@@ -11,6 +11,12 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  async function handleGoogleSignIn() {
+    setError(null);
+    setIsSubmitting(true);
+    await signIn("google", { callbackUrl: "/" });
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -73,6 +79,23 @@ export default function SignUpPage() {
         <p className="mt-2 text-sm text-slate-600">
           Create your account. New users get the <code>USER</code> role.
         </p>
+
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={isSubmitting}
+          className="mt-6 flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          Continue with Google
+        </button>
+
+        <div className="my-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+            Or
+          </span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">

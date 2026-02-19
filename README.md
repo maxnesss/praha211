@@ -47,7 +47,7 @@ Open `http://localhost:3000`.
 
 ## Auth and roles
 
-- Auth uses email/password with NextAuth credentials provider.
+- Auth uses NextAuth with credentials and Google OAuth provider.
 - New users can sign up at `/sign-up` and are assigned role `USER`.
 - Sign in at `/sign-in`.
 - Roles available: `ADMIN`, `USER`.
@@ -62,3 +62,14 @@ UPDATE "User" SET "role" = 'ADMIN' WHERE "email" = 'you@example.com';
 ```bash
 npm run user:add -- --email admin@praha211.com --password "AdminPass123" --role ADMIN --name "Admin User"
 ```
+
+## Google OAuth setup
+
+1. Create OAuth credentials in Google Cloud Console.
+2. Add these redirect values:
+   - Authorized JavaScript origin: `http://localhost:3000`
+   - Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+3. Put credentials in `.env`:
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+4. Restart `npm run dev`.
