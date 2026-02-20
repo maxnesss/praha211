@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 type CoatOfArmsProps = {
@@ -27,13 +28,12 @@ export function CoatOfArms({
       className={`relative overflow-hidden rounded-md border border-slate-700 bg-slate-950 ${className ?? ""}`}
     >
       {mode !== "placeholder" ? (
-        <img
+        <Image
           src={`/coats/${resolvedAssetKey}.png`}
-          srcSet={`/coats/${resolvedAssetKey}.png 1x`}
-          sizes={sizes}
           alt={`${name} znak městské části`}
+          fill
+          sizes={sizes}
           loading="lazy"
-          decoding="async"
           onError={() => {
             if (mode === "primary" && assetKey !== "karlin") {
               setMode("fallback");

@@ -16,21 +16,23 @@ export default async function Home() {
 
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col items-center justify-center px-4 py-8 text-center sm:px-8 sm:py-14 lg:-mt-6">
         <Image
-          src="/logo/praha.png"
+          src="/logo/praha-tr.png"
           alt="PRAHA 112 logo"
           width={900}
           height={900}
           priority
-          className="hero-logo-motion h-[22rem] w-[22rem] rounded-full border border-amber-200/45 bg-slate-900/60 object-cover p-3 shadow-[0_0_84px_rgba(245,158,11,0.5)] sm:h-[30rem] sm:w-[30rem] lg:h-[40rem] lg:w-[40rem]"
+          className="hero-logo-motion h-[20rem] w-[20rem] object-contain drop-shadow-[0_0_48px_rgba(245,158,11,0.45)] sm:h-[28rem] sm:w-[28rem] lg:h-[36rem] lg:w-[36rem]"
         />
 
         <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">
           Praha 112
         </p>
-        <h1 className="mt-3 max-w-[20ch] text-4xl font-semibold leading-[1.05] tracking-tight text-slate-100 sm:text-5xl lg:text-6xl">
-          Jedna výzva.
-          <br className="hidden sm:block" /> 112 městských částí.
-          <br className="hidden sm:block" /> Jediný cíl: dokončit celou Prahu.
+        <h1 className="mt-4 max-w-[22ch] text-[clamp(2rem,4.6vw,4.2rem)] font-semibold leading-[1.08] tracking-tight text-slate-100">
+          <span className="block">Jedna výzva.</span>
+          <span className="mt-1 block">112 městských částí.</span>
+          <span className="mt-1 block text-slate-300">
+            Jediný cíl: dokončit celou Prahu.
+          </span>
         </h1>
 
         <div className="mt-11 flex w-full max-w-sm flex-col items-center justify-center gap-3 sm:max-w-none sm:flex-row">

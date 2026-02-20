@@ -1,6 +1,8 @@
+import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
+import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday } from "@/lib/game/progress";
 import { getDistrictByCode } from "@/lib/game/praha112";
 import { prisma } from "@/lib/prisma";
@@ -99,12 +101,11 @@ export async function POST(request: Request, context: ClaimRouteContext) {
       districtName: true,
       chapterSlug: true,
       claimedAt: true,
-      awardedPoints: true,
-      basePoints: true,
-      sameDayMultiplier: true,
-      streakBonus: true,
+      selfieUrl: true,
     },
   });
+
+  revalidateTag(LEADERBOARD_CACHE_TAG, "max");
 
   return NextResponse.json(
     {

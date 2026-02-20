@@ -35,7 +35,7 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
         assetKey={district.coatAssetKey}
         code={district.code}
         name={district.name}
-        className="mt-3 aspect-square w-full"
+        className={`mt-3 aspect-square w-full ${completed ? "" : "grayscale"}`}
       />
       <p
         className={`mt-3 text-sm font-medium leading-snug ${
@@ -43,9 +43,6 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
         }`}
       >
         {district.name}
-      </p>
-      <p className="mt-2 text-xs text-slate-500">
-        {district.basePoints} základních bodů
       </p>
     </Link>
   );

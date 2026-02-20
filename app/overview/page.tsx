@@ -33,35 +33,6 @@ export default async function OverviewPage() {
           odeslání.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Dokončení
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {overview.totalCompleted} / {overview.totalDistricts}
-            </p>
-          </article>
-          <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Postup
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{overview.completionPercent}%</p>
-          </article>
-          <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Aktuální série
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{overview.currentStreak} dní</p>
-          </article>
-          <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Celkové body
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{overview.totalPoints}</p>
-          </article>
-        </div>
-
         <div className="mt-10">
           <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
             Kapitoly

@@ -1,4 +1,17 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+
+export type LeaderboardEntry = {
+  userId: string;
+  name: string | null;
+  email: string | null;
+  points: number;
+  completed: number;
+  rank: number;
+};
+
+export const LEADERBOARD_CACHE_TAG = "leaderboard";
+const LEADERBOARD_CACHE_SECONDS = 60;
 
 export async function getUserGameClaims(userId: string) {
   return prisma.districtClaim.findMany({
@@ -19,4 +32,100 @@ export async function getUserClaimedDistrictCodes(userId: string) {
   });
 
   return new Set(claims.map((claim) => claim.districtCode));
+}
+
+async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
+  const aggregated = await prisma.districtClaim.groupBy({
+    by: ["userId"],
+    _sum: { awardedPoints: true },
+    _count: { _all: true },
+  });
+
+  if (aggregated.length === 0) {
+    return [];
+  }
+
+  const byPoints = [...aggregated].sort((a, b) => {
+    const pointsA = a._sum.awardedPoints ?? 0;
+    const pointsB = b._sum.awardedPoints ?? 0;
+
+    if (pointsA !== pointsB) {
+      return pointsB - pointsA;
+    }
+
+    const completedA = a._count._all ?? 0;
+    const completedB = b._count._all ?? 0;
+    if (completedA !== completedB) {
+      return completedB - completedA;
+    }
+
+    return a.userId.localeCompare(b.userId);
+  });
+
+  const users = await prisma.user.findMany({
+    where: {
+      id: {
+        in: byPoints.map((entry) => entry.userId),
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  });
+
+  const usersById = new Map(users.map((user) => [user.id, user] as const));
+  const leaderboard: LeaderboardEntry[] = [];
+  let currentRank = 0;
+  let previousPoints: number | null = null;
+
+  for (let index = 0; index < byPoints.length; index += 1) {
+    const entry = byPoints[index];
+    const points = entry._sum.awardedPoints ?? 0;
+
+    if (previousPoints === null || points < previousPoints) {
+      currentRank = index + 1;
+    }
+
+    previousPoints = points;
+    const user = usersById.get(entry.userId);
+
+    leaderboard.push({
+      userId: entry.userId,
+      name: user?.name ?? null,
+      email: user?.email ?? null,
+      points,
+      completed: entry._count._all ?? 0,
+      rank: currentRank,
+    });
+  }
+
+  return leaderboard;
+}
+
+const getCachedLeaderboardSnapshot = unstable_cache(
+  async () => buildLeaderboardSnapshot(),
+  ["leaderboard-snapshot-v2"],
+  {
+    revalidate: LEADERBOARD_CACHE_SECONDS,
+    tags: [LEADERBOARD_CACHE_TAG],
+  },
+);
+
+export async function getUserPointsRanking(userId: string) {
+  const leaderboard = await getCachedLeaderboardSnapshot();
+  const totalPlayers = leaderboard.length;
+  const entry = leaderboard.find((item) => item.userId === userId);
+
+  return {
+    rank: entry?.rank ?? null,
+    totalPlayers,
+    userPoints: entry?.points ?? 0,
+  };
+}
+
+export async function getPointsLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
+  const leaderboard = await getCachedLeaderboardSnapshot();
+  return leaderboard.slice(0, Math.max(1, limit));
 }
