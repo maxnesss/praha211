@@ -15,21 +15,27 @@ export async function POST(request: Request, context: ClaimRouteContext) {
   const userId = session?.user?.id;
 
   if (!userId) {
-    return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
+    return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
   }
 
   const { code } = await context.params;
   const district = getDistrictByCode(code);
 
   if (!district) {
-    return NextResponse.json({ message: "District not found." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Městská část nebyla nalezena." },
+      { status: 404 },
+    );
   }
 
   let body: unknown;
   try {
     body = (await request.json()) as unknown;
   } catch {
-    return NextResponse.json({ message: "Invalid request body." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Neplatné tělo požadavku." },
+      { status: 400 },
+    );
   }
 
   const parsed = districtClaimSchema.safeParse(body);
@@ -52,7 +58,7 @@ export async function POST(request: Request, context: ClaimRouteContext) {
 
   if (existingClaim) {
     return NextResponse.json(
-      { message: "This district has already been claimed." },
+      { message: "Tato městská část už byla potvrzena." },
       { status: 409 },
     );
   }
@@ -102,7 +108,7 @@ export async function POST(request: Request, context: ClaimRouteContext) {
 
   return NextResponse.json(
     {
-      message: "District claimed successfully.",
+      message: "Městská část byla úspěšně potvrzena.",
       claim,
       streakAfterClaim,
     },

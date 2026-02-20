@@ -50,7 +50,7 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
       <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10">
         <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.18em]">
           <Link href="/" className="text-slate-400 hover:text-slate-200">
-            Overview
+            Přehled
           </Link>
           <span className="text-slate-600">/</span>
           <Link
@@ -66,13 +66,13 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr,1fr]">
           <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              District
+              Městská část
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight">
               {district.name}
             </h1>
             <p className="mt-2 text-sm text-slate-300">
-              Base value: <strong>{district.basePoints}</strong> points
+              Základní hodnota: <strong>{district.basePoints}</strong> bodů
             </p>
 
             <CoatOfArms
@@ -85,14 +85,14 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
 
             <div className="mt-6 rounded-lg border border-slate-700 bg-slate-950/70 p-4">
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
-                Rulebook V1
+                Pravidla V1
               </h2>
               <ul className="mt-3 space-y-2 text-sm text-slate-400">
-                <li>You must physically visit the district.</li>
-                <li>The official district sign must be visible.</li>
-                <li>A selfie is required for submission.</li>
-                <li>Submission server time defines completion.</li>
-                <li>Each district may be claimed once per user.</li>
+                <li>Tuto městskou část musíte fyzicky navštívit.</li>
+                <li>Na selfie musí být vidět oficiální cedule městské části.</li>
+                <li>Pro odeslání je povinná selfie.</li>
+                <li>O dokončení rozhoduje serverový čas odeslání.</li>
+                <li>Každou městskou část lze potvrdit jen jednou jedním uživatelem.</li>
               </ul>
             </div>
           </article>

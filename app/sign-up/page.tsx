@@ -49,7 +49,7 @@ export default function SignUpPage() {
         | { message?: string }
         | null;
 
-      setError(payload?.message || "Could not create your account.");
+      setError(payload?.message || "Nepodařilo se vytvořit váš účet.");
       setIsSubmitting(false);
       return;
     }
@@ -74,10 +74,10 @@ export default function SignUpPage() {
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-12">
       <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Sign up
+          Registrace
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          Create your account. New users get the <code>USER</code> role.
+          Vytvořte si účet. Noví uživatelé dostanou roli <code>USER</code>.
         </p>
 
         <button
@@ -86,13 +86,13 @@ export default function SignUpPage() {
           disabled={isSubmitting}
           className="mt-6 flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          Continue with Google
+          Pokračovat přes Google
         </button>
 
         <div className="my-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-slate-200" />
           <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
-            Or
+            Nebo
           </span>
           <div className="h-px flex-1 bg-slate-200" />
         </div>
@@ -100,7 +100,7 @@ export default function SignUpPage() {
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <label htmlFor="name" className="text-sm font-medium text-slate-700">
-              Name
+              Jméno
             </label>
             <input
               id="name"
@@ -116,7 +116,7 @@ export default function SignUpPage() {
               htmlFor="email"
               className="text-sm font-medium text-slate-700"
             >
-              Email
+              E-mail
             </label>
             <input
               id="email"
@@ -133,7 +133,7 @@ export default function SignUpPage() {
               htmlFor="password"
               className="text-sm font-medium text-slate-700"
             >
-              Password
+              Heslo
             </label>
             <input
               id="password"
@@ -144,7 +144,7 @@ export default function SignUpPage() {
               required
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none transition-colors focus:border-slate-500"
             />
-            <p className="text-xs text-slate-500">Minimum 8 characters.</p>
+            <p className="text-xs text-slate-500">Minimálně 8 znaků.</p>
           </div>
 
           {error && (
@@ -158,17 +158,17 @@ export default function SignUpPage() {
             disabled={isSubmitting}
             className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? "Creating account..." : "Create account"}
+            {isSubmitting ? "Vytvářím účet..." : "Vytvořit účet"}
           </button>
         </form>
 
         <p className="mt-5 text-sm text-slate-600">
-          Already have an account?{" "}
+          Už máte účet?{" "}
           <Link
             href="/sign-in"
             className="font-medium text-slate-900 hover:text-slate-700"
           >
-            Sign in
+            Přihlásit se
           </Link>
         </p>
       </div>

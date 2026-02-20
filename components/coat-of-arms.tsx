@@ -31,7 +31,7 @@ export function CoatOfArms({
           src={`/coats/${resolvedAssetKey}.png`}
           srcSet={`/coats/${resolvedAssetKey}.png 1x`}
           sizes={sizes}
-          alt={`${name} coat of arms`}
+          alt={`${name} znak městské části`}
           loading="lazy"
           decoding="async"
           onError={() => {

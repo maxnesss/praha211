@@ -28,7 +28,7 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
               : "bg-slate-800 text-slate-400"
           }`}
         >
-          {completed ? "Unlocked" : "Locked"}
+          {completed ? "Odemčeno" : "Zamčeno"}
         </span>
       </div>
       <CoatOfArms
@@ -44,7 +44,9 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
       >
         {district.name}
       </p>
-      <p className="mt-2 text-xs text-slate-500">{district.basePoints} base pts</p>
+      <p className="mt-2 text-xs text-slate-500">
+        {district.basePoints} základních bodů
+      </p>
     </Link>
   );
 }

@@ -3,23 +3,23 @@ import { z } from "zod";
 const emailSchema = z
   .string()
   .trim()
-  .email("Please provide a valid email address.")
+  .email("Zadejte platnou e-mailovou adresu.")
   .transform((value) => value.toLowerCase());
 
 const passwordSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters.");
+  .min(8, "Heslo musí mít alespoň 8 znaků.");
 
 const nameSchema = z
   .string()
   .trim()
-  .max(100, "Name must be 100 characters or fewer.")
+  .max(100, "Jméno může mít maximálně 100 znaků.")
   .optional()
   .transform((value) => (value && value.length > 0 ? value : undefined));
 
 export const signInSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "Password is required."),
+  password: z.string().min(1, "Heslo je povinné."),
 });
 
 export const registerSchema = z.object({
@@ -35,5 +35,5 @@ export const addUserSchema = registerSchema.extend({
 });
 
 export function getFirstZodErrorMessage(error: z.ZodError) {
-  return error.issues[0]?.message ?? "Invalid input.";
+  return error.issues[0]?.message ?? "Neplatný vstup.";
 }

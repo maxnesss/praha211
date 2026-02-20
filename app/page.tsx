@@ -19,17 +19,18 @@ export default async function Home() {
           Praha 112
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Completion wall for all 112 cadastral districts of Prague.
+          Kompletační stěna všech 112 katastrálních území Prahy.
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-          Completion is finite and permanent. Score is infinite and performance
-          driven. Rulebook V1 is trust-based and uses server time for each claim.
+          Dokončení je konečné a trvalé. Skóre je nekonečné a výkonové.
+          Pravidla V1 jsou založená na důvěře a používají serverový čas každého
+          odeslání.
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Completion
+              Dokončení
             </p>
             <p className="mt-2 text-2xl font-semibold">
               {overview.totalCompleted} / {overview.totalDistricts}
@@ -37,19 +38,19 @@ export default async function Home() {
           </article>
           <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Progress
+              Postup
             </p>
             <p className="mt-2 text-2xl font-semibold">{overview.completionPercent}%</p>
           </article>
           <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Current Streak
+              Aktuální série
             </p>
-            <p className="mt-2 text-2xl font-semibold">{overview.currentStreak} days</p>
+            <p className="mt-2 text-2xl font-semibold">{overview.currentStreak} dní</p>
           </article>
           <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-slate-400">
-              Total Points
+              Celkové body
             </p>
             <p className="mt-2 text-2xl font-semibold">{overview.totalPoints}</p>
           </article>
@@ -57,7 +58,7 @@ export default async function Home() {
 
         <div className="mt-10">
           <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Chapters
+            Kapitoly
           </h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {overview.chapterCards.map((chapter) => (
@@ -68,8 +69,8 @@ export default async function Home() {
 
         {!session?.user && (
           <p className="mt-8 rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-            Sign in to start claiming districts. All chapters are visible from
-            the start, no artificial locking.
+            Přihlaste se a začněte potvrzovat městské části. Všechny kapitoly
+            jsou viditelné od začátku, bez umělého zamykání.
           </p>
         )}
       </section>

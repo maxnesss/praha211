@@ -9,7 +9,7 @@ export function SignOutButton() {
       className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800"
       onClick={() => signOut({ callbackUrl: "/" })}
     >
-      Sign out
+      Odhlásit se
     </button>
   );
 }

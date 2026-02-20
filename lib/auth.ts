@@ -14,10 +14,10 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     CredentialsProvider({
-      name: "Email and password",
+      name: "E-mail a heslo",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        email: { label: "E-mail", type: "email" },
+        password: { label: "Heslo", type: "password" },
       },
       async authorize(credentials) {
         const parsed = signInSchema.safeParse(credentials);

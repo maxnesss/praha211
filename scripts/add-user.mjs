@@ -25,18 +25,18 @@ function getArgValue(flag) {
 
 function printUsage() {
   console.log(`
-Add a user to the database.
+Přidá uživatele do databáze.
 
-Usage:
+Použití:
   npm run user:add -- --email you@example.com --password "YourPass123"
 
-Optional:
-  --name "Full Name"
-  --role USER|ADMIN (default: USER)
+Volitelné:
+  --name "Celé jméno"
+  --role USER|ADMIN (výchozí: USER)
   --help
 
-Examples:
-  npm run user:add -- --email admin@praha211.com --password "AdminPass123" --role ADMIN --name "Admin User"
+Příklady:
+  npm run user:add -- --email admin@praha211.com --password "AdminPass123" --role ADMIN --name "Admin"
   npm run user:add -- --email user@praha211.com --password "UserPass123"
 `);
 }
@@ -45,13 +45,13 @@ const addUserSchema = z.object({
   email: z
     .string()
     .trim()
-    .email("Please provide a valid email address.")
+    .email("Zadejte platnou e-mailovou adresu.")
     .transform((value) => value.toLowerCase()),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: z.string().min(8, "Heslo musí mít alespoň 8 znaků."),
   name: z
     .string()
     .trim()
-    .max(100, "Name must be 100 characters or fewer.")
+    .max(100, "Jméno může mít maximálně 100 znaků.")
     .optional()
     .transform((value) => (value && value.length > 0 ? value : undefined)),
   role: z.enum(["USER", "ADMIN"]).default("USER"),
@@ -69,7 +69,7 @@ async function main() {
   const roleInput = (getArgValue("--role") || "USER").toUpperCase();
 
   if (!emailInput || !password) {
-    console.error("Error: --email and --password are required.\n");
+    console.error("Chyba: --email a --password jsou povinné.\n");
     printUsage();
     process.exitCode = 1;
     return;
@@ -83,8 +83,8 @@ async function main() {
   });
 
   if (!parsed.success) {
-    const message = parsed.error.issues[0]?.message ?? "Invalid input.";
-    console.error(`Error: ${message}`);
+    const message = parsed.error.issues[0]?.message ?? "Neplatný vstup.";
+    console.error(`Chyba: ${message}`);
     process.exitCode = 1;
     return;
   }
@@ -97,7 +97,7 @@ async function main() {
   });
 
   if (existingUser) {
-    console.error(`Error: A user with email "${email}" already exists.`);
+    console.error(`Chyba: Uživatel s e-mailem "${email}" už existuje.`);
     process.exitCode = 1;
     return;
   }
@@ -120,13 +120,13 @@ async function main() {
     },
   });
 
-  console.log("User created successfully:");
+  console.log("Uživatel byl úspěšně vytvořen:");
   console.log(JSON.stringify(user, null, 2));
 }
 
 main()
   .catch((error) => {
-    console.error("Failed to add user:", error);
+    console.error("Nepodařilo se přidat uživatele:", error);
     process.exitCode = 1;
   })
   .finally(async () => {

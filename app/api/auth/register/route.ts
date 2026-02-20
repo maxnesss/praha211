@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       body = (await request.json()) as unknown;
     } catch {
       return NextResponse.json(
-        { message: "Invalid request body." },
+        { message: "Neplatné tělo požadavku." },
         { status: 400 },
       );
     }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "An account with this email already exists." },
+        { message: "Účet s tímto e-mailem už existuje." },
         { status: 409 },
       );
     }
@@ -51,14 +51,14 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(
-      { message: "Account created successfully." },
+      { message: "Účet byl úspěšně vytvořen." },
       { status: 201 },
     );
   } catch (error) {
-    console.error("Registration failed:", error);
+    console.error("Registrace se nezdařila:", error);
 
     return NextResponse.json(
-      { message: "Unable to register account." },
+      { message: "Nepodařilo se zaregistrovat účet." },
       { status: 500 },
     );
   }

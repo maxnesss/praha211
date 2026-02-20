@@ -67,6 +67,16 @@ npm run dev
 - Sign in: `/sign-in`
 - Sign up: `/sign-up`
 
+## Language and localization
+
+- Default language is **Czech** (`cs`).
+- All user-facing copy should be in Czech:
+  - UI labels, buttons, headings, helper texts
+  - form validation messages
+  - API response messages surfaced in UI
+- Keep technical identifiers in code as-is (`USER`, `ADMIN`, route paths, schema names).
+- If adding new pages/layout metadata, keep `<html lang="cs">` and Czech metadata text.
+
 ## Data and migration notes
 
 - Prisma schema: `prisma/schema.prisma`

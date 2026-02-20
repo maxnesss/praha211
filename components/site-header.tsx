@@ -18,7 +18,7 @@ export function SiteHeader({ session }: SiteHeaderProps) {
             PRAHA 112
           </Link>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-slate-400 sm:inline">
-            Completion System
+            Systém dokončení
           </span>
         </div>
 
@@ -39,13 +39,13 @@ export function SiteHeader({ session }: SiteHeaderProps) {
                 href="/sign-in"
                 className="rounded-md border border-slate-700 px-3 py-1.5 text-slate-300 transition-colors hover:bg-slate-900"
               >
-                Sign in
+                Přihlásit se
               </Link>
               <Link
                 href="/sign-up"
                 className="rounded-md bg-amber-500 px-3 py-1.5 text-slate-950 transition-colors hover:bg-amber-400"
               >
-                Sign up
+                Registrovat se
               </Link>
             </>
           )}

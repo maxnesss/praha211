@@ -59,7 +59,7 @@ export function ClaimDistrictForm({
         | { message?: string }
         | null;
 
-      setError(payload?.message || "Unable to submit district claim.");
+      setError(payload?.message || "Nepodařilo se odeslat potvrzení městské části.");
       setIsSubmitting(false);
       return;
     }
@@ -68,7 +68,7 @@ export function ClaimDistrictForm({
       claim: { awardedPoints: number };
     };
 
-    setSuccess(`Claim accepted. +${payload.claim.awardedPoints} points.`);
+    setSuccess(`Potvrzení přijato. +${payload.claim.awardedPoints} bodů.`);
     setIsSubmitting(false);
     router.refresh();
   }
@@ -76,15 +76,16 @@ export function ClaimDistrictForm({
   if (!isAuthenticated) {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-        <h2 className="text-lg font-semibold text-slate-100">Claim District</h2>
+        <h2 className="text-lg font-semibold text-slate-100">Potvrdit městskou část</h2>
         <p className="mt-2 text-sm text-slate-400">
-          Sign in to submit your visit for <strong>{districtName}</strong>.
+          Přihlaste se a odešlete potvrzení návštěvy pro{" "}
+          <strong>{districtName}</strong>.
         </p>
         <Link
           href={`/sign-in?callbackUrl=${encodeURIComponent(`/district/${districtCode}`)}`}
           className="mt-4 inline-flex rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400"
         >
-          Sign in to claim
+          Přihlásit se a potvrdit
         </Link>
       </div>
     );
@@ -94,16 +95,19 @@ export function ClaimDistrictForm({
     return (
       <div className="rounded-xl border border-emerald-300/40 bg-emerald-500/10 p-5">
         <h2 className="text-lg font-semibold text-emerald-100">
-          District Completed
+          Městská část dokončena
         </h2>
         <p className="mt-2 text-sm text-emerald-100/90">
-          Claimed on {new Date(existingClaim.claimedAt).toLocaleString()}.
+          Potvrzeno dne{" "}
+          {new Date(existingClaim.claimedAt).toLocaleString("cs-CZ")}.
         </p>
         <ul className="mt-3 space-y-1 text-sm text-emerald-100/90">
-          <li>Base points: {existingClaim.basePoints}</li>
-          <li>Same-day multiplier: {existingClaim.sameDayMultiplier.toFixed(2)}x</li>
-          <li>Streak bonus: +{existingClaim.streakBonus}</li>
-          <li>Total awarded: +{existingClaim.awardedPoints}</li>
+          <li>Základní body: {existingClaim.basePoints}</li>
+          <li>
+            Násobitel za stejný den: {existingClaim.sameDayMultiplier.toFixed(2)}x
+          </li>
+          <li>Bonus za sérii: +{existingClaim.streakBonus}</li>
+          <li>Celkem získáno: +{existingClaim.awardedPoints}</li>
         </ul>
         <a
           href={existingClaim.selfieUrl}
@@ -111,7 +115,7 @@ export function ClaimDistrictForm({
           rel="noreferrer"
           className="mt-4 inline-flex text-sm font-medium text-emerald-100 underline underline-offset-4 hover:text-white"
         >
-          Open submitted selfie
+          Otevřít nahranou selfie
         </a>
       </div>
     );
@@ -119,15 +123,16 @@ export function ClaimDistrictForm({
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-      <h2 className="text-lg font-semibold text-slate-100">Submit Claim</h2>
+      <h2 className="text-lg font-semibold text-slate-100">Odeslat potvrzení</h2>
       <p className="mt-2 text-sm text-slate-400">
-        Trust-based V1: confirm visit, sign visibility, and attach selfie URL.
+        Verze V1 založená na důvěře: potvrďte návštěvu, viditelnost cedule a
+        přiložte URL selfie.
       </p>
 
       <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
           <label htmlFor="selfieUrl" className="text-sm font-medium text-slate-200">
-            Selfie URL
+            URL selfie
           </label>
           <input
             id="selfieUrl"
@@ -146,7 +151,7 @@ export function ClaimDistrictForm({
             required
             className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-900 text-amber-500 focus:ring-amber-400"
           />
-          I physically visited this district.
+          Tuto městskou část jsem fyzicky navštívil/a.
         </label>
 
         <label className="flex items-start gap-3 text-sm text-slate-300">
@@ -156,7 +161,7 @@ export function ClaimDistrictForm({
             required
             className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-900 text-amber-500 focus:ring-amber-400"
           />
-          The official district sign is visible in the selfie.
+          Na selfie je vidět oficiální cedule městské části.
         </label>
 
         {error && (
@@ -176,7 +181,7 @@ export function ClaimDistrictForm({
           disabled={isSubmitting}
           className="w-full rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {isSubmitting ? "Submitting..." : "Claim district"}
+          {isSubmitting ? "Odesílám..." : "Potvrdit městskou část"}
         </button>
       </form>
     </div>

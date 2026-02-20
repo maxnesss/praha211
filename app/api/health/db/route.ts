@@ -7,15 +7,15 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
-      message: "Database connection is healthy.",
+      message: "Připojení k databázi je v pořádku.",
     });
   } catch (error) {
-    console.error("Database health check failed", error);
+    console.error("Kontrola zdraví databáze selhala", error);
 
     return NextResponse.json(
       {
         ok: false,
-        message: "Database connection failed.",
+        message: "Připojení k databázi selhalo.",
       },
       { status: 500 },
     );

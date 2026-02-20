@@ -4,16 +4,16 @@ export const districtClaimSchema = z.object({
   selfieUrl: z
     .string()
     .trim()
-    .url("Selfie URL must be a valid URL.")
-    .max(500, "Selfie URL is too long."),
+    .url("URL selfie musí být platná adresa.")
+    .max(500, "URL selfie je příliš dlouhá."),
   attestVisited: z
     .boolean()
-    .refine((value) => value, "You must confirm physical visit."),
+    .refine((value) => value, "Musíte potvrdit fyzickou návštěvu."),
   attestSignVisible: z
     .boolean()
-    .refine((value) => value, "You must confirm the official sign is visible."),
+    .refine((value) => value, "Musíte potvrdit, že je vidět oficiální cedule."),
 });
 
 export function getValidationMessage(error: z.ZodError) {
-  return error.issues[0]?.message ?? "Invalid request.";
+  return error.issues[0]?.message ?? "Neplatný požadavek.";
 }

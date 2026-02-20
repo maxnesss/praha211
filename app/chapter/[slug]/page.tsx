@@ -37,12 +37,12 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
           href="/"
           className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200"
         >
-          ← Back to overview
+          ← Zpět na přehled
         </Link>
 
         <h1 className="mt-4 text-3xl font-semibold tracking-tight">{chapter.name}</h1>
         <p className="mt-2 text-sm text-slate-300">
-          Progress: {completedCount} / {districts.length}
+          Postup: {completedCount} / {districts.length}
         </p>
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

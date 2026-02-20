@@ -42,7 +42,7 @@ export function ChapterCard({
           className="rounded-md border px-2 py-1 text-xs font-medium uppercase tracking-wider"
           style={{ borderColor: accentColor, color: accentColor }}
         >
-          Chapter
+          Kapitola
         </span>
       </div>
 
@@ -67,7 +67,7 @@ export function ChapterCard({
           />
         </div>
         <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
-          {progressPercent}% complete
+          {progressPercent}% dokončeno
         </p>
       </div>
     </Link>

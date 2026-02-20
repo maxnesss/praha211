@@ -213,7 +213,7 @@ export const DISTRICTS: DistrictDefinition[] = CHAPTERS.flatMap(
 
     if (districtNames.length !== DISTRICTS_PER_CHAPTER) {
       throw new Error(
-        `Chapter "${chapter.slug}" must have exactly ${DISTRICTS_PER_CHAPTER} districts.`,
+        `Kapitola "${chapter.slug}" musí mít přesně ${DISTRICTS_PER_CHAPTER} městských částí.`,
       );
     }
 
