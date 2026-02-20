@@ -42,7 +42,8 @@ Otevřete `http://localhost:3000`.
 ## Struktura
 
 - `app/layout.tsx` - kořenový HTML layout a metadata
-- `app/page.tsx` - domovská stránka
+- `app/page.tsx` - veřejná landing stránka
+- `app/overview/page.tsx` - hlavní přehled po přihlášení
 - `app/chapter/[slug]/page.tsx` - stránka kapitoly s mřížkou 4x4
 - `app/district/[code]/page.tsx` - detail městské části + odeslání potvrzení
 - `app/globals.css` - globální styly
@@ -67,6 +68,8 @@ Otevřete `http://localhost:3000`.
 ## Auth a role
 
 - Autentizace běží přes NextAuth (credentials + Google OAuth).
+- Veřejná je pouze landing stránka `/`.
+- Herní části (`/overview`, `/chapter/[slug]`, `/district/[code]`) vyžadují přihlášení.
 - Noví uživatelé se registrují na `/sign-up` a dostanou roli `USER`.
 - Přihlášení je na `/sign-in`.
 - Dostupné role: `ADMIN`, `USER`.

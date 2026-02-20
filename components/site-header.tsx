@@ -7,12 +7,14 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ session }: SiteHeaderProps) {
+  const homeHref = session?.user ? "/overview" : "/";
+
   return (
     <header className="border-b border-slate-800 bg-slate-950/90">
       <nav className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-6 sm:px-10">
         <div className="flex items-center gap-6">
           <Link
-            href="/"
+            href={homeHref}
             className="text-lg font-semibold tracking-[0.08em] text-slate-100"
           >
             PRAHA 112

@@ -14,7 +14,7 @@ export default function SignUpPage() {
   async function handleGoogleSignIn() {
     setError(null);
     setIsSubmitting(true);
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", { callbackUrl: "/overview" });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -57,7 +57,7 @@ export default function SignUpPage() {
     const signInResult = await signIn("credentials", {
       email,
       password,
-      callbackUrl: "/",
+      callbackUrl: "/overview",
       redirect: false,
     });
 
@@ -66,7 +66,7 @@ export default function SignUpPage() {
       return;
     }
 
-    router.push(signInResult.url || "/");
+    router.push(signInResult.url || "/overview");
     router.refresh();
   }
 

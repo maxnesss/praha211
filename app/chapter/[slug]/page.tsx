@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { DistrictTile } from "@/components/district-tile";
 import { SiteHeader } from "@/components/site-header";
 import { authOptions } from "@/lib/auth";
@@ -20,9 +20,11 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
   }
 
   const session = await getServerSession(authOptions);
-  const completedCodes = session?.user?.id
-    ? await getUserClaimedDistrictCodes(session.user.id)
-    : new Set<string>();
+  if (!session?.user?.id) {
+    redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/chapter/${slug}`)}`);
+  }
+
+  const completedCodes = await getUserClaimedDistrictCodes(session.user.id);
   const districts = getDistrictsByChapter(slug);
   const completedCount = districts.filter((district) =>
     completedCodes.has(district.code),
@@ -34,7 +36,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10">
         <Link
-          href="/"
+          href="/overview"
           className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200"
         >
           ← Zpět na přehled

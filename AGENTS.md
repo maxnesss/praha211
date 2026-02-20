@@ -61,7 +61,8 @@ npm run dev
 
 ## UI routes
 
-- Overview: `/`
+- Main landing page (public): `/`
+- Overview (requires login): `/overview`
 - Chapter: `/chapter/[slug]`
 - District detail/claim: `/district/[code]`
 - Sign in: `/sign-in`
@@ -76,6 +77,7 @@ npm run dev
   - API response messages surfaced in UI
 - Keep technical identifiers in code as-is (`USER`, `ADMIN`, route paths, schema names).
 - If adding new pages/layout metadata, keep `<html lang="cs">` and Czech metadata text.
+- App flow rule: only the main landing page is public; game routes require login.
 
 ## Data and migration notes
 

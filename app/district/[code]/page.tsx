@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ClaimDistrictForm } from "@/components/claim-district-form";
 import { CoatOfArms } from "@/components/coat-of-arms";
 import { SiteHeader } from "@/components/site-header";
@@ -24,24 +24,26 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
-  const existingClaim = userId
-    ? await prisma.districtClaim.findUnique({
-        where: {
-          userId_districtCode: {
-            userId,
-            districtCode: district.code,
-          },
-        },
-        select: {
-          claimedAt: true,
-          awardedPoints: true,
-          basePoints: true,
-          sameDayMultiplier: true,
-          streakBonus: true,
-          selfieUrl: true,
-        },
-      })
-    : null;
+  if (!userId) {
+    redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/district/${district.code}`)}`);
+  }
+
+  const existingClaim = await prisma.districtClaim.findUnique({
+    where: {
+      userId_districtCode: {
+        userId,
+        districtCode: district.code,
+      },
+    },
+    select: {
+      claimedAt: true,
+      awardedPoints: true,
+      basePoints: true,
+      sameDayMultiplier: true,
+      streakBonus: true,
+      selfieUrl: true,
+    },
+  });
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#202938_0%,#0b1018_45%,#06080d_100%)] text-slate-100">
@@ -49,7 +51,7 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10">
         <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.18em]">
-          <Link href="/" className="text-slate-400 hover:text-slate-200">
+          <Link href="/overview" className="text-slate-400 hover:text-slate-200">
             Přehled
           </Link>
           <span className="text-slate-600">/</span>

@@ -11,3 +11,49 @@ body {
   color: #111827;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+@keyframes logo-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes logo-pulse {
+  0%,
+  100% {
+    filter: saturate(100%) brightness(100%);
+  }
+
+  50% {
+    filter: saturate(112%) brightness(105%);
+  }
+}
+
+.hero-logo-motion {
+  animation:
+    logo-float 8s ease-in-out infinite,
+    logo-pulse 6s ease-in-out infinite;
+}
+
+.hero-grain {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.03) 0,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+}
