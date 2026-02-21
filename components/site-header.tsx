@@ -1,4 +1,4 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
 import type { Session } from "next-auth";
 import { buildBadgeOverview } from "@/lib/game/badges";
@@ -61,8 +61,8 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
       ranking:
         ranking.rank && ranking.totalPlayers > 0
           ? `#${ranking.rank}/${ranking.totalPlayers}`
-          : "Bez pořadí",
-      dayStreak: `${overview.currentStreak} dní`,
+          : "Bez poÅ™adÃ­",
+      dayStreak: `${overview.currentStreak} dnÃ­`,
       badgesCount: badges.totals.unlocked,
     };
   }
@@ -98,7 +98,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
           <Link
             href={homeHref}
             className="transition-opacity hover:opacity-90"
-            aria-label="Přejít na hlavní stránku"
+            aria-label="PÅ™ejÃ­t na hlavnÃ­ strÃ¡nku"
           >
             <Image
               src="/logo/praha-tr.png"
@@ -116,7 +116,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
                   href="/sign-in"
                   className="rounded-md border border-slate-700 px-3 py-1.5 text-slate-300 transition-colors hover:bg-slate-900 sm:px-4 sm:py-2"
                 >
-                  Přihlásit se
+                  PÅ™ihlÃ¡sit se
                 </Link>
                 <Link
                   href="/sign-up"
@@ -132,11 +132,11 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
         {session?.user && navStats ? (
           <div className="mt-2 border-t border-slate-800/80 pt-2">
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
+              <NavStatTile label="Průběh" value={navStats.completion} href="/overview" />
               <NavStatTile label="Body" value={navStats.points} href="/body" />
-              <NavStatTile label="Dokončení" value={navStats.completion} href="/overview" />
               <NavStatTile label="Odznaky" value={navStats.badgesCount} href="/badges" />
-              <NavStatTile label="Pořadí" value={navStats.ranking} href="/leaderboard" />
-              <NavStatTile label="Denní série" value={navStats.dayStreak} />
+              <NavStatTile label="PoÅ™adÃ­" value={navStats.ranking} href="/leaderboard" />
+              <NavStatTile label="DennÃ­ sÃ©rie" value={navStats.dayStreak} />
             </div>
           </div>
         ) : null}
