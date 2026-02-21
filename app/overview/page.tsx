@@ -24,16 +24,8 @@ export default async function OverviewPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
           Praha 112
         </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Kompletační stěna všech 112 katastrálních území Prahy.
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-          Dokončení je konečné a trvalé. Skóre je nekonečné a výkonové.
-          Pravidla V1 jsou založená na důvěře a používají serverový čas každého
-          odeslání.
-        </p>
 
-        <div className="mt-10">
+        <div className="mt-6">
           <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
             Kapitoly
           </h2>
