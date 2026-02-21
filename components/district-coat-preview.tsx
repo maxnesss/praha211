@@ -118,6 +118,7 @@ export function DistrictCoatPreview({
           code={code}
           name={name}
           sizes="(max-width: 1024px) 80vw, 420px"
+          loadingStrategy="eager"
           className={`aspect-square w-full max-w-[22rem] ${isUnlocked ? "" : "grayscale"}`}
         />
 
