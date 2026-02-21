@@ -61,8 +61,8 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
       ranking:
         ranking.rank && ranking.totalPlayers > 0
           ? `#${ranking.rank}/${ranking.totalPlayers}`
-          : "Bez poÅ™adÃ­",
-      dayStreak: `${overview.currentStreak} dnÃ­`,
+          : "Bez pořadí",
+      dayStreak: `${overview.currentStreak} dní`,
       badgesCount: badges.totals.unlocked,
     };
   }
@@ -98,7 +98,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
           <Link
             href={homeHref}
             className="transition-opacity hover:opacity-90"
-            aria-label="PÅ™ejÃ­t na hlavnÃ­ strÃ¡nku"
+            aria-label="Přejít na hlavní stránku"
           >
             <Image
               src="/logo/praha-tr.png"
@@ -116,7 +116,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
                   href="/sign-in"
                   className="rounded-md border border-slate-700 px-3 py-1.5 text-slate-300 transition-colors hover:bg-slate-900 sm:px-4 sm:py-2"
                 >
-                  PÅ™ihlÃ¡sit se
+                  Přihlásit se
                 </Link>
                 <Link
                   href="/sign-up"
@@ -135,8 +135,8 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
               <NavStatTile label="Průběh" value={navStats.completion} href="/overview" />
               <NavStatTile label="Body" value={navStats.points} href="/body" />
               <NavStatTile label="Odznaky" value={navStats.badgesCount} href="/badges" />
-              <NavStatTile label="PoÅ™adÃ­" value={navStats.ranking} href="/leaderboard" />
-              <NavStatTile label="DennÃ­ sÃ©rie" value={navStats.dayStreak} />
+              <NavStatTile label="Pořadí" value={navStats.ranking} href="/leaderboard" />
+              <NavStatTile label="Denní série" value={navStats.dayStreak} />
             </div>
           </div>
         ) : null}
