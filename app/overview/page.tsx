@@ -17,7 +17,17 @@ export default async function OverviewPage() {
   const overview = buildOverview(claims);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#202938_0%,#0b1018_45%,#06080d_100%)] text-slate-100">
+    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#202938_0%,#0b1018_45%,#06080d_100%)] text-slate-100">
+      <div
+        className="pointer-events-none absolute inset-0 hidden opacity-10 sm:block"
+        style={{
+          backgroundImage: "url('/logo/praha-tr.png')",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center 520px",
+          backgroundSize: "min(80vw, 720px)",
+          mixBlendMode: "screen",
+        }}
+      />
       <SiteHeader session={session} />
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10">
