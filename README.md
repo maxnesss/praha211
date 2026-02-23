@@ -23,7 +23,7 @@ Otevřete `http://localhost:3000`.
   - vyžadována fyzická návštěva
   - oficiální cedule musí být vidět
   - povinné URL selfie
-  - o dokončení rozhoduje serverový čas
+  - o dokončení rozhoduje serverový čas (denní hranice: `Europe/Prague`)
   - každou městskou část lze potvrdit jen jednou na uživatele
 
 ## Skripty
