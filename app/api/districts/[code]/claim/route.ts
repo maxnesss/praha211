@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday } from "@/lib/game/progress";
-import { getDistrictByCode } from "@/lib/game/praha112";
+import { getDistrictByCode } from "@/lib/game/district-catalog";
 import { prisma } from "@/lib/prisma";
 import { districtClaimSchema, getValidationMessage } from "@/lib/validation/game";
 

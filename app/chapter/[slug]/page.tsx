@@ -5,7 +5,7 @@ import { DistrictTile } from "@/components/district-tile";
 import { SiteHeader } from "@/components/site-header";
 import { authOptions } from "@/lib/auth";
 import { getUserClaimedDistrictCodes } from "@/lib/game/queries";
-import { getChapterBySlug, getDistrictsByChapter } from "@/lib/game/praha112";
+import { getChapterBySlug, getDistrictsByChapter } from "@/lib/game/district-catalog";
 
 type ChapterPageProps = {
   params: Promise<{ slug: string }>;

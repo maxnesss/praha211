@@ -5,7 +5,7 @@ import {
   DISTRICTS,
   getDistrictsByChapter,
   type ChapterSlug,
-} from "@/lib/game/praha112";
+} from "@/lib/game/district-catalog";
 
 const PRAHA_BADGE_NUMBERS = Array.from({ length: 22 }, (_, index) => index + 1);
 

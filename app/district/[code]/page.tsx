@@ -6,7 +6,7 @@ import { DistrictCoatPreview } from "@/components/district-coat-preview";
 import { SiteHeader } from "@/components/site-header";
 import { authOptions } from "@/lib/auth";
 import { getDistrictStory } from "@/lib/game/district-stories";
-import { getChapterBySlug, getDistrictByCode } from "@/lib/game/praha112";
+import { getChapterBySlug, getDistrictByCode } from "@/lib/game/district-catalog";
 import { prisma } from "@/lib/prisma";
 
 type DistrictPageProps = {

@@ -1,4 +1,4 @@
-import { CHAPTERS, DISTRICTS, getDistrictsByChapter, getTotalDistrictCount } from "@/lib/game/praha112";
+import { CHAPTERS, DISTRICTS, getDistrictsByChapter, getTotalDistrictCount } from "@/lib/game/district-catalog";
 
 type ClaimSnapshot = {
   districtCode: string;

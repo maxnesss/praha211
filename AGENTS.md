@@ -46,7 +46,7 @@ npm run dev
 
 ## Game architecture
 
-- District and chapter data source: `lib/game/praha112.ts`
+- District and chapter data source: `lib/game/district-catalog.ts`
 - Overview/streak/scoring helpers: `lib/game/progress.ts`
 - Claim endpoint: `app/api/districts/[code]/claim/route.ts`
 - Rulebook V1 is trust-based (server-time submission, one claim per user+district)

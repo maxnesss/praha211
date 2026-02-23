@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CoatOfArms } from "@/components/coat-of-arms";
-import type { DistrictDefinition } from "@/lib/game/praha112";
+import type { DistrictDefinition } from "@/lib/game/district-catalog";
 
 type DistrictTileProps = {
   district: DistrictDefinition;
