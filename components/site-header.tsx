@@ -1,9 +1,7 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
 import type { Session } from "next-auth";
-import { buildBadgeOverview } from "@/lib/game/badges";
-import { buildOverview } from "@/lib/game/progress";
-import { getUserGameClaims, getUserPointsRanking } from "@/lib/game/queries";
+import { getUserNavStats, type UserNavStats } from "@/lib/game/queries";
 
 type SiteHeaderProps = {
   session: Session | null;
@@ -39,32 +37,10 @@ function NavStatTile({ label, value, href }: NavStatTileProps) {
 
 export async function SiteHeader({ session }: SiteHeaderProps) {
   const homeHref = session?.user ? "/overview" : "/";
-  let navStats:
-    | {
-        points: number;
-        completion: string;
-        ranking: string;
-        dayStreak: string;
-        badgesCount: number;
-      }
-    | null = null;
+  let navStats: UserNavStats | null = null;
 
   if (session?.user?.id) {
-    const claims = await getUserGameClaims(session.user.id);
-    const overview = buildOverview(claims);
-    const ranking = await getUserPointsRanking(session.user.id);
-    const badges = buildBadgeOverview(overview.completedCodes);
-
-    navStats = {
-      points: ranking.userPoints || overview.totalPoints,
-      completion: `${overview.totalCompleted}/${overview.totalDistricts}`,
-      ranking:
-        ranking.rank && ranking.totalPlayers > 0
-          ? `#${ranking.rank}/${ranking.totalPlayers}`
-          : "Bez pořadí",
-      dayStreak: `${overview.currentStreak} dní`,
-      badgesCount: badges.totals.unlocked,
-    };
+    navStats = await getUserNavStats(session.user.id);
   }
 
   return (
