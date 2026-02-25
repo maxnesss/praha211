@@ -27,7 +27,7 @@ export default async function Home() {
         <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">
           Praha 112
         </p>
-        <h1 className="mt-4 max-w-[22ch] text-[clamp(2rem,4.6vw,4.2rem)] font-semibold leading-[1.08] tracking-tight text-slate-100">
+        <h1 className="mt-4 max-w-[22ch] text-[clamp(2rem,4.6vw,4.2rem)] leading-[1.08] tracking-tight text-slate-100">
           <span className="block">Jedna výzva.</span>
           <span className="mt-1 block">112 městských částí.</span>
           <span className="mt-1 block text-slate-300">

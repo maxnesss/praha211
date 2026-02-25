@@ -9,7 +9,7 @@ body {
   min-height: 100vh;
   background: #ffffff;
   color: #111827;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-brand), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @keyframes logo-float {

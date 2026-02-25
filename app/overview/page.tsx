@@ -34,6 +34,9 @@ export default async function OverviewPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
           Praha 112
         </p>
+        <h1 className="mt-3 text-3xl leading-tight tracking-tight text-amber-50 sm:text-4xl">
+          Přehled výzvy
+        </h1>
 
         <div className="mt-6">
           <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">

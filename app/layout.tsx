@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
+import { Cinzel_Decorative } from "next/font/google";
 import "./globals.css";
+
+const cinzelDecorative = Cinzel_Decorative({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-brand",
+});
 
 export const metadata: Metadata = {
   title: "PRAHA 112",
@@ -13,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="cs">
-      <body className="antialiased">{children}</body>
+      <body className={`${cinzelDecorative.variable} antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }
