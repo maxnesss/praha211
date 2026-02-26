@@ -6,7 +6,7 @@ export function SignOutButton() {
   return (
     <button
       type="button"
-      className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800"
+      className="rounded-md border border-orange-300/60 bg-orange-400/20 px-3 py-1.5 text-sm font-medium text-orange-50 transition-colors hover:bg-orange-400/30"
       onClick={() => signOut({ callbackUrl: "/" })}
     >
       Odhlásit se

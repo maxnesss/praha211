@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { DistrictBadgeWall } from "@/components/badges/district-badge-wall";
 import { SiteHeader } from "@/components/site-header";
+import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { buildBadgeOverview } from "@/lib/game/badges";
 import { getUserClaimedDistrictCodes } from "@/lib/game/queries";
@@ -26,14 +27,14 @@ function BadgeChip({
     "group flex h-[4.4rem] w-full min-w-0 flex-col justify-between rounded-md border px-2.5 py-2 text-left transition-transform hover:-translate-y-0.5";
 
   const stateClassName = unlocked
-    ? "border-slate-600 text-slate-100"
-    : "border-slate-800 bg-slate-900/50 text-slate-500 grayscale opacity-80";
+    ? "border-cyan-300/35 bg-cyan-500/8 text-cyan-50"
+    : "border-cyan-300/15 bg-[#08161f]/55 text-cyan-100/45 grayscale opacity-80";
 
   const style = unlocked
     ? {
-        borderColor: accentColor ? `${accentColor}cc` : undefined,
-        backgroundColor: accentColor ? `${accentColor}20` : undefined,
-        boxShadow: accentColor ? `0 0 14px ${accentColor}30` : undefined,
+        borderColor: accentColor ? `${accentColor}bb` : undefined,
+        backgroundColor: accentColor ? `${accentColor}1b` : undefined,
+        boxShadow: accentColor ? `0 0 14px ${accentColor}2d` : undefined,
       }
     : undefined;
 
@@ -86,93 +87,98 @@ export default async function BadgesPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#202938_0%,#0b1018_45%,#06080d_100%)] text-slate-100">
+    <main className={`${metro.routeShell}`}>
+      <div className={`${metro.scanlineOverlay} pointer-events-none absolute inset-0 opacity-35`} />
+      <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
+
       <SiteHeader session={session} />
 
-      <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
-              Odznaky
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Stěna všech odznaků
-            </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-              Každý odznak je zpočátku duch (šedý). Po odemknutí se rozsvítí do barvy.
-            </p>
+      <section className={metro.shellContent}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
+                Odznaky
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-cyan-50 sm:text-4xl">
+                Stěna všech odznaků
+              </h1>
+              <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/75 sm:text-base">
+                Každý odznak je zpočátku duch (šedý). Po odemknutí se rozsvítí do barvy.
+              </p>
+            </div>
+
+            <Link
+              href="/overview"
+              className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
+            >
+              Zpět na přehled
+            </Link>
           </div>
 
-          <Link
-            href="/overview"
-            className="rounded-md border border-slate-700 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300 transition-colors hover:bg-slate-900"
-          >
-            Zpět na přehled
-          </Link>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <article className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Odemčeno celkem</p>
-            <p className="mt-2 text-2xl font-semibold text-amber-200">{badges.totals.unlocked}</p>
-          </article>
-          <article className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Městské části</p>
-            <p className="mt-2 text-2xl font-semibold">{badges.totals.districtsUnlocked} / 112</p>
-          </article>
-          <article className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Kapitoly</p>
-            <p className="mt-2 text-2xl font-semibold">{badges.totals.chaptersUnlocked} / 7</p>
-          </article>
-          <article className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Praha 1–22</p>
-            <p className="mt-2 text-2xl font-semibold">{badges.totals.prahaUnlocked} / 22</p>
-          </article>
-        </div>
-
-        <div className="mt-8 rounded-xl border border-slate-800 bg-slate-900/55 p-4 sm:p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Městské části (112)
-          </h2>
-          <DistrictBadgeWall badges={badges.districtBadges} />
-        </div>
-
-        <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900/55 p-4 sm:p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Kapitoly (7)
-          </h2>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-            {badges.chapterBadges.map((badge) => (
-              <BadgeChip
-                key={badge.slug}
-                title={`${badge.completed}/${badge.total}`}
-                subtitle={badge.name}
-                unlocked={badge.unlocked}
-                accentColor={badge.accentColor}
-                href={`/chapter/${badge.slug}`}
-              />
-            ))}
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Odemčeno celkem</p>
+              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-orange-100`}>{badges.totals.unlocked}</p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Městské části</p>
+              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>{badges.totals.districtsUnlocked} / 112</p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Kapitoly</p>
+              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>{badges.totals.chaptersUnlocked} / 7</p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Praha 1–22</p>
+              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>{badges.totals.prahaUnlocked} / 22</p>
+            </article>
           </div>
-        </div>
 
-        <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900/55 p-4 sm:p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Dokončení Praha 1–22
-          </h2>
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8 xl:grid-cols-11">
-            {badges.prahaBadges.map((badge) => {
-              const accent = prahaAccents[(badge.number - 1) % prahaAccents.length];
+          <div className="mt-8 rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-4 sm:p-5">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/70">
+              Městské části (112)
+            </h2>
+            <DistrictBadgeWall badges={badges.districtBadges} />
+          </div>
 
-              return (
+          <div className="mt-5 rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-4 sm:p-5">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/70">
+              Kapitoly (7)
+            </h2>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+              {badges.chapterBadges.map((badge) => (
                 <BadgeChip
-                  key={`praha-${badge.number}`}
+                  key={badge.slug}
                   title={`${badge.completed}/${badge.total}`}
-                  subtitle={`Praha ${badge.number}`}
+                  subtitle={badge.name}
                   unlocked={badge.unlocked}
-                  accentColor={accent}
+                  accentColor={badge.accentColor}
+                  href={`/chapter/${badge.slug}`}
                 />
-              );
-            })}
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-4 sm:p-5">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/70">
+              Dokončení Praha 1–22
+            </h2>
+            <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-8 xl:grid-cols-11">
+              {badges.prahaBadges.map((badge) => {
+                const accent = prahaAccents[(badge.number - 1) % prahaAccents.length];
+
+                return (
+                  <BadgeChip
+                    key={`praha-${badge.number}`}
+                    title={`${badge.completed}/${badge.total}`}
+                    subtitle={`Praha ${badge.number}`}
+                    unlocked={badge.unlocked}
+                    accentColor={accent}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>

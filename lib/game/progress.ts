@@ -1,4 +1,4 @@
-import { CHAPTERS, DISTRICTS, getDistrictsByChapter, getTotalDistrictCount } from "@/lib/game/praha112";
+import { CHAPTERS, DISTRICTS, getDistrictsByChapter, getTotalDistrictCount } from "@/lib/game/district-catalog";
 
 type ClaimSnapshot = {
   districtCode: string;
@@ -6,18 +6,43 @@ type ClaimSnapshot = {
   claimedAt: Date;
 };
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const PRAGUE_TIME_ZONE = "Europe/Prague";
+const pragueDayFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: PRAGUE_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
-function toUtcDayKey(date: Date) {
-  return date.toISOString().slice(0, 10);
+function toPragueDayKey(date: Date) {
+  const parts = pragueDayFormatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  return `${year}-${month}-${day}`;
 }
 
-function utcDayStart(date: Date) {
-  return new Date(`${toUtcDayKey(date)}T00:00:00.000Z`);
-}
+function getPreviousDayKey(dayKey: string) {
+  const [year, month, day] = dayKey.split("-").map((part) => Number.parseInt(part, 10));
+  if (
+    Number.isNaN(year)
+    || Number.isNaN(month)
+    || Number.isNaN(day)
+  ) {
+    return "0000-00-00";
+  }
 
-function utcDayEndExclusive(date: Date) {
-  return new Date(utcDayStart(date).getTime() + MS_PER_DAY);
+  const previousUtc = new Date(Date.UTC(year, month - 1, day - 1));
+  const previousYear = previousUtc.getUTCFullYear();
+  const previousMonth = String(previousUtc.getUTCMonth() + 1).padStart(2, "0");
+  const previousDay = String(previousUtc.getUTCDate()).padStart(2, "0");
+
+  return `${previousYear}-${previousMonth}-${previousDay}`;
 }
 
 function sortDayKeysDesc(keys: Iterable<string>) {
@@ -29,37 +54,33 @@ export function calculateCurrentStreak(claimDates: Date[], now = new Date()) {
     return 0;
   }
 
-  const uniqueKeys = new Set(claimDates.map((date) => toUtcDayKey(date)));
+  const uniqueKeys = new Set(claimDates.map((date) => toPragueDayKey(date)));
   const sorted = sortDayKeysDesc(uniqueKeys);
-  const todayKey = toUtcDayKey(now);
-  const yesterdayKey = toUtcDayKey(new Date(utcDayStart(now).getTime() - MS_PER_DAY));
+  const todayKey = toPragueDayKey(now);
+  const yesterdayKey = getPreviousDayKey(todayKey);
 
   if (sorted[0] !== todayKey && sorted[0] !== yesterdayKey) {
     return 0;
   }
 
-  const start = sorted[0] === todayKey ? utcDayStart(now) : new Date(utcDayStart(now).getTime() - MS_PER_DAY);
+  let currentKey = sorted[0];
   let streak = 0;
 
-  for (let i = 0; ; i += 1) {
-    const key = toUtcDayKey(new Date(start.getTime() - i * MS_PER_DAY));
-    if (!uniqueKeys.has(key)) {
+  for (;;) {
+    if (!uniqueKeys.has(currentKey)) {
       break;
     }
+
     streak += 1;
+    currentKey = getPreviousDayKey(currentKey);
   }
 
   return streak;
 }
 
 export function countClaimsToday(claimDates: Date[], now = new Date()) {
-  const start = utcDayStart(now).getTime();
-  const end = utcDayEndExclusive(now).getTime();
-
-  return claimDates.filter((date) => {
-    const time = date.getTime();
-    return time >= start && time < end;
-  }).length;
+  const todayKey = toPragueDayKey(now);
+  return claimDates.filter((date) => toPragueDayKey(date) === todayKey).length;
 }
 
 export function calculateAwardedPoints(input: {

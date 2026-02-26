@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CoatOfArms } from "@/components/coat-of-arms";
-import type { DistrictDefinition } from "@/lib/game/praha112";
+import type { DistrictDefinition } from "@/lib/game/district-catalog";
 
 type DistrictTileProps = {
   district: DistrictDefinition;
@@ -11,21 +11,17 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
   return (
     <Link
       href={`/district/${district.code}`}
-      className={`group relative overflow-hidden rounded-lg border p-3 transition-all ${
-        completed
-          ? "border-emerald-300/50 bg-emerald-500/15 shadow-[0_0_24px_rgba(16,185,129,0.22)]"
-          : "border-slate-700 bg-slate-900/50 hover:border-slate-600"
-      }`}
+      className="group block rounded-none p-0"
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+      <div className="flex items-start justify-between gap-2 px-1">
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/65">
           {district.code}
         </span>
         <span
           className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
             completed
-              ? "bg-emerald-300/20 text-emerald-200"
-              : "bg-slate-800 text-slate-400"
+              ? "bg-orange-400/20 text-orange-100"
+              : "bg-cyan-950/80 text-cyan-200/60"
           }`}
         >
           {completed ? "Odemčeno" : "Zamčeno"}
@@ -38,8 +34,8 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
         className={`mt-3 aspect-square w-full ${completed ? "" : "grayscale"}`}
       />
       <p
-        className={`mt-3 text-sm font-medium leading-snug ${
-          completed ? "text-slate-100" : "text-slate-300"
+        className={`mt-3 px-1 text-sm font-medium leading-snug ${
+          completed ? "text-cyan-50" : "text-cyan-100/82"
         }`}
       >
         {district.name}

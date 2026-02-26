@@ -1,4 +1,7 @@
 import { unstable_cache } from "next/cache";
+import { cache } from "react";
+import { buildBadgeOverview } from "@/lib/game/badges";
+import { buildOverview } from "@/lib/game/progress";
 import { prisma } from "@/lib/prisma";
 
 export type LeaderboardEntry = {
@@ -10,10 +13,18 @@ export type LeaderboardEntry = {
   rank: number;
 };
 
+export type UserNavStats = {
+  points: number;
+  completion: string;
+  ranking: string;
+  dayStreak: string;
+  badgesCount: number;
+};
+
 export const LEADERBOARD_CACHE_TAG = "leaderboard";
 const LEADERBOARD_CACHE_SECONDS = 60;
 
-export async function getUserGameClaims(userId: string) {
+const getUserGameClaimsCached = cache(async (userId: string) => {
   return prisma.districtClaim.findMany({
     where: { userId },
     select: {
@@ -23,14 +34,14 @@ export async function getUserGameClaims(userId: string) {
     },
     orderBy: { claimedAt: "desc" },
   });
+});
+
+export async function getUserGameClaims(userId: string) {
+  return getUserGameClaimsCached(userId);
 }
 
 export async function getUserClaimedDistrictCodes(userId: string) {
-  const claims = await prisma.districtClaim.findMany({
-    where: { userId },
-    select: { districtCode: true },
-  });
-
+  const claims = await getUserGameClaims(userId);
   return new Set(claims.map((claim) => claim.districtCode));
 }
 
@@ -128,4 +139,28 @@ export async function getUserPointsRanking(userId: string) {
 export async function getPointsLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
   const leaderboard = await getCachedLeaderboardSnapshot();
   return leaderboard.slice(0, Math.max(1, limit));
+}
+
+const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats> => {
+  const [claims, ranking] = await Promise.all([
+    getUserGameClaims(userId),
+    getUserPointsRanking(userId),
+  ]);
+  const overview = buildOverview(claims);
+  const badges = buildBadgeOverview(overview.completedCodes);
+
+  return {
+    points: ranking.userPoints || overview.totalPoints,
+    completion: `${overview.totalCompleted}/${overview.totalDistricts}`,
+    ranking:
+      ranking.rank && ranking.totalPlayers > 0
+        ? `#${ranking.rank}/${ranking.totalPlayers}`
+        : "Bez pořadí",
+    dayStreak: `${overview.currentStreak} dní`,
+    badgesCount: badges.totals.unlocked,
+  };
+});
+
+export async function getUserNavStats(userId: string): Promise<UserNavStats> {
+  return getUserNavStatsCached(userId);
 }

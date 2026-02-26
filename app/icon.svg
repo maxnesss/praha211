@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="PRAHA 112 icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#071824" />
+      <stop offset="100%" stop-color="#0f2a3d" />
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="url(#bg)" />
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="none" stroke="url(#ring)" stroke-width="4" />
+
+  <path d="M26 30h12v68H26z" fill="#f59e0b" />
+  <path d="M46 30h12v68H46z" fill="#f59e0b" />
+  <path
+    d="M68 45c0-11 8-18 19-18s19 7 19 18c0 9-5 14-11 19l-10 8c-3 2-4 4-4 6h25v13H66c0-12 5-20 14-27l10-8c3-3 6-5 6-10 0-4-3-7-9-7-6 0-9 3-9 7z"
+    fill="#f59e0b"
+  />
+
+  <rect x="20" y="98" width="88" height="8" rx="4" fill="#22d3ee" opacity="0.6" />
+</svg>

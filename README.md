@@ -23,7 +23,7 @@ Otevřete `http://localhost:3000`.
   - vyžadována fyzická návštěva
   - oficiální cedule musí být vidět
   - povinné URL selfie
-  - o dokončení rozhoduje serverový čas
+  - o dokončení rozhoduje serverový čas (denní hranice: `Europe/Prague`)
   - každou městskou část lze potvrdit jen jednou na uživatele
 
 ## Skripty
@@ -54,7 +54,7 @@ Otevřete `http://localhost:3000`.
 - `app/api/districts/[code]/claim/route.ts` - endpoint potvrzení městské části (trust-based)
 - `app/api/health/db/route.ts` - health endpoint konektivity DB
 - `lib/auth.ts` - konfigurace NextAuth (credentials + callbacky)
-- `lib/game/praha112.ts` - definice kapitol a městských částí
+- `lib/game/district-catalog.ts` - definice kapitol a městských částí
 - `lib/game/progress.ts` - helpery pro postup, sérii a bodování
 - `lib/prisma.ts` - singleton Prisma clientu
 - `prisma/schema.prisma` - Prisma schéma a modely
@@ -87,7 +87,7 @@ npm run user:add -- --email admin@praha211.com --password "AdminPass123" --role 
 
 ## Obsah městských částí
 
-- Rozdělení kapitol a názvy městských částí jsou v `lib/game/praha112.ts`.
+- Rozdělení kapitol a názvy městských částí jsou v `lib/game/district-catalog.ts`.
 - Kódy městských částí jsou stabilní: `D001` až `D112`.
 - Znak se dohledává podle slug názvu městské části (např. `stare_mesto.png`).
 - Pokud znak chybí, UI automaticky použije fallback `karlin`.

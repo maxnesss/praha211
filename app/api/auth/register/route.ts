@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       data: {
         email,
         name: name ?? null,
+        nickname: name ?? null,
         passwordHash,
         role: "USER",
       },

@@ -27,14 +27,12 @@ export function ChapterCard({
   return (
     <Link
       href={`/chapter/${slug}`}
-      className="group rounded-xl border border-slate-800 bg-slate-900/60 p-5 transition-colors hover:border-slate-700 hover:bg-slate-900"
+      className="group rounded-xl border border-cyan-300/30 bg-[#091925]/75 p-5 transition-colors hover:border-cyan-200/70 hover:bg-[#0b1f2f]/85"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold tracking-wide text-slate-100">
-            {name}
-          </h2>
-          <p className="mt-1 text-sm text-slate-400">
+          <h2 className="text-base font-semibold tracking-wide text-cyan-50">{name}</h2>
+          <p className="mt-1 text-sm text-cyan-100/70">
             {completed} / {total}
           </p>
         </div>
@@ -52,21 +50,21 @@ export function ChapterCard({
             key={cell.code}
             className={`h-6 rounded-sm border ${
               cell.completed
-                ? "border-emerald-300/50 bg-emerald-400/30"
-                : "border-slate-700 bg-slate-950"
+                ? "border-cyan-300/55 bg-cyan-400/30"
+                : "border-cyan-300/20 bg-[#08161f]"
             }`}
           />
         ))}
       </div>
 
       <div className="mt-4">
-        <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+        <div className="h-2 overflow-hidden rounded-full bg-cyan-950/80">
           <div
             className="h-full rounded-full transition-all"
             style={{ width: `${progressPercent}%`, backgroundColor: accentColor }}
           />
         </div>
-        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
+        <p className="mt-2 text-xs uppercase tracking-[0.14em] text-cyan-100/65">
           {progressPercent}% dokončeno
         </p>
       </div>

@@ -22,8 +22,8 @@ type DistrictBadgeWallProps = {
 function DistrictCoatTile({ badge }: { badge: DistrictBadgeWallItem }) {
   const unlockedStyle = badge.unlocked
     ? {
-        borderColor: `${badge.accentColor}cc`,
-        boxShadow: `0 0 14px ${badge.accentColor}30`,
+        borderColor: `${badge.accentColor}bb`,
+        boxShadow: `0 0 14px ${badge.accentColor}2d`,
       }
     : undefined;
 
@@ -34,8 +34,8 @@ function DistrictCoatTile({ badge }: { badge: DistrictBadgeWallItem }) {
       title={`${badge.code} · ${badge.name}`}
       className={`group block rounded-md border p-1 transition-transform hover:-translate-y-0.5 ${
         badge.unlocked
-          ? "border-slate-600 bg-slate-900/70"
-          : "border-slate-800 bg-slate-900/45 opacity-80 grayscale"
+          ? "border-cyan-300/30 bg-cyan-500/8"
+          : "border-cyan-300/15 bg-[#08161f]/55 opacity-80 grayscale"
       }`}
       style={unlockedStyle}
     >

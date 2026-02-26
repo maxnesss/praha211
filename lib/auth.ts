@@ -73,7 +73,7 @@ export const authOptions: NextAuthOptions = {
 
       const existingUser = await prisma.user.findUnique({
         where: { email },
-        select: { id: true, name: true },
+        select: { id: true, name: true, nickname: true },
       });
 
       if (!existingUser) {
@@ -81,14 +81,18 @@ export const authOptions: NextAuthOptions = {
           data: {
             email,
             name: user.name ?? null,
+            nickname: user.name ?? null,
             role: "USER",
           },
           select: { id: true },
         });
-      } else if (!existingUser.name && user.name) {
+      } else if ((!existingUser.name || !existingUser.nickname) && user.name) {
         await prisma.user.update({
           where: { email },
-          data: { name: user.name },
+          data: {
+            name: existingUser.name ?? user.name,
+            nickname: existingUser.nickname ?? user.name,
+          },
           select: { id: true },
         });
       }

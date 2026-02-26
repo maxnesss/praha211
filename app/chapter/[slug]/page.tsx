@@ -1,11 +1,13 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 import { DistrictTile } from "@/components/district-tile";
 import { SiteHeader } from "@/components/site-header";
+import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { getUserClaimedDistrictCodes } from "@/lib/game/queries";
-import { getChapterBySlug, getDistrictsByChapter } from "@/lib/game/praha112";
+import { getChapterBySlug, getDistrictsByChapter } from "@/lib/game/district-catalog";
 
 type ChapterPageProps = {
   params: Promise<{ slug: string }>;
@@ -31,30 +33,42 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
   ).length;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#202938_0%,#0b1018_45%,#06080d_100%)] text-slate-100">
+    <main className={`${metro.routeShell}`}>
+      <div className={`${metro.scanlineOverlay} pointer-events-none absolute inset-0 opacity-35`} />
+      <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
+
       <SiteHeader session={session} />
 
-      <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10">
-        <Link
-          href="/overview"
-          className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200"
-        >
-          ← Zpět na přehled
-        </Link>
+      <section className={metro.shellContent}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+          <Link
+            href="/overview"
+            className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/70 hover:text-cyan-100"
+          >
+            ← Zpět na přehled
+          </Link>
 
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">{chapter.name}</h1>
-        <p className="mt-2 text-sm text-slate-300">
-          Postup: {completedCount} / {districts.length}
-        </p>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-cyan-50">
+            {chapter.name}
+          </h1>
+          <p className="mt-2 text-sm text-cyan-100/75">
+            Postup: <span className={metro.monoDigit}>{completedCount} / {districts.length}</span>
+          </p>
 
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {districts.map((district) => (
-            <DistrictTile
-              key={district.code}
-              district={district}
-              completed={completedCodes.has(district.code)}
-            />
-          ))}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {districts.map((district, index) => (
+              <div
+                key={district.code}
+                className={metro.staggerItem}
+                style={{ "--stagger": index } as CSSProperties}
+              >
+                <DistrictTile
+                  district={district}
+                  completed={completedCodes.has(district.code)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </main>
