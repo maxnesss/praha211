@@ -1,11 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
+
+  if (session?.user?.id) {
+    redirect("/overview");
+  }
 
   return (
     <main className={`${metro.routeShell}`}>
@@ -42,29 +47,18 @@ export default async function Home() {
           </p>
 
           <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
-            {session?.user ? (
-              <Link
-                href="/overview"
-                className="w-full rounded-xl border border-orange-300/60 bg-orange-400/20 px-7 py-3 text-base font-semibold text-orange-50 transition-all hover:-translate-y-0.5 hover:bg-orange-400/30 sm:w-auto"
-              >
-                Pokračovat do přehledu
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/sign-in"
-                  className="w-full rounded-xl border border-cyan-300/45 bg-cyan-400/15 px-7 py-3 text-base font-semibold text-cyan-50 transition-all hover:-translate-y-0.5 hover:bg-cyan-400/25 sm:w-auto"
-                >
-                  Přihlásit se
-                </Link>
-                <Link
-                  href="/sign-up"
-                  className="w-full rounded-xl border border-orange-300/60 bg-orange-400/20 px-7 py-3 text-base font-semibold text-orange-50 transition-all hover:-translate-y-0.5 hover:bg-orange-400/30 sm:w-auto"
-                >
-                  Vytvořit účet
-                </Link>
-              </>
-            )}
+            <Link
+              href="/sign-in"
+              className="w-full rounded-xl border border-cyan-300/45 bg-cyan-400/15 px-7 py-3 text-base font-semibold text-cyan-50 transition-all hover:-translate-y-0.5 hover:bg-cyan-400/25 sm:w-auto"
+            >
+              Přihlásit se
+            </Link>
+            <Link
+              href="/sign-up"
+              className="w-full rounded-xl border border-orange-300/60 bg-orange-400/20 px-7 py-3 text-base font-semibold text-orange-50 transition-all hover:-translate-y-0.5 hover:bg-orange-400/30 sm:w-auto"
+            >
+              Vytvořit účet
+            </Link>
           </div>
         </div>
       </section>
