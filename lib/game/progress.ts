@@ -121,6 +121,7 @@ export function buildOverview(claims: ClaimSnapshot[]) {
       progressPercent,
       preview: chapterDistricts.map((district) => ({
         code: district.code,
+        name: district.name,
         completed: completedCodes.has(district.code),
       })),
     };

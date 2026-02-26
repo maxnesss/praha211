@@ -64,6 +64,8 @@ function OverviewChapterCard({
   return (
     <Link
       href={`/chapter/${chapter.slug}`}
+      title={chapter.name}
+      aria-label={chapter.name}
       className={`${metro.staggerItem} group rounded-2xl border border-cyan-300/30 bg-[#091925]/70 p-5 transition-all hover:border-cyan-200/80 hover:bg-[#0b1f2f]/85`}
       style={{ "--stagger": index } as CSSProperties}
     >
@@ -104,6 +106,8 @@ function OverviewChapterCard({
         {chapter.preview.map((district) => (
           <div
             key={district.code}
+            title={district.name}
+            aria-label={district.name}
             className="h-2 rounded-sm"
             style={{
               backgroundColor: district.completed

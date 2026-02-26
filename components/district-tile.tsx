@@ -11,6 +11,8 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
   return (
     <Link
       href={`/district/${district.code}`}
+      title={district.name}
+      aria-label={district.name}
       className="group block rounded-none p-0"
     >
       <div className="flex items-start justify-between gap-2 px-1">
