@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cinzel_Decorative } from "next/font/google";
+import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 const cinzelDecorative = Cinzel_Decorative({
@@ -22,7 +23,10 @@ export default function RootLayout({
   return (
     <html lang="cs">
       <body className={`${cinzelDecorative.variable} antialiased`}>
-        {children}
+        <div className="flex min-h-screen flex-col">
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </div>
       </body>
     </html>
   );
