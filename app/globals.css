@@ -9,7 +9,7 @@ body {
   min-height: 100vh;
   background: #06141d;
   color: #e6fbff;
-  font-family: var(--font-ui), ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--font-brand), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 @keyframes logo-float {
