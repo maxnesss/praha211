@@ -34,7 +34,7 @@ export default async function ProfilePage() {
   }).format(user.createdAt);
 
   return (
-    <main className={`${metro.routeShell} font-[family:var(--font-ui)]`}>
+    <main className={`${metro.routeShell}`}>
       <div className={`${metro.scanlineOverlay} pointer-events-none absolute inset-0 opacity-35`} />
       <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
 
