@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { SignOutButton } from "@/components/sign-out-button";
+import { ProfileSettingsForms } from "@/components/profile-settings-forms";
 import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
@@ -16,22 +16,17 @@ export default async function ProfilePage() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      id: true,
       name: true,
       email: true,
+      nickname: true,
+      passwordHash: true,
       role: true,
-      createdAt: true,
     },
   });
 
   if (!user) {
     redirect("/sign-in?callbackUrl=%2Fprofile");
   }
-
-  const formattedCreatedAt = new Intl.DateTimeFormat("cs-CZ", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(user.createdAt);
 
   return (
     <main className={`${metro.routeShell}`}>
@@ -52,38 +47,14 @@ export default async function ProfilePage() {
             Přehled vašeho účtu pro výzvu PRAHA 112.
           </p>
 
-          <article className="mt-8 max-w-2xl rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-6">
-            <dl className="grid gap-4 text-sm sm:grid-cols-[180px,1fr] sm:items-center">
-              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
-                Jméno
-              </dt>
-              <dd className="text-cyan-50">{user.name ?? "Neuvedeno"}</dd>
-
-              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
-                E-mail
-              </dt>
-              <dd className="text-cyan-50">{user.email}</dd>
-
-              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
-                Role
-              </dt>
-              <dd className="text-cyan-50">{user.role}</dd>
-
-              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
-                Vytvořeno
-              </dt>
-              <dd className="text-cyan-50">{formattedCreatedAt}</dd>
-
-              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
-                ID uživatele
-              </dt>
-              <dd className="break-all text-cyan-50">{user.id}</dd>
-            </dl>
-
-            <div className="mt-8">
-              <SignOutButton />
-            </div>
-          </article>
+          <ProfileSettingsForms
+            name={user.name}
+            email={user.email}
+            hasPassword={Boolean(user.passwordHash)}
+            initialNickname={user.nickname}
+            role={user.role}
+            showRole={session.user.role === "ADMIN"}
+          />
         </div>
       </section>
     </main>
