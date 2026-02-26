@@ -101,7 +101,7 @@ export function DistrictCoatPreview({
             type="button"
             onClick={handleTestToggle}
             disabled={isSaving}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+            className="rounded-md border border-cyan-300/35 px-3 py-1.5 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-400/10 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSaving
               ? "Test: Ukládám..."
@@ -122,18 +122,18 @@ export function DistrictCoatPreview({
           className={`aspect-square w-full max-w-[22rem] ${isUnlocked ? "" : "grayscale"}`}
         />
 
-        <aside className="flex flex-col rounded-lg border border-slate-700 bg-slate-950/70 p-4 md:h-[22rem]">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+        <aside className="flex flex-col rounded-lg border border-cyan-300/25 bg-[#08161f]/80 p-4 md:h-[22rem]">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">
             Historie části
           </p>
-          <p className="mt-3 overflow-hidden text-sm leading-6 text-slate-200 [display:-webkit-box] [text-overflow:ellipsis] [-webkit-box-orient:vertical] [-webkit-line-clamp:7] lg:[-webkit-line-clamp:8]">
+          <p className="mt-3 overflow-hidden text-sm leading-6 text-cyan-50/90 [display:-webkit-box] [text-overflow:ellipsis] [-webkit-box-orient:vertical] [-webkit-line-clamp:7] lg:[-webkit-line-clamp:8]">
             {historyPreview}
           </p>
 
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">
+          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-orange-200">
             Zajímavost
           </p>
-          <p className="mt-2 overflow-hidden text-sm leading-6 text-slate-200 [display:-webkit-box] [text-overflow:ellipsis] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] lg:[-webkit-line-clamp:3]">
+          <p className="mt-2 overflow-hidden text-sm leading-6 text-cyan-50/90 [display:-webkit-box] [text-overflow:ellipsis] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] lg:[-webkit-line-clamp:3]">
             {funFactPreview}
           </p>
 
@@ -142,7 +142,7 @@ export function DistrictCoatPreview({
               href={sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-auto pt-4 text-xs font-medium text-slate-300 underline underline-offset-4 hover:text-white"
+              className="mt-auto pt-4 text-xs font-medium text-cyan-100/75 underline underline-offset-4 hover:text-cyan-50"
             >
               Zdroj: Wikipedie
             </a>
@@ -152,7 +152,7 @@ export function DistrictCoatPreview({
 
       <p
         className={`mt-4 text-xs font-semibold uppercase tracking-[0.14em] ${
-          isUnlocked ? "text-emerald-300" : "text-slate-400"
+          isUnlocked ? "text-orange-200" : "text-cyan-100/65"
         }`}
       >
         {isUnlocked ? "Erb je odemčen." : "Erb je zamčen."}

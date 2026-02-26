@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cinzel_Decorative } from "next/font/google";
+import { Cinzel_Decorative, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
 const cinzelDecorative = Cinzel_Decorative({
@@ -7,6 +7,13 @@ const cinzelDecorative = Cinzel_Decorative({
   weight: ["400", "700"],
   display: "swap",
   variable: "--font-brand",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-ui",
 });
 
 export const metadata: Metadata = {
@@ -21,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="cs">
-      <body className={`${cinzelDecorative.variable} antialiased`}>
+      <body className={`${cinzelDecorative.variable} ${ibmPlexMono.variable} antialiased`}>
         {children}
       </body>
     </html>

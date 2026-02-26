@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SiteHeader } from "@/components/site-header";
+import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -33,52 +34,57 @@ export default async function ProfilePage() {
   }).format(user.createdAt);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#202938_0%,#0b1018_45%,#06080d_100%)] text-slate-100">
+    <main className={`${metro.routeShell} font-[family:var(--font-ui)]`}>
+      <div className={`${metro.scanlineOverlay} pointer-events-none absolute inset-0 opacity-35`} />
+      <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
+
       <SiteHeader session={session} />
 
-      <section className="mx-auto w-full max-w-7xl px-6 py-10 sm:px-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">
-          Profil
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-          Informace o účtu
-        </h1>
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-          Přehled vašeho účtu pro výzvu PRAHA 112.
-        </p>
+      <section className={metro.shellContent}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
+            Profil
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-cyan-50 sm:text-4xl">
+            Informace o účtu
+          </h1>
+          <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/75 sm:text-base">
+            Přehled vašeho účtu pro výzvu PRAHA 112.
+          </p>
 
-        <article className="mt-8 max-w-2xl rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-          <dl className="grid gap-4 text-sm sm:grid-cols-[180px,1fr] sm:items-center">
-            <dt className="font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Jméno
-            </dt>
-            <dd className="text-slate-100">{user.name ?? "Neuvedeno"}</dd>
+          <article className="mt-8 max-w-2xl rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-6">
+            <dl className="grid gap-4 text-sm sm:grid-cols-[180px,1fr] sm:items-center">
+              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
+                Jméno
+              </dt>
+              <dd className="text-cyan-50">{user.name ?? "Neuvedeno"}</dd>
 
-            <dt className="font-semibold uppercase tracking-[0.14em] text-slate-400">
-              E-mail
-            </dt>
-            <dd className="text-slate-100">{user.email}</dd>
+              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
+                E-mail
+              </dt>
+              <dd className="text-cyan-50">{user.email}</dd>
 
-            <dt className="font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Role
-            </dt>
-            <dd className="text-slate-100">{user.role}</dd>
+              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
+                Role
+              </dt>
+              <dd className="text-cyan-50">{user.role}</dd>
 
-            <dt className="font-semibold uppercase tracking-[0.14em] text-slate-400">
-              Vytvořeno
-            </dt>
-            <dd className="text-slate-100">{formattedCreatedAt}</dd>
+              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
+                Vytvořeno
+              </dt>
+              <dd className="text-cyan-50">{formattedCreatedAt}</dd>
 
-            <dt className="font-semibold uppercase tracking-[0.14em] text-slate-400">
-              ID uživatele
-            </dt>
-            <dd className="break-all text-slate-100">{user.id}</dd>
-          </dl>
+              <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
+                ID uživatele
+              </dt>
+              <dd className="break-all text-cyan-50">{user.id}</dd>
+            </dl>
 
-          <div className="mt-8">
-            <SignOutButton />
-          </div>
-        </article>
+            <div className="mt-8">
+              <SignOutButton />
+            </div>
+          </article>
+        </div>
       </section>
     </main>
   );

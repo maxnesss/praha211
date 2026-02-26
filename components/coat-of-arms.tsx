@@ -64,7 +64,7 @@ export function CoatOfArms({
   return (
     <div
       ref={rootRef}
-      className={`relative overflow-hidden rounded-md border border-slate-700 bg-slate-950 ${className ?? ""}`}
+      className={`relative overflow-hidden rounded-md border border-cyan-300/25 bg-[#08161f] ${className ?? ""}`}
     >
       {mode !== "placeholder" && shouldRenderImage ? (
         <Image
@@ -84,8 +84,8 @@ export function CoatOfArms({
           className="h-full w-full object-cover"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(140deg,#202733_0%,#101621_70%,#090d14_100%)] text-center">
-          <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
+        <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(140deg,#153346_0%,#0d2230_70%,#071824_100%)] text-center">
+          <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/80">
             {code}
           </span>
         </div>
