@@ -17,6 +17,10 @@ export default async function LeaderboardPage() {
   const preview = await getPointsLeaderboardPreview(session.user.id, 15);
   const leaderboard = preview.topEntries;
   const myEntry = preview.myEntry;
+  const skippedPlayersCount =
+    preview.showMyEntrySeparately && myEntry
+      ? Math.max(0, myEntry.rank - leaderboard.length - 1)
+      : 0;
 
   return (
     <main className={`${metro.routeShell}`}>
@@ -130,9 +134,17 @@ export default async function LeaderboardPage() {
                   )}
                   {preview.showMyEntrySeparately && myEntry ? (
                     <>
-                      <tr className="border-t border-cyan-300/20 text-cyan-200/60">
-                        <td className={`${metro.monoDigit} px-4 py-2 text-center`} colSpan={4}>
-                          ...
+                      <tr className="border-t border-cyan-300/20 bg-cyan-500/[0.03] text-cyan-200/75">
+                        <td className="px-4 py-3" colSpan={4}>
+                          <div className="flex items-center gap-3">
+                            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-300/30 to-cyan-300/10" />
+                            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-200/75">
+                              {skippedPlayersCount > 0
+                                ? `Mezi tím je ještě ${skippedPlayersCount} hráčů`
+                                : "Vaše pozice je níže"}
+                            </p>
+                            <span className="h-px flex-1 bg-gradient-to-l from-transparent via-cyan-300/30 to-cyan-300/10" />
+                          </div>
                         </td>
                       </tr>
                       <tr className="border-t border-cyan-300/20 bg-orange-400/10 text-orange-100">
