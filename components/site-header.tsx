@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Session } from "next-auth";
+import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { getUserNavStats, type UserNavStats } from "@/lib/game/queries";
 
 type SiteHeaderProps = {
@@ -41,6 +42,7 @@ function NavStatTile({ label, value, href }: NavStatTileProps) {
 
 export async function SiteHeader({ session }: SiteHeaderProps) {
   const homeHref = session?.user ? "/overview" : "/";
+  const headerAvatar = session?.user?.avatar ?? DEFAULT_USER_AVATAR;
   let navStats: UserNavStats | null = null;
 
   if (session?.user?.id) {
@@ -54,21 +56,17 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
           <Link
             href="/profile"
             aria-label="Profil"
-            className="absolute right-4 top-3 rounded-md border border-cyan-300/30 bg-cyan-500/5 p-2 text-cyan-100 transition-colors hover:bg-cyan-500/15 sm:right-8 sm:top-4"
+            className="absolute right-4 top-3 text-cyan-100 transition-opacity hover:opacity-90 sm:right-8 sm:top-4"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c1.6-3.4 4.3-5 8-5s6.4 1.6 8 5" />
-            </svg>
+            <span className="relative block h-8 w-8 overflow-hidden rounded-full">
+              <Image
+                src={`/user_icons/${headerAvatar}.png`}
+                alt="Avatar uživatele"
+                fill
+                sizes="32px"
+                className="object-cover"
+              />
+            </span>
           </Link>
         ) : null}
 

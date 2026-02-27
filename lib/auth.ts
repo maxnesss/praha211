@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
+import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { signInSchema } from "@/lib/validation/auth";
 
@@ -46,6 +47,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          avatar: user.avatar ?? DEFAULT_USER_AVATAR,
         };
       },
     }),
@@ -73,7 +75,7 @@ export const authOptions: NextAuthOptions = {
 
       const existingUser = await prisma.user.findUnique({
         where: { email },
-        select: { id: true, name: true, nickname: true },
+        select: { id: true, name: true, nickname: true, avatar: true },
       });
 
       if (!existingUser) {
@@ -82,16 +84,18 @@ export const authOptions: NextAuthOptions = {
             email,
             name: user.name ?? null,
             nickname: user.name ?? null,
+            avatar: DEFAULT_USER_AVATAR,
             role: "USER",
           },
           select: { id: true },
         });
-      } else if ((!existingUser.name || !existingUser.nickname) && user.name) {
+      } else if (!existingUser.name || !existingUser.nickname || !existingUser.avatar) {
         await prisma.user.update({
           where: { email },
           data: {
-            name: existingUser.name ?? user.name,
-            nickname: existingUser.nickname ?? user.name,
+            name: existingUser.name ?? user.name ?? null,
+            nickname: existingUser.nickname ?? user.name ?? null,
+            avatar: existingUser.avatar ?? DEFAULT_USER_AVATAR,
           },
           select: { id: true },
         });
@@ -103,20 +107,23 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === "credentials" && user) {
         token.id = user.id;
         token.role = user.role;
+        token.avatar =
+          typeof user.avatar === "string" ? user.avatar : DEFAULT_USER_AVATAR;
       }
 
       const shouldHydrateFromDb =
-        account?.provider === "google" || !token.id || !token.role;
+        account?.provider === "google" || !token.id || !token.role || !token.avatar;
 
       if (shouldHydrateFromDb && typeof token.email === "string") {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email.toLowerCase() },
-          select: { id: true, role: true },
+          select: { id: true, role: true, avatar: true },
         });
 
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
+          token.avatar = dbUser.avatar ?? DEFAULT_USER_AVATAR;
         }
       }
 
@@ -126,6 +133,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = String(token.id);
         session.user.role = token.role === "ADMIN" ? "ADMIN" : "USER";
+        session.user.avatar =
+          typeof token.avatar === "string" ? token.avatar : DEFAULT_USER_AVATAR;
       }
 
       return session;

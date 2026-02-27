@@ -1,11 +1,15 @@
 "use client";
 
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { DEFAULT_USER_AVATAR, USER_AVATAR_OPTIONS } from "@/lib/profile-avatars";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
   changePasswordSchema,
   getProfileValidationMessage,
+  updateAvatarSchema,
   updateNicknameSchema,
 } from "@/lib/validation/profile";
 
@@ -14,6 +18,7 @@ type ProfileSettingsFormsProps = {
   email: string;
   hasPassword: boolean;
   initialNickname: string | null;
+  initialAvatar: string | null;
   role: "ADMIN" | "USER";
   showRole: boolean;
 };
@@ -23,14 +28,23 @@ export function ProfileSettingsForms({
   email,
   hasPassword,
   initialNickname,
+  initialAvatar,
   role,
   showRole,
 }: ProfileSettingsFormsProps) {
+  const router = useRouter();
   const [nicknameDraft, setNicknameDraft] = useState(initialNickname ?? "");
   const [nicknameValue, setNicknameValue] = useState(initialNickname);
   const [nicknameError, setNicknameError] = useState<string | null>(null);
   const [isNicknameSubmitting, setIsNicknameSubmitting] = useState(false);
   const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
+
+  const resolvedInitialAvatar = initialAvatar ?? DEFAULT_USER_AVATAR;
+  const [avatarValue, setAvatarValue] = useState(resolvedInitialAvatar);
+  const [avatarDraft, setAvatarDraft] = useState(resolvedInitialAvatar);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [isAvatarSubmitting, setIsAvatarSubmitting] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
@@ -111,10 +125,81 @@ export function ProfileSettingsForms({
     form.reset();
   }
 
+  async function handleAvatarSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAvatarError(null);
+    setIsAvatarSubmitting(true);
+
+    const parsed = updateAvatarSchema.safeParse({ avatar: avatarDraft });
+    if (!parsed.success) {
+      setAvatarError(getProfileValidationMessage(parsed.error));
+      setIsAvatarSubmitting(false);
+      return;
+    }
+
+    const response = await fetch("/api/profile/avatar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parsed.data),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | { message?: string }
+      | null;
+
+    if (!response.ok) {
+      setAvatarError(payload?.message ?? "Avatar se nepodařilo uložit.");
+      setIsAvatarSubmitting(false);
+      return;
+    }
+
+    setAvatarValue(parsed.data.avatar);
+    setIsAvatarSubmitting(false);
+    setIsAvatarModalOpen(false);
+    router.refresh();
+  }
+
   return (
     <>
       <article className="mt-8 max-w-2xl rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-6">
         <dl className="grid gap-4 text-sm sm:grid-cols-[180px,1fr] sm:items-center">
+          <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
+            Avatar
+          </dt>
+          <dd className="text-cyan-50">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setAvatarError(null);
+                  setAvatarDraft(avatarValue);
+                  setIsAvatarModalOpen(true);
+                }}
+                className="group relative h-14 w-14 overflow-hidden rounded-full border border-cyan-300/35 bg-[#08161f] transition-colors hover:border-cyan-200/70"
+                aria-label="Změnit avatar"
+              >
+                <Image
+                  src={`/user_icons/${avatarValue}.png`}
+                  alt="Aktuální avatar"
+                  fill
+                  sizes="56px"
+                  className="object-cover"
+                />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAvatarError(null);
+                  setAvatarDraft(avatarValue);
+                  setIsAvatarModalOpen(true);
+                }}
+                className="rounded-md border border-cyan-300/35 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-500/20"
+              >
+                Změnit avatar
+              </button>
+            </div>
+          </dd>
+
           <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
             Jméno
           </dt>
@@ -183,6 +268,88 @@ export function ProfileSettingsForms({
           <SignOutButton />
         </div>
       </article>
+
+      {isAvatarModalOpen ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#030b11]/80 p-4">
+          <div className="mx-auto flex min-h-full w-full items-center justify-center py-4">
+            <div className="w-full max-w-3xl rounded-xl border border-cyan-300/35 bg-[#0b1f2f] p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-cyan-50">Vyberte avatar</h2>
+                  <p className="mt-1 text-sm text-cyan-100/70">
+                    Vyberte si avatar, který se bude zobrazovat na vašem profilu.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(false)}
+                  className="rounded-md border border-cyan-300/35 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-400/10"
+                >
+                  Zavřít
+                </button>
+              </div>
+
+              <form className="mt-5 space-y-4" onSubmit={handleAvatarSubmit}>
+                <div className="max-h-[56vh] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                    {USER_AVATAR_OPTIONS.map((option) => {
+                      const isSelected = avatarDraft === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setAvatarDraft(option.value)}
+                          className={`rounded-lg border p-2 text-left transition-colors ${
+                            isSelected
+                              ? "border-orange-300/70 bg-orange-400/10"
+                              : "border-cyan-300/30 bg-[#08161f] hover:border-cyan-200/65"
+                          }`}
+                        >
+                          <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border border-cyan-300/35 bg-[#061119]">
+                            <Image
+                              src={`/user_icons/${option.value}.png`}
+                              alt={option.label}
+                              fill
+                              sizes="64px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <p className="mt-2 text-center text-xs font-medium text-cyan-100">
+                            {option.label}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {avatarError ? (
+                  <p className="rounded-md border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                    {avatarError}
+                  </p>
+                ) : null}
+
+                <div className="flex items-center justify-end gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsAvatarModalOpen(false)}
+                    className="rounded-md border border-cyan-300/35 px-4 py-2 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-400/10"
+                  >
+                    Zrušit
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isAvatarSubmitting}
+                    className="rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isAvatarSubmitting ? "Ukládám..." : "Uložit"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isNicknameModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030b11]/80 p-4">
