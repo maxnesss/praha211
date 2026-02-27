@@ -81,6 +81,7 @@ const NICK_SUFFIXES = [
 ];
 
 const PRAGUE_TIME_ZONE = "Europe/Prague";
+const TEAM_MAX_MEMBERS = 5;
 const pragueDayFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: PRAGUE_TIME_ZONE,
   year: "numeric",
@@ -117,12 +118,15 @@ Volitelné:
   --domain "seed.local"      Doména pro e-mailové adresy
   --min-progress 0           Minimální počet claimů na uživatele
   --max-progress 112         Maximální počet claimů na uživatele
+  --teams                    Vytvoří i náhodné týmy a přiřadí do nich uživatele
+  --team-count 6             Cílový počet týmů (volitelné, při --teams)
   --dry-run                  Pouze simulace, bez zápisu do DB
   --help
 
 Příklady:
   npm run users:seed:random -- --count 30
   npm run users:seed:random -- --count 50 --min-progress 5 --max-progress 35
+  npm run users:seed:random -- --count 30 --teams --team-count 6
   npm run users:seed:random -- --password "SeedPass123" --domain "example.local"
 `);
 }
@@ -244,6 +248,74 @@ function calculateAwardedPoints(input) {
   };
 }
 
+function toTeamSlug(name) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function shuffledCopy(input) {
+  const copy = [...input];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const randomIndex = randomInt(0, index + 1);
+    [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
+  }
+  return copy;
+}
+
+function buildTeamBuckets(users, teamCount) {
+  const buckets = Array.from({ length: teamCount }, () => []);
+  const randomizedUsers = shuffledCopy(users);
+
+  for (let index = 0; index < randomizedUsers.length; index += 1) {
+    buckets[index % teamCount].push(randomizedUsers[index]);
+  }
+
+  return buckets.filter((bucket) => bucket.length > 0);
+}
+
+function resolveTeamCount(totalUsers, requestedTeamCount) {
+  const minTeamsForCapacity = Math.max(1, Math.ceil(totalUsers / TEAM_MAX_MEMBERS));
+  const maxTeams = Math.max(1, totalUsers);
+  const target = requestedTeamCount ?? minTeamsForCapacity;
+
+  return {
+    minTeamsForCapacity,
+    requested: requestedTeamCount ?? null,
+    resolved: Math.min(maxTeams, Math.max(minTeamsForCapacity, target)),
+  };
+}
+
+function createTeamName(index) {
+  const TEAM_ADJECTIVES = [
+    "Městští",
+    "Noční",
+    "Električtí",
+    "Vltavští",
+    "Železní",
+    "Střešní",
+    "Pouliční",
+    "Rychlí",
+  ];
+  const TEAM_NOUNS = [
+    "Rytíři",
+    "Průzkumníci",
+    "Velitelé",
+    "Lovci",
+    "Navigátoři",
+    "Hlídači",
+    "Pionýři",
+    "Kurýři",
+  ];
+
+  return `${pickRandom(TEAM_ADJECTIVES)} ${pickRandom(TEAM_NOUNS)} ${index + 1}`;
+}
+
 async function main() {
   if (hasFlag("--help") || hasFlag("-h")) {
     printUsage();
@@ -257,6 +329,8 @@ async function main() {
       domain: z.string().trim().min(3).default("seed.praha112.local"),
       minProgress: z.coerce.number().int().min(0).default(0),
       maxProgress: z.coerce.number().int().min(0).default(112),
+      teams: z.boolean().default(false),
+      teamCount: z.coerce.number().int().min(1).max(500).optional(),
       dryRun: z.boolean().default(false),
     })
     .safeParse({
@@ -265,6 +339,8 @@ async function main() {
       domain: getArgValue("--domain"),
       minProgress: getArgValue("--min-progress"),
       maxProgress: getArgValue("--max-progress"),
+      teams: hasFlag("--teams") || getArgValue("--team-count") !== undefined,
+      teamCount: getArgValue("--team-count"),
       dryRun: hasFlag("--dry-run"),
     });
 
@@ -294,6 +370,9 @@ async function main() {
 
   let createdUsers = 0;
   let createdClaims = 0;
+  let createdTeams = 0;
+  let assignedUsersToTeams = 0;
+  const seededUsers = [];
 
   for (let index = 0; index < options.count; index += 1) {
     const firstName = pickRandom(FIRST_NAMES);
@@ -341,10 +420,16 @@ async function main() {
       );
       createdUsers += 1;
       createdClaims += claimsData.length;
+      seededUsers.push({
+        id: `dry-user-${index + 1}`,
+        name,
+        nickname,
+        email,
+      });
       continue;
     }
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         name,
@@ -356,16 +441,72 @@ async function main() {
           create: claimsData,
         },
       },
-      select: { id: true },
+      select: {
+        id: true,
+        name: true,
+        nickname: true,
+        email: true,
+      },
     });
 
     createdUsers += 1;
     createdClaims += claimsData.length;
+    seededUsers.push(user);
+  }
+
+  if (options.teams && seededUsers.length > 0) {
+    const teamCountInfo = resolveTeamCount(seededUsers.length, options.teamCount);
+    const teamBuckets = buildTeamBuckets(seededUsers, teamCountInfo.resolved);
+
+    if (teamCountInfo.requested !== null && teamCountInfo.requested !== teamCountInfo.resolved) {
+      console.log(
+        `Upravuji počet týmů z ${teamCountInfo.requested} na ${teamCountInfo.resolved} (limit: max ${TEAM_MAX_MEMBERS} hráčů na tým).`,
+      );
+    }
+
+    for (let index = 0; index < teamBuckets.length; index += 1) {
+      const members = teamBuckets[index];
+      const leader = members[0];
+      const teamName = createTeamName(index);
+      const teamSlugBase = toTeamSlug(teamName);
+      const teamSlug = `${teamSlugBase}-${timestamp}-${String(index + 1).padStart(2, "0")}`.slice(
+        0,
+        60,
+      );
+
+      if (options.dryRun) {
+        const memberNames = members
+          .map((member) => member.nickname || member.name || member.email)
+          .join(", ");
+        console.log(
+          `[dry-run][team] ${teamName} (${teamSlug}) | velitel=${leader.nickname || leader.name || leader.email} | členové=${members.length}/${TEAM_MAX_MEMBERS} | ${memberNames}`,
+        );
+      } else {
+        await prisma.team.create({
+          data: {
+            name: teamName,
+            slug: teamSlug,
+            leader: { connect: { id: leader.id } },
+            users: {
+              connect: members.map((member) => ({ id: member.id })),
+            },
+          },
+          select: { id: true },
+        });
+      }
+
+      createdTeams += 1;
+      assignedUsersToTeams += members.length;
+    }
   }
 
   const mode = options.dryRun ? "Simulace dokončena" : "Seed dokončen";
+  const teamSummary = options.teams
+    ? `, týmů=${createdTeams}, přiřazených uživatelů=${assignedUsersToTeams}`
+    : "";
+
   console.log(
-    `${mode}: uživatelů=${createdUsers}, claimů=${createdClaims}, rozsah postupu=${minProgress}-${maxProgress}/${totalDistricts}`,
+    `${mode}: uživatelů=${createdUsers}, claimů=${createdClaims}${teamSummary}, rozsah postupu=${minProgress}-${maxProgress}/${totalDistricts}`,
   );
 }
 
