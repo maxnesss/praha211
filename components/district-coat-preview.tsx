@@ -151,7 +151,7 @@ export function DistrictCoatPreview({
       </div>
 
       <p
-        className={`mt-4 text-xs font-semibold uppercase tracking-[0.14em] ${
+        className={`mb-1 mt-3 text-xs font-semibold uppercase tracking-[0.14em] ${
           isUnlocked ? "text-orange-200" : "text-cyan-100/65"
         }`}
       >

@@ -163,9 +163,9 @@ export function ClaimDistrictForm({
 
   if (isClaimed && existingClaim) {
     return (
-      <div className="rounded-xl border border-orange-300/40 bg-orange-400/12 p-5">
+      <div className="mt-1 rounded-xl border border-orange-300/40 bg-orange-400/12 p-4 sm:p-5">
         <h2 className="text-lg font-semibold text-orange-100">Městská část dokončena</h2>
-        <p className="mt-2 text-sm text-orange-100/85">
+        <p className="mt-1.5 text-sm text-orange-100/85">
           Potvrzeno dne {new Date(existingClaim.claimedAt).toLocaleString("cs-CZ")}.
         </p>
         {existingClaim.selfieUrl.startsWith("selfies/") ? (
@@ -173,7 +173,7 @@ export function ClaimDistrictForm({
             href={`/api/uploads/selfie/view?key=${encodeURIComponent(existingClaim.selfieUrl)}`}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
+            className="mt-3 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
           >
             Otevřít nahranou selfie
           </a>
@@ -182,12 +182,12 @@ export function ClaimDistrictForm({
             href={existingClaim.selfieUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-4 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
+            className="mt-3 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
           >
             Otevřít nahranou selfie
           </a>
         ) : (
-          <p className="mt-4 text-sm text-orange-100/85">Selfie soubor byl nahrán.</p>
+          <p className="mt-3 text-sm text-orange-100/85">Selfie soubor byl nahrán.</p>
         )}
       </div>
     );
