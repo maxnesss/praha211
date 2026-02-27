@@ -12,7 +12,8 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
-    "user:add": "node --env-file=.env scripts/add-user.mjs"
+    "user:add": "node --env-file=.env scripts/add-user.mjs",
+    "users:seed:random": "node --env-file=.env scripts/seed-random-users.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

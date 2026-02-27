@@ -19,6 +19,8 @@ export type UserNavStats = {
   ranking: string;
   dayStreak: string;
   badgesCount: number;
+  teamName: string;
+  teamSlug: string | null;
 };
 
 export const LEADERBOARD_CACHE_TAG = "leaderboard";
@@ -142,9 +144,20 @@ export async function getPointsLeaderboard(limit = 100): Promise<LeaderboardEntr
 }
 
 const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats> => {
-  const [claims, ranking] = await Promise.all([
+  const [claims, ranking, user] = await Promise.all([
     getUserGameClaims(userId),
     getUserPointsRanking(userId),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        team: {
+          select: {
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    }),
   ]);
   const overview = buildOverview(claims);
   const badges = buildBadgeOverview(overview.completedCodes);
@@ -164,6 +177,8 @@ const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats
         : "Bez pořadí",
     dayStreak: streakMessage,
     badgesCount: badges.totals.unlocked,
+    teamName: user?.team?.name ?? "Bez týmu",
+    teamSlug: user?.team?.slug ?? null,
   };
 });
 

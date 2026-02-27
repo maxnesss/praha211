@@ -109,12 +109,17 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
 
         {session?.user && navStats ? (
           <div className="mt-2 border-t border-cyan-300/20 pt-2">
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-6">
               <NavStatTile label="Průběh" value={navStats.completion} href="/overview" />
               <NavStatTile label="Body" value={navStats.points} href="/body" />
               <NavStatTile label="Odznaky" value={navStats.badgesCount} href="/badges" />
               <NavStatTile label="Pořadí" value={navStats.ranking} href="/leaderboard" />
               <NavStatTile label="Denní série" value={navStats.dayStreak} />
+              <NavStatTile
+                label="Tým"
+                value={navStats.teamName}
+                href={navStats.teamSlug ? `/team/${navStats.teamSlug}` : "/teams"}
+              />
             </div>
           </div>
         ) : null}
