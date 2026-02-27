@@ -127,7 +127,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
           <div className="mt-2 border-t border-cyan-300/20 pt-2">
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
               <NavStatTile label="Body" value={navStats.points} href="/body" />
-              <NavStatTile label="Odznaky" value={navStats.badgesCount} href="/badges" />
+              <NavStatTile label="Pokladnice" value={navStats.badgesCount} href="/badges" />
               <NavStatTile
                 label="Radnice"
                 value={navStats.completion}
@@ -135,7 +135,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
                 prominent
                 className="col-span-2 sm:col-span-1"
               />
-              <NavStatTile label="Pořadí" value={navStats.ranking} href="/leaderboard" />
+              <NavStatTile label="Kniha hrdinů" value={navStats.ranking} href="/leaderboard" />
               <NavStatTile
                 label="Tým"
                 value={navStats.teamName}
