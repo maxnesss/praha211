@@ -136,6 +136,25 @@ function pickRandom(list) {
   return list[randomInt(0, list.length)];
 }
 
+function createSeedNickname() {
+  return `${pickRandom(NICK_PREFIXES)}_${pickRandom(NICK_SUFFIXES)}${randomInt(10, 999)}`;
+}
+
+function generateUniqueSeedNickname(reservedNicknames) {
+  for (let attempt = 0; attempt < 5000; attempt += 1) {
+    const candidate = createSeedNickname();
+    const key = candidate.toLocaleLowerCase("cs-CZ");
+    if (!reservedNicknames.has(key)) {
+      reservedNicknames.add(key);
+      return candidate;
+    }
+  }
+
+  const fallback = `hrac_${Date.now().toString(36)}${randomInt(1000, 9999)}`;
+  reservedNicknames.add(fallback.toLocaleLowerCase("cs-CZ"));
+  return fallback;
+}
+
 function normalizeSlug(input) {
   return input
     .normalize("NFD")
@@ -381,6 +400,20 @@ async function main() {
   const maxProgress = Math.max(minProgress, Math.min(options.maxProgress, totalDistricts));
   const passwordHash = await hash(options.password, 12);
   const timestamp = Date.now().toString(36);
+  const reservedNicknames = new Set();
+
+  if (!options.dryRun) {
+    const existingNicknames = await prisma.user.findMany({
+      where: { nickname: { not: null } },
+      select: { nickname: true },
+    });
+
+    for (const entry of existingNicknames) {
+      if (entry.nickname) {
+        reservedNicknames.add(entry.nickname.toLocaleLowerCase("cs-CZ"));
+      }
+    }
+  }
 
   let createdUsers = 0;
   let createdClaims = 0;
@@ -393,7 +426,7 @@ async function main() {
     const firstName = pickRandom(FIRST_NAMES);
     const lastName = pickRandom(LAST_NAMES);
     const name = `${firstName} ${lastName}`;
-    const nickname = `${pickRandom(NICK_PREFIXES)}_${pickRandom(NICK_SUFFIXES)}${randomInt(10, 99)}`;
+    const nickname = generateUniqueSeedNickname(reservedNicknames);
     const uniq = `${timestamp}${index.toString().padStart(3, "0")}${randomInt(1000, 9999)}`;
     const emailLocal = normalizeSlug(`${firstName}.${lastName}.${uniq}`);
     const email = `${emailLocal}@${options.domain}`.toLowerCase();

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { TeamJoinRequestOverview, TeamMemberOverview } from "@/lib/team-types";
@@ -63,7 +64,14 @@ export function TeamLeaderPanel({
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-cyan-300/20 bg-cyan-500/5 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm text-cyan-50">{request.displayName}</p>
+                    <p className="text-sm text-cyan-50">
+                      <Link
+                        href={`/player/${request.userId}`}
+                        className="underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
+                      >
+                        {request.displayName}
+                      </Link>
+                    </p>
                     <p className="text-xs text-cyan-100/70">
                       Požádal: {formatCzDateTime(request.createdAtIso)}
                     </p>
@@ -112,7 +120,14 @@ export function TeamLeaderPanel({
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-cyan-300/20 bg-cyan-500/5 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm text-cyan-50">{member.displayName}</p>
+                    <p className="text-sm text-cyan-50">
+                      <Link
+                        href={`/player/${member.id}`}
+                        className="underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
+                      >
+                        {member.displayName}
+                      </Link>
+                    </p>
                     <p className="text-xs text-cyan-100/70">
                       Body: {member.points} · Odemčeno: {member.completed}/112
                     </p>

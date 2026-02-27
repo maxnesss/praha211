@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
+import { generateUniqueNickname } from "@/lib/nickname-utils";
 import { DEFAULT_USER_AVATAR, USER_AVATAR_VALUES } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { signInSchema } from "@/lib/validation/auth";
@@ -81,22 +82,31 @@ export const authOptions: NextAuthOptions = {
       });
 
       if (!existingUser) {
+        const nickname = await generateUniqueNickname(user.name ?? email.split("@")[0] ?? null);
+
         await prisma.user.create({
           data: {
             email,
             name: user.name ?? null,
-            nickname: user.name ?? null,
+            nickname,
             avatar: DEFAULT_USER_AVATAR,
             role: "USER",
           },
           select: { id: true },
         });
       } else if (!existingUser.name || !existingUser.nickname || !existingUser.avatar) {
+        const generatedNickname = !existingUser.nickname
+          ? await generateUniqueNickname(
+            user.name ?? email.split("@")[0] ?? null,
+            existingUser.id,
+          )
+          : existingUser.nickname;
+
         await prisma.user.update({
           where: { email },
           data: {
             name: existingUser.name ?? user.name ?? null,
-            nickname: existingUser.nickname ?? user.name ?? null,
+            nickname: generatedNickname,
             avatar: existingUser.avatar ?? DEFAULT_USER_AVATAR,
           },
           select: { id: true },

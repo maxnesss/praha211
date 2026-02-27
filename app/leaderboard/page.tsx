@@ -103,7 +103,12 @@ export default async function LeaderboardPage() {
                           <td className={`${metro.monoDigit} px-4 py-3 font-semibold`}>#{entry.rank}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <span>{toLeaderboardPlayerLabel(entry)}</span>
+                              <Link
+                                href={`/player/${entry.userId}`}
+                                className="transition-colors hover:text-white"
+                              >
+                                {toLeaderboardPlayerLabel(entry)}
+                              </Link>
                               {isCurrentUser ? (
                                 <span className="rounded bg-orange-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
                                   Vy
@@ -136,7 +141,12 @@ export default async function LeaderboardPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span>{toLeaderboardPlayerLabel(myEntry)}</span>
+                            <Link
+                              href={`/player/${myEntry.userId}`}
+                              className="transition-colors hover:text-white"
+                            >
+                              {toLeaderboardPlayerLabel(myEntry)}
+                            </Link>
                             <span className="rounded bg-orange-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
                               Vy
                             </span>

@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { buildBadgeOverview } from "@/lib/game/badges";
+import { buildBadgeOverview, type BadgeOverview } from "@/lib/game/badges";
 import { buildOverview, countClaimsToday } from "@/lib/game/progress";
 import { prisma } from "@/lib/prisma";
 
@@ -37,6 +37,21 @@ export type UserNavStats = {
   badgesCount: number;
   teamName: string;
   teamSlug: string | null;
+};
+
+export type PublicPlayerProfile = {
+  userId: string;
+  nickname: string | null;
+  name: string | null;
+  email: string | null;
+  avatar: string | null;
+  teamName: string | null;
+  teamSlug: string | null;
+  points: number;
+  completed: number;
+  totalDistricts: number;
+  completionPercent: number;
+  badges: BadgeOverview;
 };
 
 export const LEADERBOARD_CACHE_TAG = "leaderboard";
@@ -195,6 +210,48 @@ export async function getPointsLeaderboardPage(
     totalPages,
     page: safePage,
     pageSize: safePageSize,
+  };
+}
+
+export async function getPublicPlayerProfile(userId: string): Promise<PublicPlayerProfile | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      nickname: true,
+      name: true,
+      email: true,
+      avatar: true,
+      team: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  const claims = await getUserGameClaims(user.id);
+  const overview = buildOverview(claims);
+  const badges = buildBadgeOverview(overview.completedCodes);
+
+  return {
+    userId: user.id,
+    nickname: user.nickname,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    teamName: user.team?.name ?? null,
+    teamSlug: user.team?.slug ?? null,
+    points: overview.totalPoints,
+    completed: overview.totalCompleted,
+    totalDistricts: overview.totalDistricts,
+    completionPercent: overview.completionPercent,
+    badges,
   };
 }
 

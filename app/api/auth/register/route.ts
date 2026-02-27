@@ -1,5 +1,7 @@
+import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
+import { generateUniqueNickname } from "@/lib/nickname-utils";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
@@ -41,11 +43,13 @@ export async function POST(request: Request) {
 
     const passwordHash = await hash(password, 12);
 
+    const nickname = await generateUniqueNickname(name ?? null);
+
     await prisma.user.create({
       data: {
         email,
         name: name ?? null,
-        nickname: name ?? null,
+        nickname,
         avatar: DEFAULT_USER_AVATAR,
         passwordHash,
         role: "USER",
@@ -58,6 +62,16 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError
+      && error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { message: "Účet s tímto e-mailem nebo přezdívkou už existuje." },
+        { status: 409 },
+      );
+    }
+
     console.error("Registrace se nezdařila:", error);
 
     return NextResponse.json(

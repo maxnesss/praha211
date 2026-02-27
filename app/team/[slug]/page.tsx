@@ -133,7 +133,12 @@ export default async function TeamPage({ params }: TeamPageContext) {
                       <tr key={member.id} className="border-t border-cyan-300/20 text-cyan-50/90">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <span>{member.displayName}</span>
+                            <Link
+                              href={`/player/${member.id}`}
+                              className="underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
+                            >
+                              {member.displayName}
+                            </Link>
                             {member.isLeader ? (
                               <span className="rounded bg-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
                                 Velitel
