@@ -120,6 +120,7 @@ Volitelné:
   --max-progress 112         Maximální počet claimů na uživatele
   --teams                    Vytvoří i náhodné týmy a přiřadí do nich uživatele
   --team-count 6             Cílový počet týmů (volitelné, při --teams)
+                             Pokud kapacita nestačí, část uživatelů zůstane bez týmu
   --dry-run                  Pouze simulace, bez zápisu do DB
   --help
 
@@ -268,9 +269,9 @@ function shuffledCopy(input) {
   return copy;
 }
 
-function buildTeamBuckets(users, teamCount) {
+function buildTeamBuckets(users, teamCount, assignableUsersCount) {
   const buckets = Array.from({ length: teamCount }, () => []);
-  const randomizedUsers = shuffledCopy(users);
+  const randomizedUsers = shuffledCopy(users).slice(0, assignableUsersCount);
 
   for (let index = 0; index < randomizedUsers.length; index += 1) {
     buckets[index % teamCount].push(randomizedUsers[index]);
@@ -280,14 +281,27 @@ function buildTeamBuckets(users, teamCount) {
 }
 
 function resolveTeamCount(totalUsers, requestedTeamCount) {
-  const minTeamsForCapacity = Math.max(1, Math.ceil(totalUsers / TEAM_MAX_MEMBERS));
   const maxTeams = Math.max(1, totalUsers);
-  const target = requestedTeamCount ?? minTeamsForCapacity;
 
+  if (requestedTeamCount !== undefined) {
+    const resolvedTeamCount = Math.min(maxTeams, Math.max(1, requestedTeamCount));
+    const assignableUsersCount = Math.min(totalUsers, resolvedTeamCount * TEAM_MAX_MEMBERS);
+    return {
+      requested: requestedTeamCount,
+      resolved: resolvedTeamCount,
+      assignableUsersCount,
+      unassignedUsersCount: totalUsers - assignableUsersCount,
+      mode: "fixed",
+    };
+  }
+
+  const resolvedTeamCount = Math.max(1, Math.ceil(totalUsers / TEAM_MAX_MEMBERS));
   return {
-    minTeamsForCapacity,
-    requested: requestedTeamCount ?? null,
-    resolved: Math.min(maxTeams, Math.max(minTeamsForCapacity, target)),
+    requested: null,
+    resolved: resolvedTeamCount,
+    assignableUsersCount: totalUsers,
+    unassignedUsersCount: 0,
+    mode: "auto",
   };
 }
 
@@ -372,6 +386,7 @@ async function main() {
   let createdClaims = 0;
   let createdTeams = 0;
   let assignedUsersToTeams = 0;
+  let usersWithoutTeam = 0;
   const seededUsers = [];
 
   for (let index = 0; index < options.count; index += 1) {
@@ -456,11 +471,21 @@ async function main() {
 
   if (options.teams && seededUsers.length > 0) {
     const teamCountInfo = resolveTeamCount(seededUsers.length, options.teamCount);
-    const teamBuckets = buildTeamBuckets(seededUsers, teamCountInfo.resolved);
+    const teamBuckets = buildTeamBuckets(
+      seededUsers,
+      teamCountInfo.resolved,
+      teamCountInfo.assignableUsersCount,
+    );
 
     if (teamCountInfo.requested !== null && teamCountInfo.requested !== teamCountInfo.resolved) {
       console.log(
-        `Upravuji počet týmů z ${teamCountInfo.requested} na ${teamCountInfo.resolved} (limit: max ${TEAM_MAX_MEMBERS} hráčů na tým).`,
+        `Upravuji počet týmů z ${teamCountInfo.requested} na ${teamCountInfo.resolved}.`,
+      );
+    }
+
+    if (teamCountInfo.mode === "fixed" && teamCountInfo.unassignedUsersCount > 0) {
+      console.log(
+        `Kapacita ${teamCountInfo.resolved} týmů je ${teamCountInfo.assignableUsersCount} hráčů. ${teamCountInfo.unassignedUsersCount} hráčů zůstane bez týmu.`,
       );
     }
 
@@ -498,11 +523,13 @@ async function main() {
       createdTeams += 1;
       assignedUsersToTeams += members.length;
     }
+
+    usersWithoutTeam = seededUsers.length - assignedUsersToTeams;
   }
 
   const mode = options.dryRun ? "Simulace dokončena" : "Seed dokončen";
   const teamSummary = options.teams
-    ? `, týmů=${createdTeams}, přiřazených uživatelů=${assignedUsersToTeams}`
+    ? `, týmů=${createdTeams}, přiřazených uživatelů=${assignedUsersToTeams}, bez týmu=${usersWithoutTeam}`
     : "";
 
   console.log(
