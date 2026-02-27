@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cinzel_Decorative } from "next/font/google";
+import { CookieConsentDialog } from "@/components/cookie-consent-dialog";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
@@ -26,6 +27,7 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col">
           <div className="flex-1">{children}</div>
           <SiteFooter />
+          <CookieConsentDialog />
         </div>
       </body>
     </html>
