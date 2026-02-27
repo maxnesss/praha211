@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { OverviewDistrictSearch } from "@/components/overview-district-search";
 import { SiteHeader } from "@/components/site-header";
 import { authOptions } from "@/lib/auth";
 import { getUserGameClaims } from "@/lib/game/queries";
@@ -175,6 +176,8 @@ export default async function OverviewPage() {
             <OverviewStatCard label="Denní série" value={overview.currentStreak} />
             <OverviewStatCard label="Kapitoly hotovo" value={completedChapters} />
           </div>
+
+          <OverviewDistrictSearch />
 
           <div className="mt-8 grid gap-4 lg:grid-cols-2">
             {overview.chapterCards.map((chapter, index) => (
