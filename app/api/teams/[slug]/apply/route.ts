@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -8,12 +9,24 @@ type ApplyTeamRouteContext = {
   params: Promise<{ slug: string }>;
 };
 
-export async function POST(_request: Request, context: ApplyTeamRouteContext) {
+export async function POST(request: Request, context: ApplyTeamRouteContext) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
   if (!userId) {
     return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  }
+
+  const rateLimited = applyRateLimit({
+    request,
+    prefix: "teams-apply",
+    userId,
+    max: 20,
+    windowMs: 10 * 60 * 1000,
+    message: "Příliš mnoho žádostí o vstup v krátkém čase. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
   }
 
   const { slug } = await context.params;

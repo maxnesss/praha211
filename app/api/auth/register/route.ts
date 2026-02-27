@@ -1,12 +1,24 @@
 import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { generateUniqueNickname } from "@/lib/nickname-utils";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
 
 export async function POST(request: Request) {
+  const rateLimited = applyRateLimit({
+    request,
+    prefix: "auth-register",
+    max: 6,
+    windowMs: 15 * 60 * 1000,
+    message: "Příliš mnoho pokusů o registraci. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
+  }
+
   try {
     let body: unknown;
 

@@ -1,6 +1,7 @@
 import { compare, hash } from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -14,6 +15,18 @@ export async function POST(request: Request) {
 
   if (!userId) {
     return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  }
+
+  const rateLimited = applyRateLimit({
+    request,
+    prefix: "profile-password",
+    userId,
+    max: 8,
+    windowMs: 60 * 60 * 1000,
+    message: "Příliš mnoho pokusů o změnu hesla. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
   }
 
   try {

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toTeamSlug } from "@/lib/team-utils";
@@ -12,6 +13,18 @@ export async function POST(request: Request) {
 
   if (!userId) {
     return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  }
+
+  const rateLimited = applyRateLimit({
+    request,
+    prefix: "teams-create",
+    userId,
+    max: 5,
+    windowMs: 60 * 60 * 1000,
+    message: "Příliš mnoho pokusů o vytvoření týmu. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
   }
 
   let body: unknown;

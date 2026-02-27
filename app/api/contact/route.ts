@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import {
   contactFormSchema,
   getContactValidationMessage,
 } from "@/lib/validation/contact";
 
 export async function POST(request: Request) {
+  const rateLimited = applyRateLimit({
+    request,
+    prefix: "contact",
+    max: 8,
+    windowMs: 10 * 60 * 1000,
+    message: "Příliš mnoho zpráv v krátkém čase. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
+  }
+
   try {
     let body: unknown;
 

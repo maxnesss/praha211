@@ -1,6 +1,8 @@
+import { Prisma } from "@prisma/client";
 import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { authOptions } from "@/lib/auth";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday } from "@/lib/game/progress";
@@ -18,6 +20,18 @@ export async function POST(request: Request, context: ClaimRouteContext) {
 
   if (!userId) {
     return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  }
+
+  const rateLimited = applyRateLimit({
+    request,
+    prefix: "district-claim",
+    userId,
+    max: 30,
+    windowMs: 5 * 60 * 1000,
+    message: "Příliš mnoho potvrzení v krátkém čase. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
   }
 
   const { code } = await context.params;
@@ -81,38 +95,56 @@ export async function POST(request: Request, context: ClaimRouteContext) {
     streakAfterClaim,
   });
 
-  const claim = await prisma.districtClaim.create({
-    data: {
-      userId,
-      districtCode: district.code,
-      chapterSlug: district.chapterSlug,
-      districtName: district.name,
-      selfieUrl: parsed.data.selfieUrl,
-      signVisible: parsed.data.attestSignVisible,
-      claimedAt: now,
-      basePoints: district.basePoints,
-      sameDayMultiplier: scoring.sameDayMultiplier,
-      streakBonus: scoring.streakBonus,
-      awardedPoints: scoring.awardedPoints,
-    },
-    select: {
-      id: true,
-      districtCode: true,
-      districtName: true,
-      chapterSlug: true,
-      claimedAt: true,
-      selfieUrl: true,
-    },
-  });
+  try {
+    const claim = await prisma.districtClaim.create({
+      data: {
+        userId,
+        districtCode: district.code,
+        chapterSlug: district.chapterSlug,
+        districtName: district.name,
+        selfieUrl: parsed.data.selfieUrl,
+        signVisible: parsed.data.attestSignVisible,
+        claimedAt: now,
+        basePoints: district.basePoints,
+        sameDayMultiplier: scoring.sameDayMultiplier,
+        streakBonus: scoring.streakBonus,
+        awardedPoints: scoring.awardedPoints,
+      },
+      select: {
+        id: true,
+        districtCode: true,
+        districtName: true,
+        chapterSlug: true,
+        claimedAt: true,
+        selfieUrl: true,
+      },
+    });
 
-  revalidateTag(LEADERBOARD_CACHE_TAG, "max");
+    revalidateTag(LEADERBOARD_CACHE_TAG, "max");
 
-  return NextResponse.json(
-    {
-      message: "Městská část byla úspěšně potvrzena.",
-      claim,
-      streakAfterClaim,
-    },
-    { status: 201 },
-  );
+    return NextResponse.json(
+      {
+        message: "Městská část byla úspěšně potvrzena.",
+        claim,
+        streakAfterClaim,
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError
+      && error.code === "P2002"
+    ) {
+      return NextResponse.json(
+        { message: "Tato městská část už byla potvrzena." },
+        { status: 409 },
+      );
+    }
+
+    console.error("Potvrzení městské části selhalo:", error);
+    return NextResponse.json(
+      { message: "Potvrzení městské části selhalo." },
+      { status: 500 },
+    );
+  }
 }
