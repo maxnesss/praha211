@@ -293,7 +293,7 @@ export function ProfileSettingsForms({
                 </button>
               </div>
 
-              <form className="mt-5 space-y-4" onSubmit={handleAvatarSubmit}>
+              <form className="mt-5 space-y-4" onSubmit={handleAvatarSubmit} autoComplete="off">
                 <div className="max-h-[56vh] overflow-y-auto pr-1">
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
                     {USER_AVATAR_OPTIONS.map((option) => {
@@ -374,7 +374,7 @@ export function ProfileSettingsForms({
               </button>
             </div>
 
-            <form className="mt-5 space-y-4" onSubmit={handleNicknameSubmit}>
+            <form className="mt-5 space-y-4" onSubmit={handleNicknameSubmit} autoComplete="off">
               <div className="space-y-1.5">
                 <label htmlFor="nickname" className="text-sm font-medium text-cyan-100">
                   Přezdívka
@@ -383,6 +383,7 @@ export function ProfileSettingsForms({
                   id="nickname"
                   name="nickname"
                   type="text"
+                  autoComplete="off"
                   value={nicknameDraft}
                   onChange={(event) => setNicknameDraft(event.target.value)}
                   maxLength={40}
@@ -440,7 +441,7 @@ export function ProfileSettingsForms({
               </button>
             </div>
 
-            <form className="mt-5 space-y-3" onSubmit={handlePasswordSubmit}>
+            <form className="mt-5 space-y-3" onSubmit={handlePasswordSubmit} autoComplete="off">
               {hasPassword ? (
                 <div className="space-y-1.5">
                   <label htmlFor="currentPassword" className="text-sm font-medium text-cyan-100">
@@ -450,7 +451,7 @@ export function ProfileSettingsForms({
                     id="currentPassword"
                     name="currentPassword"
                     type="password"
-                    autoComplete="current-password"
+                    autoComplete="off"
                     required={hasPassword}
                     className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
                   />
@@ -465,7 +466,7 @@ export function ProfileSettingsForms({
                   id="newPassword"
                   name="newPassword"
                   type="password"
-                  autoComplete="new-password"
+                  autoComplete="off"
                   minLength={8}
                   required
                   className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
@@ -480,7 +481,7 @@ export function ProfileSettingsForms({
                   id="confirmNewPassword"
                   name="confirmNewPassword"
                   type="password"
-                  autoComplete="new-password"
+                  autoComplete="off"
                   minLength={8}
                   required
                   className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"

@@ -152,7 +152,7 @@ export function ClaimDistrictForm({
               </button>
             </div>
 
-            <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+            <form className="mt-5 space-y-4" onSubmit={handleSubmit} autoComplete="off">
               <div className="space-y-1.5">
                 <label htmlFor="selfieFile" className="text-sm font-medium text-cyan-100">
                   Nahrajte selfie

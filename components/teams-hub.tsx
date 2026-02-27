@@ -197,7 +197,7 @@ export function TeamsHub({
                 </button>
               </div>
 
-              <form className="mt-5 space-y-4" onSubmit={handleCreateTeam}>
+              <form className="mt-5 space-y-4" onSubmit={handleCreateTeam} autoComplete="off">
                 <div className="space-y-1.5">
                   <label htmlFor="team-name" className="text-sm font-medium text-cyan-100">
                     Název týmu
@@ -206,6 +206,7 @@ export function TeamsHub({
                     id="team-name"
                     value={nameDraft}
                     onChange={(event) => setNameDraft(event.target.value)}
+                    autoComplete="off"
                     placeholder="Např. Knights"
                     maxLength={40}
                     required

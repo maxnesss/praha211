@@ -79,6 +79,11 @@ npm run dev
 - If adding new pages/layout metadata, keep `<html lang="cs">` and Czech metadata text.
 - App flow rule: only the main landing page is public; game routes require login.
 
+## Form autofill policy
+
+- Disable browser autofill/autocomplete on all forms by default.
+- Exception: keep autofill enabled on `sign-in` and `sign-up` forms.
+
 ## Data and migration notes
 
 - Prisma schema: `prisma/schema.prisma`

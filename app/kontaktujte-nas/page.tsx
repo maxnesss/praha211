@@ -97,7 +97,7 @@ export default function ContactPage() {
               Máš otázku nebo tip, jak PRAHA 112 posunout dál? Ozvi se nám.
             </p>
 
-            <form className="mt-7 space-y-4" onSubmit={handleSubmit}>
+            <form className="mt-7 space-y-4" onSubmit={handleSubmit} autoComplete="off">
             <div className="space-y-1.5">
               <label htmlFor="name" className="text-sm font-medium text-cyan-100">
                 Jméno
@@ -106,7 +106,7 @@ export default function ContactPage() {
                 id="name"
                 name="name"
                 type="text"
-                autoComplete="name"
+                autoComplete="off"
                 required
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />
@@ -120,7 +120,7 @@ export default function ContactPage() {
                 id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
+                autoComplete="off"
                 required
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />
@@ -133,6 +133,7 @@ export default function ContactPage() {
               <select
                 id="topic"
                 name="topic"
+                autoComplete="off"
                 required
                 defaultValue=""
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
@@ -155,6 +156,7 @@ export default function ContactPage() {
               <textarea
                 id="message"
                 name="message"
+                autoComplete="off"
                 rows={6}
                 required
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
