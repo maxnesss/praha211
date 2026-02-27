@@ -5,21 +5,41 @@ import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { toLeaderboardPlayerLabel } from "@/lib/game/leaderboard-display";
-import { getPointsLeaderboardPreview } from "@/lib/game/queries";
+import { getPointsLeaderboardPage } from "@/lib/game/queries";
 
-export default async function LeaderboardPage() {
+const PAGE_SIZE = 50;
+
+type LeaderboardListPageProps = {
+  searchParams: Promise<{ page?: string }>;
+};
+
+function parsePage(input: string | undefined) {
+  const value = Number.parseInt(input ?? "1", 10);
+  if (Number.isNaN(value) || value < 1) {
+    return 1;
+  }
+  return value;
+}
+
+function toPageHref(page: number) {
+  return page <= 1 ? "/leaderboard/list" : `/leaderboard/list?page=${page}`;
+}
+
+export default async function LeaderboardListPage({
+  searchParams,
+}: LeaderboardListPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect("/sign-in?callbackUrl=%2Fleaderboard");
+    redirect("/sign-in?callbackUrl=%2Fleaderboard%2Flist");
   }
 
-  const preview = await getPointsLeaderboardPreview(session.user.id, 15);
-  const leaderboard = preview.topEntries;
-  const myEntry = preview.myEntry;
+  const { page } = await searchParams;
+  const requestedPage = parsePage(page);
+  const leaderboard = await getPointsLeaderboardPage(requestedPage, PAGE_SIZE);
 
   return (
-    <main className={`${metro.routeShell}`}>
+    <main className={metro.routeShell}>
       <div className={`${metro.scanlineOverlay} pointer-events-none absolute inset-0 opacity-35`} />
       <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
 
@@ -33,19 +53,19 @@ export default async function LeaderboardPage() {
                 Pořadí
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-cyan-50 sm:text-4xl">
-                Žebříček hráčů
+                Kompletní žebříček
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/75 sm:text-base">
-                Tady jsou hrdinové a hrdinky Prahy. Každý bod je další stopa v mapě města.
+                Všichni hráči přehledně po stránkách.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <Link
-                href="/leaderboard/list"
+                href="/leaderboard"
                 className="rounded-md border border-orange-300/60 bg-orange-400/20 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-orange-50 transition-colors hover:bg-orange-400/30"
               >
-                Kompletní seznam
+                Zkrácený přehled
               </Link>
               <Link
                 href="/overview"
@@ -60,18 +80,20 @@ export default async function LeaderboardPage() {
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Hráčů v pořadí</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
-                {preview.totalPlayers}
+                {leaderboard.totalPlayers}
               </p>
             </article>
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Vaše pozice</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Strana</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
-                {myEntry ? `#${myEntry.rank}` : "Bez pořadí"}
+                {leaderboard.page}/{leaderboard.totalPages}
               </p>
             </article>
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Vaše body</p>
-              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>{myEntry?.points ?? 0}</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Na stránce</p>
+              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
+                {leaderboard.entries.length}
+              </p>
             </article>
           </div>
 
@@ -87,8 +109,8 @@ export default async function LeaderboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {leaderboard.length > 0 ? (
-                    leaderboard.map((entry) => {
+                  {leaderboard.entries.length > 0 ? (
+                    leaderboard.entries.map((entry) => {
                       const isCurrentUser = entry.userId === session.user.id;
 
                       return (
@@ -123,33 +145,37 @@ export default async function LeaderboardPage() {
                       </td>
                     </tr>
                   )}
-                  {preview.showMyEntrySeparately && myEntry ? (
-                    <>
-                      <tr className="border-t border-cyan-300/20 text-cyan-200/60">
-                        <td className={`${metro.monoDigit} px-4 py-2 text-center`} colSpan={4}>
-                          ...
-                        </td>
-                      </tr>
-                      <tr className="border-t border-cyan-300/20 bg-orange-400/10 text-orange-100">
-                        <td className={`${metro.monoDigit} px-4 py-3 font-semibold`}>
-                          #{myEntry.rank}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span>{toLeaderboardPlayerLabel(myEntry)}</span>
-                            <span className="rounded bg-orange-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
-                              Vy
-                            </span>
-                          </div>
-                        </td>
-                        <td className={`${metro.monoDigit} px-4 py-3 font-semibold`}>{myEntry.points}</td>
-                        <td className={`${metro.monoDigit} px-4 py-3`}>{myEntry.completed} / 112</td>
-                      </tr>
-                    </>
-                  ) : null}
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3">
+            {leaderboard.page > 1 ? (
+              <Link
+                href={toPageHref(leaderboard.page - 1)}
+                className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
+              >
+                Předchozí
+              </Link>
+            ) : (
+              <span className="rounded-md border border-cyan-300/20 bg-cyan-400/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/45">
+                Předchozí
+              </span>
+            )}
+
+            {leaderboard.page < leaderboard.totalPages ? (
+              <Link
+                href={toPageHref(leaderboard.page + 1)}
+                className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
+              >
+                Další
+              </Link>
+            ) : (
+              <span className="rounded-md border border-cyan-300/20 bg-cyan-400/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/45">
+                Další
+              </span>
+            )}
           </div>
         </div>
       </section>

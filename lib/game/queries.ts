@@ -6,11 +6,27 @@ import { prisma } from "@/lib/prisma";
 
 export type LeaderboardEntry = {
   userId: string;
+  nickname: string | null;
   name: string | null;
   email: string | null;
   points: number;
   completed: number;
   rank: number;
+};
+
+export type LeaderboardPreview = {
+  topEntries: LeaderboardEntry[];
+  myEntry: LeaderboardEntry | null;
+  totalPlayers: number;
+  showMyEntrySeparately: boolean;
+};
+
+export type LeaderboardPageResult = {
+  entries: LeaderboardEntry[];
+  totalPlayers: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
 };
 
 export type UserNavStats = {
@@ -83,6 +99,7 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
     },
     select: {
       id: true,
+      nickname: true,
       name: true,
       email: true,
     },
@@ -106,6 +123,7 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
 
     leaderboard.push({
       userId: entry.userId,
+      nickname: user?.nickname ?? null,
       name: user?.name ?? null,
       email: user?.email ?? null,
       points,
@@ -119,7 +137,7 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
 
 const getCachedLeaderboardSnapshot = unstable_cache(
   async () => buildLeaderboardSnapshot(),
-  ["leaderboard-snapshot-v2"],
+  ["leaderboard-snapshot-v3"],
   {
     revalidate: LEADERBOARD_CACHE_SECONDS,
     tags: [LEADERBOARD_CACHE_TAG],
@@ -141,6 +159,43 @@ export async function getUserPointsRanking(userId: string) {
 export async function getPointsLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
   const leaderboard = await getCachedLeaderboardSnapshot();
   return leaderboard.slice(0, Math.max(1, limit));
+}
+
+export async function getPointsLeaderboardPreview(
+  userId: string,
+  limit = 15,
+): Promise<LeaderboardPreview> {
+  const leaderboard = await getCachedLeaderboardSnapshot();
+  const safeLimit = Math.max(1, limit);
+  const topEntries = leaderboard.slice(0, safeLimit);
+  const myEntry = leaderboard.find((entry) => entry.userId === userId) ?? null;
+
+  return {
+    topEntries,
+    myEntry,
+    totalPlayers: leaderboard.length,
+    showMyEntrySeparately: Boolean(myEntry && myEntry.rank > safeLimit),
+  };
+}
+
+export async function getPointsLeaderboardPage(
+  page = 1,
+  pageSize = 50,
+): Promise<LeaderboardPageResult> {
+  const leaderboard = await getCachedLeaderboardSnapshot();
+  const safePageSize = Math.max(1, pageSize);
+  const totalPlayers = leaderboard.length;
+  const totalPages = Math.max(1, Math.ceil(totalPlayers / safePageSize));
+  const safePage = Math.min(totalPages, Math.max(1, page));
+  const start = (safePage - 1) * safePageSize;
+
+  return {
+    entries: leaderboard.slice(start, start + safePageSize),
+    totalPlayers,
+    totalPages,
+    page: safePage,
+    pageSize: safePageSize,
+  };
 }
 
 const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats> => {
