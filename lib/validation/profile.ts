@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { USER_AVATAR_VALUES } from "@/lib/profile-avatars";
 
 const nicknameSchema = z
   .string()
@@ -11,6 +12,10 @@ const nicknameSchema = z
 
 export const updateNicknameSchema = z.object({
   nickname: nicknameSchema.transform((value) => (value.length > 0 ? value : null)),
+});
+
+export const updateAvatarSchema = z.object({
+  avatar: z.enum(USER_AVATAR_VALUES),
 });
 
 export const changePasswordSchema = z

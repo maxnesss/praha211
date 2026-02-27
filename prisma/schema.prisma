@@ -17,6 +17,7 @@ model User {
   email        String   @unique
   name         String?
   nickname     String?
+  avatar       String?
   passwordHash String?
   role         UserRole @default(USER)
   claims       DistrictClaim[]

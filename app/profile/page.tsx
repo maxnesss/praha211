@@ -19,6 +19,7 @@ export default async function ProfilePage() {
       name: true,
       email: true,
       nickname: true,
+      avatar: true,
       passwordHash: true,
       role: true,
     },
@@ -52,6 +53,7 @@ export default async function ProfilePage() {
             email={user.email}
             hasPassword={Boolean(user.passwordHash)}
             initialNickname={user.nickname}
+            initialAvatar={user.avatar}
             role={user.role}
             showRole={session.user.role === "ADMIN"}
           />

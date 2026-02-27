@@ -108,6 +108,7 @@ async function main() {
     data: {
       email,
       name,
+      avatar: "male/dobrodruh",
       passwordHash,
       role,
     },

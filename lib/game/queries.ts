@@ -1,7 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { buildBadgeOverview } from "@/lib/game/badges";
-import { buildOverview } from "@/lib/game/progress";
+import { buildOverview, countClaimsToday } from "@/lib/game/progress";
 import { prisma } from "@/lib/prisma";
 
 export type LeaderboardEntry = {
@@ -148,6 +148,12 @@ const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats
   ]);
   const overview = buildOverview(claims);
   const badges = buildBadgeOverview(overview.completedCodes);
+  const claimsTodayCount = countClaimsToday(claims.map((claim) => claim.claimedAt));
+  const streakMessage = claimsTodayCount > 0
+    ? overview.currentStreak <= 1
+      ? "Dnes jsi začal."
+      : `Máte ${overview.currentStreak} dní v řadě.`
+    : "Začni dnes.";
 
   return {
     points: ranking.userPoints || overview.totalPoints,
@@ -156,7 +162,7 @@ const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats
       ranking.rank && ranking.totalPlayers > 0
         ? `#${ranking.rank}/${ranking.totalPlayers}`
         : "Bez pořadí",
-    dayStreak: `${overview.currentStreak} dní`,
+    dayStreak: streakMessage,
     badgesCount: badges.totals.unlocked,
   };
 });

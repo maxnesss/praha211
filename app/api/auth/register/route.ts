@@ -1,5 +1,6 @@
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
+import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
 
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
         email,
         name: name ?? null,
         nickname: name ?? null,
+        avatar: DEFAULT_USER_AVATAR,
         passwordHash,
         role: "USER",
       },
