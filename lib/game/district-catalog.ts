@@ -190,7 +190,7 @@ const CHAPTER_DISTRICT_NAMES: Record<ChapterSlug, string[]> = {
     "Lipany",
     "Nedvězí u Říčan",
     "Královice",
-    "Kamýk",
+    "Újezd u Průhonic",
   ],
 };
 

@@ -93,5 +93,5 @@ npm run dev
 
 ## Current caveat
 
-- District list currently includes one intentional known duplicate (`Kamýk`) per product input.
+- District list uses 112 unique cadastral districts and includes `Újezd u Průhonic` (no duplicate `Kamýk` entry).
 - Do not auto-correct product data unless explicitly requested.

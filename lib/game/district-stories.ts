@@ -561,9 +561,9 @@ export const DISTRICT_STORIES: Record<string, DistrictStory> = {
     sourceUrl: 'https://cs.wikipedia.org/wiki/Kr%C3%A1lovice_(Praha)',
   },
   D112: {
-    history: 'Kamýk (německy Kameik) je městská čtvrť a katastrální území v Praze, které bylo vytvořeno v roce 1988 rozhodnutím (účinnost od 1989) Národního výboru hl. města Prahy na úkor dosavadních katastrálních území Modřany, Lhotka a Libuš v rámci městského obvodu Praha 4. Dnes je k. ú. Kamýk součástí území městské části Praha 12. Název je odvozen z názvu kopce[zdroj?] a lesa, u něhož se čtvrť nachází.',
-    funFact: 'Název je odvozen z názvu kopce[zdroj?] a lesa, u něhož se čtvrť nachází.',
-    sourceUrl: 'https://cs.wikipedia.org/wiki/Kam%C3%BDk_(Praha)',
+    history: 'Újezd u Průhonic (německy Aujest bei Pruhonitz) je městská čtvrť a katastrální území na jihovýchodním okraji Prahy, tvořící území městské části Praha-Újezd. Zástavba se historicky dělí na dvě části: původní Újezd a severozápadně položené Kateřinky.',
+    funFact: 'Újezd u Průhonic a Kateřinky jsou od sebe vzdálené zhruba jeden kilometr, přičemž Kateřinky dnes tvoří větší část zástavby.',
+    sourceUrl: 'https://cs.wikipedia.org/wiki/%C3%9Ajezd_u_Pr%C5%AFhonic',
   },
 };
 
