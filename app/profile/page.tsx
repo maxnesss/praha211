@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { ProfileSettingsForms } from "@/components/profile-settings-forms";
+import { ProfileSessionProvider } from "@/components/profile-session-provider";
 import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
@@ -48,15 +49,17 @@ export default async function ProfilePage() {
             Přehled vašeho účtu pro výzvu PRAHA 112.
           </p>
 
-          <ProfileSettingsForms
-            name={user.name}
-            email={user.email}
-            hasPassword={Boolean(user.passwordHash)}
-            initialNickname={user.nickname}
-            initialAvatar={user.avatar}
-            role={user.role}
-            showRole={session.user.role === "ADMIN"}
-          />
+          <ProfileSessionProvider session={session}>
+            <ProfileSettingsForms
+              name={user.name}
+              email={user.email}
+              hasPassword={Boolean(user.passwordHash)}
+              initialNickname={user.nickname}
+              initialAvatar={user.avatar}
+              role={user.role}
+              showRole={session.user.role === "ADMIN"}
+            />
+          </ProfileSessionProvider>
         </div>
       </section>
     </main>
