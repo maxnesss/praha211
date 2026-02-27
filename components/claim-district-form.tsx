@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  isAllowedSelfieMimeType,
+  SELFIE_ALLOWED_MIME_TYPES,
+  SELFIE_MAX_SIZE_BYTES,
+} from "@/lib/selfie-upload-rules";
 
 type ExistingClaim = {
   claimedAt: string;
@@ -15,6 +20,13 @@ type ClaimDistrictFormProps = {
   isAuthenticated: boolean;
   isClaimed: boolean;
   existingClaim?: ExistingClaim;
+};
+
+type SignedUploadPayload = {
+  uploadUrl: string;
+  selfieKey: string;
+  contentType: string;
+  method: "PUT";
 };
 
 export function ClaimDistrictForm({
@@ -47,24 +59,77 @@ export function ClaimDistrictForm({
       return;
     }
 
-    const selfieUrl = URL.createObjectURL(selfieFile);
+    if (!isAllowedSelfieMimeType(selfieFile.type)) {
+      setError("Nepodporovaný formát souboru. Nahrajte prosím JPG, PNG, WEBP nebo HEIC.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (selfieFile.size > SELFIE_MAX_SIZE_BYTES) {
+      setError("Soubor je příliš velký. Maximální velikost je 10 MB.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const signResponse = await fetch("/api/uploads/selfie/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: selfieFile.name,
+        type: selfieFile.type,
+        size: selfieFile.size,
+        districtCode,
+      }),
+    });
+
+    const signPayload = (await signResponse.json().catch(() => null)) as
+      | ({ message?: string } & Partial<SignedUploadPayload>)
+      | null;
+
+    if (
+      !signResponse.ok
+      || !signPayload?.uploadUrl
+      || !signPayload.selfieKey
+      || !signPayload.contentType
+    ) {
+      setError(signPayload?.message || "Nepodařilo se připravit upload selfie.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const uploadResponse = await fetch(signPayload.uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": signPayload.contentType,
+      },
+      body: selfieFile,
+    });
+
+    if (!uploadResponse.ok) {
+      setError("Nahrání selfie selhalo. Zkuste to prosím znovu.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const response = await fetch(`/api/districts/${districtCode}/claim`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        selfieUrl,
+        selfieUrl: signPayload.selfieKey,
         attestVisited,
         attestSignVisible,
       }),
     });
-    URL.revokeObjectURL(selfieUrl);
 
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as
         | { message?: string }
         | null;
 
-      setError(payload?.message || "Nepodařilo se odeslat potvrzení městské části.");
+      setError(
+        payload?.message
+          || "Nepodařilo se odeslat potvrzení městské části po nahrání selfie.",
+      );
       setIsSubmitting(false);
       return;
     }
@@ -103,7 +168,16 @@ export function ClaimDistrictForm({
         <p className="mt-2 text-sm text-orange-100/85">
           Potvrzeno dne {new Date(existingClaim.claimedAt).toLocaleString("cs-CZ")}.
         </p>
-        {existingClaim.selfieUrl.startsWith("http") ? (
+        {existingClaim.selfieUrl.startsWith("selfies/") ? (
+          <a
+            href={`/api/uploads/selfie/view?key=${encodeURIComponent(existingClaim.selfieUrl)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
+          >
+            Otevřít nahranou selfie
+          </a>
+        ) : existingClaim.selfieUrl.startsWith("http") ? (
           <a
             href={existingClaim.selfieUrl}
             target="_blank"
@@ -161,7 +235,7 @@ export function ClaimDistrictForm({
                   id="selfieFile"
                   name="selfieFile"
                   type="file"
-                  accept="image/*"
+                  accept={SELFIE_ALLOWED_MIME_TYPES.join(",")}
                   required
                   className="w-full rounded-md border border-cyan-300/30 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 file:mr-3 file:rounded-md file:border-0 file:bg-cyan-500/15 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-cyan-100 hover:file:bg-cyan-500/25"
                 />

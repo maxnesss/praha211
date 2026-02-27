@@ -1,11 +1,24 @@
 import { z } from "zod";
+import { isSelfieObjectKey } from "@/lib/selfie-upload-rules";
+
+function isHttpUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export const districtClaimSchema = z.object({
   selfieUrl: z
     .string()
     .trim()
-    .url("URL selfie musí být platná adresa.")
-    .max(500, "URL selfie je příliš dlouhá."),
+    .max(500, "Odkaz na selfie je příliš dlouhý.")
+    .refine(
+      (value) => isHttpUrl(value) || isSelfieObjectKey(value),
+      "Selfie musí být platná URL nebo interní klíč úložiště.",
+    ),
   attestVisited: z
     .boolean()
     .refine((value) => value, "Musíte potvrdit fyzickou návštěvu."),

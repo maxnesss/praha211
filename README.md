@@ -67,6 +67,7 @@ Aplikace běží na `http://localhost:3000`.
 - `npm run prisma:studio` - Prisma Studio
 - `npm run user:add -- --email ... --password ...` - přidání uživatele přes CLI
 - `npm run users:seed:random -- [parametry]` - seed náhodných uživatelů
+- `npm run r2:smoke` - ověření Cloudflare R2 (1 upload + 1 download + verifikace + delete)
 
 Příklady seedování:
 
@@ -113,6 +114,8 @@ API:
 - `/api/teams/[slug]/requests/[requestId]/approve`
 - `/api/teams/[slug]/requests/[requestId]/reject`
 - `/api/teams/[slug]/members/[memberId]/remove`
+- `/api/uploads/selfie/sign` (podepsaný upload URL)
+- `/api/uploads/selfie/view` (podepsaný download URL)
 - `/api/contact`
 - `/api/health/db`
 
@@ -134,6 +137,10 @@ Poznámky:
 - Vybrané write endpointy mají rate limiting (registrace, kontakt, claim, týmové akce, změna hesla).
 - Claim endpoint ošetřuje závodní stav (duplicate claim) a vrací konzistentní `409`.
 - Health endpoint (`/api/health/db`) je určen primárně pro monitoring konektivity DB.
+- Selfie se ukládají privátně do Cloudflare R2:
+  - klient si vyžádá podepsaný upload URL (`/api/uploads/selfie/sign`)
+  - do DB se ukládá klíč objektu (`selfies/...`), ne veřejná URL
+  - zobrazení probíhá přes podepsaný download URL (`/api/uploads/selfie/view`)
 
 ## Auth a role
 
@@ -177,3 +184,29 @@ Assety patří do `public/coats/`:
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
 4. Restartujte dev server.
+
+## Cloudflare R2 setup (privátní selfie)
+
+1. V Cloudflare R2 vytvořte bucket (např. `praha112`).
+2. Vytvořte API token s oprávněním číst/zapisovat do bucketu.
+3. Doplňte do `.env`:
+   - `R2_ACCOUNT_ID`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_BUCKET_NAME`
+   - volitelně `R2_ENDPOINT` (jinak se dopočítá z `R2_ACCOUNT_ID`)
+4. Ověřte připojení:
+
+```bash
+npm run r2:smoke
+```
+
+Volitelné přepínače:
+
+```bash
+# ponechá testovací objekt v bucketu
+npm run r2:smoke -- --keep
+
+# explicitní bucket (přepíše R2_BUCKET_NAME z .env)
+npm run r2:smoke -- --bucket praha112
+```
