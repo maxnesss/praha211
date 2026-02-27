@@ -12,13 +12,29 @@ type NavStatTileProps = {
   label: string;
   value: string | number;
   href?: string;
+  prominent?: boolean;
+  className?: string;
 };
 
-function NavStatTile({ label, value, href }: NavStatTileProps) {
+function NavStatTile({ label, value, href, prominent = false, className }: NavStatTileProps) {
+  const containerClass = prominent
+    ? "rounded-lg border border-orange-300/60 bg-gradient-to-b from-orange-400/28 to-orange-500/12 px-3 py-2 shadow-[0_10px_22px_rgba(251,146,60,0.18)] transition-colors hover:from-orange-400/36 hover:to-orange-500/20"
+    : "rounded-md border border-cyan-300/25 bg-cyan-500/5 px-2 py-1.5 transition-colors hover:border-cyan-200/50 hover:bg-cyan-500/10";
+
   const content = (
     <>
-      <p className="text-[9px] uppercase tracking-[0.12em] text-cyan-200/65">{label}</p>
-      <p className="text-xs font-semibold text-cyan-50">{value}</p>
+      <p
+        className={
+          prominent
+            ? "text-[10px] uppercase tracking-[0.16em] text-orange-100/85"
+            : "text-[9px] uppercase tracking-[0.12em] text-cyan-200/65"
+        }
+      >
+        {label}
+      </p>
+      <p className={prominent ? "text-sm font-bold text-orange-50" : "text-xs font-semibold text-cyan-50"}>
+        {value}
+      </p>
     </>
   );
 
@@ -26,7 +42,7 @@ function NavStatTile({ label, value, href }: NavStatTileProps) {
     return (
       <Link
         href={href}
-        className="rounded-md border border-cyan-300/25 bg-cyan-500/5 px-2 py-1.5 transition-colors hover:border-cyan-200/50 hover:bg-cyan-500/10"
+        className={`${containerClass} ${className ?? ""}`}
       >
         {content}
       </Link>
@@ -34,7 +50,7 @@ function NavStatTile({ label, value, href }: NavStatTileProps) {
   }
 
   return (
-    <article className="rounded-md border border-cyan-300/25 bg-cyan-500/5 px-2 py-1.5">
+    <article className={`${containerClass} ${className ?? ""}`}>
       {content}
     </article>
   );
@@ -109,12 +125,17 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
 
         {session?.user && navStats ? (
           <div className="mt-2 border-t border-cyan-300/20 pt-2">
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-6">
-              <NavStatTile label="Průběh" value={navStats.completion} href="/overview" />
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
               <NavStatTile label="Body" value={navStats.points} href="/body" />
               <NavStatTile label="Odznaky" value={navStats.badgesCount} href="/badges" />
+              <NavStatTile
+                label="Radnice"
+                value={navStats.completion}
+                href="/overview"
+                prominent
+                className="col-span-2 sm:col-span-1"
+              />
               <NavStatTile label="Pořadí" value={navStats.ranking} href="/leaderboard" />
-              <NavStatTile label="Denní série" value={navStats.dayStreak} />
               <NavStatTile
                 label="Tým"
                 value={navStats.teamName}
