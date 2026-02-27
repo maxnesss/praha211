@@ -150,24 +150,12 @@ export default async function OverviewPage() {
 
       <section className={metro.shellContent}>
         <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[var(--metro-panel)]/80 p-6 shadow-[0_24px_50px_rgba(0,0,0,0.45)] sm:p-8`}>
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Praha 112</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-cyan-100 sm:text-5xl">
-                Metro dispečink
-              </h1>
-            </div>
-            <p className="rounded-xl border border-orange-300/55 bg-orange-400/10 px-3 py-2 text-xs uppercase tracking-[0.16em] text-orange-100">
-              Online přenos postupu
-            </p>
-          </div>
-
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <OverviewStatCard
               label="Dokončeno"
               value={(
                 <>
-                  {String(overview.totalCompleted).padStart(3, "0")}
+                  {overview.totalCompleted}
                   <span className="text-base text-cyan-100/70"> / {overview.totalDistricts}</span>
                 </>
               )}

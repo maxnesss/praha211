@@ -60,7 +60,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
           >
             <span className="relative block h-8 w-8 overflow-hidden rounded-full">
               <Image
-                src={`/user_icons/${headerAvatar}.png`}
+                src={`/user_icons/${headerAvatar}.webp`}
                 alt="Avatar uživatele"
                 fill
                 sizes="32px"

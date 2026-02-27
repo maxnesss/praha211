@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { DEFAULT_USER_AVATAR, USER_AVATAR_OPTIONS } from "@/lib/profile-avatars";
@@ -33,6 +34,7 @@ export function ProfileSettingsForms({
   showRole,
 }: ProfileSettingsFormsProps) {
   const router = useRouter();
+  const { update } = useSession();
   const [nicknameDraft, setNicknameDraft] = useState(initialNickname ?? "");
   const [nicknameValue, setNicknameValue] = useState(initialNickname);
   const [nicknameError, setNicknameError] = useState<string | null>(null);
@@ -153,9 +155,11 @@ export function ProfileSettingsForms({
       return;
     }
 
-    setAvatarValue(parsed.data.avatar);
+    const nextAvatar = parsed.data.avatar;
+    setAvatarValue(nextAvatar);
     setIsAvatarSubmitting(false);
     setIsAvatarModalOpen(false);
+    await update({ avatar: nextAvatar }).catch(() => null);
     router.refresh();
   }
 
@@ -179,7 +183,7 @@ export function ProfileSettingsForms({
                 aria-label="Změnit avatar"
               >
                 <Image
-                  src={`/user_icons/${avatarValue}.png`}
+                  src={`/user_icons/${avatarValue}.webp`}
                   alt="Aktuální avatar"
                   fill
                   sizes="56px"
@@ -307,7 +311,7 @@ export function ProfileSettingsForms({
                         >
                           <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-full border border-cyan-300/35 bg-[#061119]">
                             <Image
-                              src={`/user_icons/${option.value}.png`}
+                              src={`/user_icons/${option.value}.webp`}
                               alt={option.label}
                               fill
                               sizes="64px"

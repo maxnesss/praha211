@@ -2,9 +2,11 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
-import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
+import { DEFAULT_USER_AVATAR, USER_AVATAR_VALUES } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { signInSchema } from "@/lib/validation/auth";
+
+const USER_AVATAR_VALUE_SET = new Set<string>(USER_AVATAR_VALUES);
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -103,12 +105,20 @@ export const authOptions: NextAuthOptions = {
 
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
       if (account?.provider === "credentials" && user) {
         token.id = user.id;
         token.role = user.role;
         token.avatar =
           typeof user.avatar === "string" ? user.avatar : DEFAULT_USER_AVATAR;
+      }
+
+      if (
+        trigger === "update" &&
+        typeof session?.avatar === "string" &&
+        USER_AVATAR_VALUE_SET.has(session.avatar)
+      ) {
+        token.avatar = session.avatar;
       }
 
       const shouldHydrateFromDb =
