@@ -70,13 +70,10 @@ function OverviewChapterCard({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/70">
-            Linka {String(index + 1).padStart(2, "0")}
-          </p>
-          <h2 className="mt-1 text-xl font-semibold text-cyan-100">
+          <h2 className="text-xl font-semibold text-cyan-100">
             {chapter.name}
           </h2>
-          <p className="mt-1 text-xs uppercase tracking-[0.14em] text-cyan-200/65">
+          <p className="mt-1.5 text-xs uppercase tracking-[0.14em] text-cyan-200/65">
             {getProgressTone(chapter.progressPercent)}
           </p>
         </div>
