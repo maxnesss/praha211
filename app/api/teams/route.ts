@@ -3,7 +3,10 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import {
+  isSerializableConflictError,
+  runSerializableTransactionWithRetry,
+} from "@/lib/db/serializable-transaction";
 import { toTeamSlug } from "@/lib/team-utils";
 import { createTeamSchema, getTeamValidationMessage } from "@/lib/validation/team";
 
@@ -54,43 +57,38 @@ export async function POST(request: Request) {
   }
 
   try {
-    const team = await prisma.$transaction(
-      async (tx) => {
-        const user = await tx.user.findUnique({
-          where: { id: userId },
-          select: { id: true, teamId: true },
-        });
+    const team = await runSerializableTransactionWithRetry(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true, teamId: true },
+      });
 
-        if (!user) {
-          throw new Error("USER_NOT_FOUND");
-        }
+      if (!user) {
+        throw new Error("USER_NOT_FOUND");
+      }
 
-        if (user.teamId) {
-          throw new Error("ALREADY_IN_TEAM");
-        }
+      if (user.teamId) {
+        throw new Error("ALREADY_IN_TEAM");
+      }
 
-        return tx.team.create({
-          data: {
-            name: parsed.data.name,
-            slug,
-            leader: {
-              connect: { id: user.id },
-            },
-            users: {
-              connect: { id: user.id },
-            },
+      return tx.team.create({
+        data: {
+          name: parsed.data.name,
+          slug,
+          leader: {
+            connect: { id: user.id },
           },
-          select: {
-            id: true,
-            name: true,
-            slug: true,
+          users: {
+            connect: { id: user.id },
           },
-        });
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
-    );
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      });
+    });
 
     return NextResponse.json(
       {
@@ -120,6 +118,13 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { message: "Tým s tímto názvem už existuje. Zvolte jiný název." },
+        { status: 409 },
+      );
+    }
+
+    if (isSerializableConflictError(error)) {
+      return NextResponse.json(
+        { message: "Probíhá souběžná změna týmů. Zkuste to prosím znovu." },
         { status: 409 },
       );
     }

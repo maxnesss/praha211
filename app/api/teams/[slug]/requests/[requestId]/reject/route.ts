@@ -1,8 +1,10 @@
-import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import {
+  isSerializableConflictError,
+  runSerializableTransactionWithRetry,
+} from "@/lib/db/serializable-transaction";
 
 type RejectJoinRequestRouteContext = {
   params: Promise<{ slug: string; requestId: string }>;
@@ -22,48 +24,43 @@ export async function POST(
   const { slug, requestId } = await context.params;
 
   try {
-    await prisma.$transaction(
-      async (tx) => {
-        const [team, request] = await Promise.all([
-          tx.team.findUnique({
-            where: { slug },
-            select: { id: true, leaderUserId: true },
-          }),
-          tx.teamJoinRequest.findUnique({
-            where: { id: requestId },
-            select: { id: true, teamId: true, status: true },
-          }),
-        ]);
+    await runSerializableTransactionWithRetry(async (tx) => {
+      const [team, request] = await Promise.all([
+        tx.team.findUnique({
+          where: { slug },
+          select: { id: true, leaderUserId: true },
+        }),
+        tx.teamJoinRequest.findUnique({
+          where: { id: requestId },
+          select: { id: true, teamId: true, status: true },
+        }),
+      ]);
 
-        if (!team) {
-          throw new Error("TEAM_NOT_FOUND");
-        }
+      if (!team) {
+        throw new Error("TEAM_NOT_FOUND");
+      }
 
-        if (team.leaderUserId !== userId) {
-          throw new Error("FORBIDDEN");
-        }
+      if (team.leaderUserId !== userId) {
+        throw new Error("FORBIDDEN");
+      }
 
-        if (!request || request.teamId !== team.id) {
-          throw new Error("REQUEST_NOT_FOUND");
-        }
+      if (!request || request.teamId !== team.id) {
+        throw new Error("REQUEST_NOT_FOUND");
+      }
 
-        if (request.status !== "PENDING") {
-          throw new Error("REQUEST_NOT_PENDING");
-        }
+      if (request.status !== "PENDING") {
+        throw new Error("REQUEST_NOT_PENDING");
+      }
 
-        await tx.teamJoinRequest.update({
-          where: { id: request.id },
-          data: {
-            status: "REJECTED",
-            respondedAt: new Date(),
-          },
-          select: { id: true },
-        });
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
-    );
+      await tx.teamJoinRequest.update({
+        where: { id: request.id },
+        data: {
+          status: "REJECTED",
+          respondedAt: new Date(),
+        },
+        select: { id: true },
+      });
+    });
 
     return NextResponse.json({
       message: "Žádost byla zamítnuta.",
@@ -87,6 +84,13 @@ export async function POST(
     if (error instanceof Error && error.message === "REQUEST_NOT_PENDING") {
       return NextResponse.json(
         { message: "Žádost už byla zpracována." },
+        { status: 409 },
+      );
+    }
+
+    if (isSerializableConflictError(error)) {
+      return NextResponse.json(
+        { message: "Probíhá souběžná změna týmů. Zkuste to prosím znovu." },
         { status: 409 },
       );
     }
