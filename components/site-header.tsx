@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Session } from "next-auth";
+import { GameInfoFab } from "@/components/game-info-fab";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { getUserNavStats, type UserNavStats } from "@/lib/game/queries";
 
@@ -122,6 +123,12 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
             )}
           </div>
         </div>
+
+        {session?.user ? (
+          <div className="mt-2 flex justify-end">
+            <GameInfoFab />
+          </div>
+        ) : null}
 
         {session?.user && navStats ? (
           <div className="mt-2 border-t border-cyan-300/20 pt-2">
