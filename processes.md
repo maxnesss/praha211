@@ -178,10 +178,180 @@ Tento proces je dvoukrokovy: nejdriv upload selfie do R2, potom zapis claimu do 
 - Rate-limit store je in-memory (global map), tedy proces-local.
 - Chranene route se kontroluji per-page/per-endpoint pomoci `getServerSession`.
 
-## 8. Rychly seznam procesu (mapa)
+## 8. Procesy tymu (create, apply, approve/reject, leave, remove member)
+
+Zakladni pravidla podle implementace:
+- 1 hrac muze byt jen v 1 tymu (`User.teamId`).
+- Tym ma max 5 clenu (`TEAM_MAX_MEMBERS = 5` + DB trigger guard).
+- Velitel tymu je hrac, ktery tym vytvoril (`Team.leaderUserId`).
+
+### 8.1 Vytvoreni tymu (`POST /api/teams`)
+
+#### Spoustec
+- Uzivatel bez tymu potvrdi vytvoreni tymu ve formulari/modalu.
+
+#### Backend kroky
+1. Kontrola session (`401` pokud neprihlasen).
+2. Rate-limit `teams-create`: max 5 pokusu / 1 hodina (uzivatel).
+3. Parsovani JSON + validace `createTeamSchema`:
+   - `name` min 2, max 40
+   - slugovatelny na delku >= 2
+4. Vypocet `slug = toTeamSlug(name)`.
+5. Serializable transakce s retry:
+   - nacte uzivatele
+   - overi, ze uzivatel neni v tymu
+   - vytvori `Team` + nastavi uzivatele jako leadera a clena
+6. Odpoved `201` s novym tymem.
+
+#### Datove efekty
+- Nova radka v `Team`.
+- Autor je pripojen jako clen (`User.teamId = team.id`) a velitel (`leaderUserId`).
+
+#### Chybove vetve
+- `400`: neplatny nazev/slug.
+- `401`: neprihlaseny uzivatel.
+- `404`: uzivatel nenalezen.
+- `409`: uz je v tymu / kolize nazvu-slugu / soubezna zmena.
+- `429`: rate-limit.
+- `500`: interni chyba.
+
+### 8.2 Zadost o vstup do tymu (`POST /api/teams/[slug]/apply`)
+
+#### Spoustec
+- Uzivatel mimo tym otevre detail tymu a klikne na zadost o vstup.
+
+#### Backend kroky
+1. Kontrola session (`401` pokud neprihlasen).
+2. Rate-limit `teams-apply`: max 20 zadosti / 10 minut (uzivatel).
+3. Serializable transakce s retry:
+   - nacte cilovy tym a uzivatele
+   - overi, ze uzivatel neni v jinem tymu a neni velitel tohoto tymu
+   - overi, zda uz neexistuje `PENDING` request
+   - `upsert` do `TeamJoinRequest` se stavem `PENDING`
+4. Odpoved `200` s potvrzenim.
+
+#### Datove efekty
+- Vznik nebo reset zadosti v `TeamJoinRequest` na `PENDING`.
+
+#### Chybove vetve
+- `401`: neprihlaseny uzivatel.
+- `404`: tym/uzivatel nenalezen.
+- `409`: uz je v tymu, uz je velitel, zadost uz ceka, nebo soubezna zmena.
+- `429`: rate-limit.
+- `500`: interni chyba.
+
+### 8.3 Schvaleni zadosti velitelem (`POST /api/teams/[slug]/requests/[requestId]/approve`)
+
+#### Spoustec
+- Velitel tymu otevre detail tymu a schvali konkretni zadost.
+
+#### Backend kroky
+1. Kontrola session (`401` pokud neprihlasen).
+2. Serializable transakce s retry:
+   - nacte tym podle slug + zadost podle `requestId`
+   - overi, ze caller je velitel tymu
+   - overi, ze zadost patri do tymu a je `PENDING`
+   - overi, ze zadatel stale neni v jinem tymu
+   - spocita aktualni pocet clenu tymu a overi limit 5
+   - prida zadatele do tymu (`updateMany ... where teamId is null`)
+   - nastavi schvalovanou zadost na `ACCEPTED`
+   - vsechny ostatni `PENDING` zadosti stejneho uzivatele nastavi na `REJECTED`
+3. Odpoved `200`.
+
+#### Datove efekty
+- `User.teamId` zadatele je nastaven na cilovy tym.
+- Vybrana zadost -> `ACCEPTED`, ostatni cekajici -> `REJECTED`.
+
+#### Chybove vetve
+- `401`: neprihlaseny uzivatel.
+- `403`: akci neprovadi velitel tymu.
+- `404`: tym / zadost / zadatel nenalezen.
+- `409`: zadost uz zpracovana, zadatel uz v jinem tymu, tym plny, nebo soubezna zmena.
+- `500`: interni chyba.
+
+### 8.4 Zamitnuti zadosti velitelem (`POST /api/teams/[slug]/requests/[requestId]/reject`)
+
+#### Spoustec
+- Velitel tymu zamitne konkretni zadost.
+
+#### Backend kroky
+1. Kontrola session (`401`).
+2. Serializable transakce s retry:
+   - overi tym, velitele, existenci zadosti a stav `PENDING`
+   - zmeni stav zadosti na `REJECTED` + nastavi `respondedAt`
+3. Odpoved `200`.
+
+#### Datove efekty
+- `TeamJoinRequest.status` prejde z `PENDING` na `REJECTED`.
+
+#### Chybove vetve
+- `401`: neprihlaseny uzivatel.
+- `403`: akci neprovadi velitel tymu.
+- `404`: tym nebo zadost nenalezena.
+- `409`: zadost uz neni `PENDING` nebo soubezna zmena.
+- `500`: interni chyba.
+
+### 8.5 Odejiti z tymu (`POST /api/teams/[slug]/leave`)
+
+#### Spoustec
+- Clen tymu klikne na opusteni tymu.
+
+#### Backend kroky
+1. Kontrola session (`401`).
+2. Serializable transakce s retry:
+   - overi tym + uzivatele
+   - overi, ze je clenem daneho tymu
+   - velitel nesmi odejit sam (`LEADER_CANNOT_LEAVE`)
+   - nastavi `User.teamId = null`
+3. Odpoved `200`.
+
+#### Datove efekty
+- Uzivatel je odebran z tymu (`teamId = null`).
+
+#### Chybove vetve
+- `401`: neprihlaseny uzivatel.
+- `404`: tym nebo uzivatel nenalezen.
+- `409`: neni clenem tymu, velitel se pokousi odejit, nebo soubezna zmena.
+- `500`: interni chyba.
+
+### 8.6 Odebrani clena velitelem (`POST /api/teams/[slug]/members/[memberId]/remove`)
+
+#### Spoustec
+- Velitel tymu odebere konkretniho clena.
+
+#### Backend kroky
+1. Kontrola session (`401`).
+2. Serializable transakce s retry:
+   - overi tym a opravneni velitele
+   - velitel nemuze odebrat sam sebe
+   - overi, ze `memberId` je clenem tohoto tymu
+   - nastavi clenuv `teamId = null`
+3. Odpoved `200`.
+
+#### Datove efekty
+- Odebirany hrac je vyjmut z tymu.
+
+#### Chybove vetve
+- `401`: neprihlaseny uzivatel.
+- `403`: akci neprovadi velitel tymu.
+- `404`: tym nebo clen nenalezen v tymu.
+- `409`: pokus odebrat velitele nebo soubezna zmena.
+- `500`: interni chyba.
+
+### 8.7 Doplnek: primy join endpoint je vypnuty
+- `POST /api/teams/[slug]/join` vraci `410`.
+- Aplikace tim vynucuje workflow se zadosti (`/apply`) a schvalenim velitelem.
+
+### 8.8 Doplnek: ochrana proti soubehu a preplneni tymu
+- Team mutation endpointy bezne bezi v `Serializable` transakci s retry (`P2034`).
+- DB trigger `enforce_team_member_limit` zajistuje max 5 clenu i pri race conditions.
+
+## 9. Rychly seznam procesu (mapa)
 
 1. Landing (`/`) -> pokud login existuje, redirect `/overview`.
 2. Registrace (`/sign-up`) -> `POST /api/auth/register` -> auto login -> `/overview`.
 3. Prihlaseni (`/sign-in`) -> NextAuth credentials/google -> `/overview` nebo callback URL.
 4. Claim district (`/district/[code]`) -> sign upload -> upload do R2 -> claim API -> prepocet score.
 5. Zobrazeni selfie -> private signed view link.
+6. Tym create (`/api/teams`) -> zadost (`/apply`) -> schvaleni/zamitnuti velitelem.
+7. Sprava clenu tymu -> leave / remove member dle role.
