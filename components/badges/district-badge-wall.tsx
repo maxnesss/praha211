@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { coatImageLoader } from "@/lib/game/coat-image-loader";
 
 const INITIAL_VISIBLE_COUNT = 48;
 const VISIBLE_BATCH_SIZE = 32;
@@ -44,6 +45,7 @@ function DistrictCoatTile({ badge }: { badge: DistrictBadgeWallItem }) {
           src={`/coats/${badge.coatAssetKey}.png`}
           alt={`${badge.name} znak`}
           fill
+          loader={coatImageLoader}
           sizes="(max-width: 640px) 22vw, (max-width: 1024px) 14vw, 56px"
           quality={55}
           className={`object-cover ${badge.unlocked ? "" : "grayscale"}`}

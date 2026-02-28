@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { coatImageLoader } from "@/lib/game/coat-image-loader";
 
 type CoatOfArmsProps = {
   assetKey: string;
-  code: string;
+  code?: string;
   name: string;
   sizes?: string;
   className?: string;
@@ -71,6 +72,7 @@ export function CoatOfArms({
           src={`/coats/${resolvedAssetKey}.png`}
           alt={`${name} znak městské části`}
           fill
+          loader={coatImageLoader}
           sizes={sizes}
           loading={isEager ? "eager" : "lazy"}
           quality={70}
@@ -85,9 +87,11 @@ export function CoatOfArms({
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(140deg,#153346_0%,#0d2230_70%,#071824_100%)] text-center">
-          <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/80">
-            {code}
-          </span>
+          {code ? (
+            <span className="px-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/80">
+              {code}
+            </span>
+          ) : null}
         </div>
       )}
     </div>

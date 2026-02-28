@@ -11,12 +11,21 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
   return (
     <Link
       href={`/district/${district.code}`}
-      className="group block rounded-none p-0"
+      className="group block rounded-xl border border-cyan-300/20 bg-[#08161f]/35 p-2 transition-colors hover:border-cyan-200/35"
     >
-      <div className="flex items-start justify-between gap-2 px-1">
-        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/65">
-          {district.code}
-        </span>
+      <CoatOfArms
+        assetKey={district.coatAssetKey}
+        name={district.name}
+        className={`aspect-square w-full ${completed ? "" : "grayscale"}`}
+      />
+      <p
+        className={`mt-3 px-1 text-center text-sm font-medium leading-snug ${
+          completed ? "text-cyan-50" : "text-cyan-100/82"
+        }`}
+      >
+        {district.name}
+      </p>
+      <div className="mt-2 flex justify-center px-1 pb-0.5">
         <span
           className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
             completed
@@ -27,19 +36,6 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
           {completed ? "Odemčeno" : "Zamčeno"}
         </span>
       </div>
-      <CoatOfArms
-        assetKey={district.coatAssetKey}
-        code={district.code}
-        name={district.name}
-        className={`mt-3 aspect-square w-full ${completed ? "" : "grayscale"}`}
-      />
-      <p
-        className={`mt-3 px-1 text-sm font-medium leading-snug ${
-          completed ? "text-cyan-50" : "text-cyan-100/82"
-        }`}
-      >
-        {district.name}
-      </p>
     </Link>
   );
 }
