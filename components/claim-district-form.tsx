@@ -29,6 +29,46 @@ type SignedUploadPayload = {
   method: "PUT";
 };
 
+const UNLOCK_EFFECT_SESSION_KEY_PREFIX = "praha112_unlock_effect_";
+const UNLOCK_EFFECT_MAX_AGE_MS = 20_000;
+
+const UNLOCK_EFFECT_SPARKS = [
+  { left: "8%", top: "86%", delay: "0ms" },
+  { left: "16%", top: "80%", delay: "70ms" },
+  { left: "26%", top: "88%", delay: "120ms" },
+  { left: "38%", top: "82%", delay: "60ms" },
+  { left: "49%", top: "90%", delay: "180ms" },
+  { left: "59%", top: "84%", delay: "90ms" },
+  { left: "68%", top: "88%", delay: "150ms" },
+  { left: "78%", top: "81%", delay: "40ms" },
+  { left: "88%", top: "86%", delay: "140ms" },
+] as const;
+
+function getUnlockEffectStorageKey(districtCode: string) {
+  return `${UNLOCK_EFFECT_SESSION_KEY_PREFIX}${districtCode}`;
+}
+
+function consumePendingUnlockEffect(districtCode: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const storageKey = getUnlockEffectStorageKey(districtCode);
+  const stored = window.sessionStorage.getItem(storageKey);
+  if (!stored) {
+    return false;
+  }
+
+  window.sessionStorage.removeItem(storageKey);
+  const timestamp = Number.parseInt(stored, 10);
+
+  if (Number.isNaN(timestamp) || Date.now() - timestamp > UNLOCK_EFFECT_MAX_AGE_MS) {
+    return false;
+  }
+
+  return true;
+}
+
 export function ClaimDistrictForm({
   districtCode,
   districtName,
@@ -41,6 +81,9 @@ export function ClaimDistrictForm({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showUnlockEffect, setShowUnlockEffect] = useState(() =>
+    consumePendingUnlockEffect(districtCode),
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -141,6 +184,13 @@ export function ClaimDistrictForm({
     setSuccess(payload?.message || "Potvrzení přijato.");
     setIsModalOpen(false);
     setIsSubmitting(false);
+    setShowUnlockEffect(true);
+
+    if (typeof window !== "undefined") {
+      const storageKey = getUnlockEffectStorageKey(districtCode);
+      window.sessionStorage.setItem(storageKey, String(Date.now()));
+    }
+
     router.refresh();
   }
 
@@ -163,9 +213,31 @@ export function ClaimDistrictForm({
 
   if (isClaimed && existingClaim) {
     return (
-      <div className="mt-1 rounded-xl border border-orange-300/40 bg-orange-400/12 p-4 sm:p-5">
-        <h2 className="text-lg font-semibold text-orange-100">Městská část dokončena</h2>
-        <p className="mt-1.5 text-sm text-orange-100/85">
+      <div className="relative mt-1 overflow-hidden rounded-xl border border-orange-300/40 bg-orange-400/12 p-4 sm:p-5">
+        {showUnlockEffect ? (
+          <div className="pointer-events-none absolute inset-0">
+            <div
+              className="absolute inset-0 animate-[unlock-sheen_1200ms_ease-out_forwards] bg-[radial-gradient(circle_at_16%_12%,rgba(251,191,36,0.24),transparent_46%),radial-gradient(circle_at_78%_20%,rgba(125,211,252,0.2),transparent_44%),radial-gradient(circle_at_52%_92%,rgba(251,146,60,0.18),transparent_58%)]"
+              onAnimationEnd={() => {
+                setShowUnlockEffect(false);
+              }}
+            />
+            {UNLOCK_EFFECT_SPARKS.map((spark) => (
+              <span
+                key={`${spark.left}-${spark.delay}`}
+                className="absolute h-1.5 w-1.5 rounded-full bg-orange-100/95 shadow-[0_0_16px_rgba(251,191,36,0.75)] animate-[unlock-spark_1050ms_ease-out_forwards]"
+                style={{
+                  left: spark.left,
+                  top: spark.top,
+                  animationDelay: spark.delay,
+                }}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        <h2 className="relative text-lg font-semibold text-orange-100">Městská část dokončena</h2>
+        <p className="relative mt-1.5 text-sm text-orange-100/85">
           Potvrzeno dne {new Date(existingClaim.claimedAt).toLocaleString("cs-CZ")}.
         </p>
         {existingClaim.selfieUrl.startsWith("selfies/") ? (
@@ -173,7 +245,7 @@ export function ClaimDistrictForm({
             href={`/api/uploads/selfie/view?key=${encodeURIComponent(existingClaim.selfieUrl)}`}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
+            className="relative mt-3 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
           >
             Otevřít nahranou selfie
           </a>
@@ -182,12 +254,12 @@ export function ClaimDistrictForm({
             href={existingClaim.selfieUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-3 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
+            className="relative mt-3 inline-flex text-sm font-medium text-orange-100 underline underline-offset-4 hover:text-orange-50"
           >
             Otevřít nahranou selfie
           </a>
         ) : (
-          <p className="mt-3 text-sm text-orange-100/85">Selfie soubor byl nahrán.</p>
+          <p className="relative mt-3 text-sm text-orange-100/85">Selfie soubor byl nahrán.</p>
         )}
       </div>
     );
