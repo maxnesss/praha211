@@ -124,16 +124,24 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
   const leaderboard: LeaderboardEntry[] = [];
   let currentRank = 0;
   let previousPoints: number | null = null;
+  let previousCompleted: number | null = null;
 
   for (let index = 0; index < byPoints.length; index += 1) {
     const entry = byPoints[index];
     const points = entry._sum.awardedPoints ?? 0;
+    const completed = entry._count._all ?? 0;
 
-    if (previousPoints === null || points < previousPoints) {
+    if (
+      previousPoints === null
+      || previousCompleted === null
+      || points < previousPoints
+      || completed < previousCompleted
+    ) {
       currentRank = index + 1;
     }
 
     previousPoints = points;
+    previousCompleted = completed;
     const user = usersById.get(entry.userId);
 
     leaderboard.push({
@@ -142,7 +150,7 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
       name: user?.name ?? null,
       email: user?.email ?? null,
       points,
-      completed: entry._count._all ?? 0,
+      completed,
       rank: currentRank,
     });
   }
