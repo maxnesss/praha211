@@ -27,6 +27,7 @@ model User {
   teamId            String?
   passwordHash      String?
   role              UserRole          @default(USER)
+  isFrozen          Boolean           @default(false)
   team              Team?             @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
   ledTeam           Team?             @relation("TeamLeader")
   teamJoinRequests  TeamJoinRequest[]

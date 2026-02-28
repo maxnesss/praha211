@@ -22,6 +22,18 @@ export async function POST(request: Request, context: ClaimRouteContext) {
     return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
   }
 
+  const userStatus = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isFrozen: true },
+  });
+
+  if (userStatus?.isFrozen) {
+    return NextResponse.json(
+      { message: "Váš účet je zmrazený. Kontaktujte prosím podporu." },
+      { status: 403 },
+    );
+  }
+
   const rateLimited = applyRateLimit({
     request,
     prefix: "district-claim",
