@@ -118,8 +118,47 @@ export default async function TeamPage({ params }: TeamPageContext) {
                 Členové týmu
               </h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] text-sm">
+            <div className="space-y-3 px-4 py-4 sm:hidden">
+              {team.members.length > 0 ? (
+                team.members.map((member) => (
+                  <article
+                    key={member.id}
+                    className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-3 text-cyan-50/90"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`${metro.monoDigit} text-sm font-semibold`}>
+                        {member.completed} / 112
+                      </p>
+                      <p className={`${metro.monoDigit} text-sm`}>{member.points}</p>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Link
+                        href={`/player/${member.id}`}
+                        className="text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
+                      >
+                        {member.displayName}
+                      </Link>
+                      {member.isLeader ? (
+                        <span className="rounded bg-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
+                          Velitel
+                        </span>
+                      ) : null}
+                      {member.isCurrentUser ? (
+                        <span className="rounded bg-orange-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
+                          Vy
+                        </span>
+                      ) : null}
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <p className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-4 text-sm text-cyan-100/65">
+                  Tým zatím nemá žádné členy.
+                </p>
+              )}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
                 <thead className="bg-[#06141d]/70 text-xs uppercase tracking-[0.12em] text-cyan-200/60">
                   <tr>
                     <th className="px-4 py-3 text-left">Hráč</th>

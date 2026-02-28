@@ -98,8 +98,49 @@ export default async function LeaderboardListPage({
           </div>
 
           <div className="mt-8 overflow-hidden rounded-xl border border-cyan-300/25 bg-[#091925]/75">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] text-sm">
+            <div className="space-y-3 px-4 py-4 sm:hidden">
+              {leaderboard.entries.length > 0 ? (
+                leaderboard.entries.map((entry) => {
+                  const isCurrentUser = entry.userId === session.user.id;
+
+                  return (
+                    <article
+                      key={entry.userId}
+                      className={`rounded-lg border px-3 py-3 ${
+                        isCurrentUser
+                          ? "border-orange-300/35 bg-orange-400/10 text-orange-100"
+                          : "border-cyan-300/20 bg-cyan-500/[0.04] text-cyan-50/90"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`${metro.monoDigit} text-sm font-semibold`}>#{entry.rank}</p>
+                        <p className={`${metro.monoDigit} text-sm`}>{entry.completed} / 112</p>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Link
+                          href={`/player/${entry.userId}`}
+                          className="text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
+                        >
+                          {toLeaderboardPlayerLabel(entry)}
+                        </Link>
+                        {isCurrentUser ? (
+                          <span className="rounded bg-orange-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
+                            Vy
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className={`${metro.monoDigit} mt-2 text-lg font-semibold`}>{entry.points}</p>
+                    </article>
+                  );
+                })
+              ) : (
+                <p className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-4 text-sm text-cyan-100/65">
+                  Zatím nejsou v žebříčku žádní hráči.
+                </p>
+              )}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
                 <thead className="bg-[#06141d]/70 text-xs uppercase tracking-[0.12em] text-cyan-200/60">
                   <tr>
                     <th className="px-4 py-3 text-left">#</th>

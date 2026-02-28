@@ -106,8 +106,48 @@ export default async function BodyPage() {
                 Poslední bodované odemčení
               </h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
+            <div className="space-y-3 px-4 py-4 sm:hidden">
+              {claims.length > 0 ? (
+                claims.slice(0, 30).map((claim) => (
+                  <article
+                    key={claim.id}
+                    className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] p-3 text-cyan-50/90"
+                  >
+                    <p className={`${metro.monoDigit} text-xs text-cyan-100/70`}>
+                      {claim.claimedAt.toLocaleString("cs-CZ")}
+                    </p>
+                    <p className="mt-1 text-base font-semibold text-cyan-50">
+                      {claim.districtName}
+                    </p>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="uppercase tracking-[0.1em] text-cyan-200/65">Základ</p>
+                        <p className={`${metro.monoDigit} mt-1 text-sm`}>{claim.basePoints}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-[0.1em] text-cyan-200/65">Násobitel</p>
+                        <p className={`${metro.monoDigit} mt-1 text-sm`}>
+                          {claim.sameDayMultiplier.toFixed(2)}x
+                        </p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-[0.1em] text-cyan-200/65">Série</p>
+                        <p className={`${metro.monoDigit} mt-1 text-sm`}>+{claim.streakBonus}</p>
+                      </div>
+                    </div>
+                    <p className={`${metro.monoDigit} mt-3 text-sm font-semibold text-orange-100`}>
+                      +{claim.awardedPoints}
+                    </p>
+                  </article>
+                ))
+              ) : (
+                <p className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-4 text-sm text-cyan-100/65">
+                  Zatím nemáte žádné bodované odemčení.
+                </p>
+              )}
+            </div>
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full text-sm">
                 <thead className="bg-[#06141d]/70 text-xs uppercase tracking-[0.12em] text-cyan-200/60">
                   <tr>
                     <th className="px-4 py-2 text-left">Datum</th>
