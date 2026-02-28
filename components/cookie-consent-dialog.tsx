@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 
 type ConsentChoice = "all" | "essential";
+type ConsentSnapshot = ConsentChoice | null | "unknown";
 
 const CONSENT_COOKIE_NAME = "praha112_cookie_consent";
 const CONSENT_STORAGE_KEY = "praha112_cookie_consent";
@@ -58,7 +59,7 @@ export function CookieConsentDialog() {
   const consent = useSyncExternalStore(
     () => () => undefined,
     () => readConsentChoice(),
-    () => null,
+    () => "unknown" as ConsentSnapshot,
   );
 
   function handleChoice(choice: ConsentChoice) {
@@ -66,7 +67,7 @@ export function CookieConsentDialog() {
     setDismissed(true);
   }
 
-  if (dismissed || consent) {
+  if (dismissed || consent === "unknown" || consent) {
     return null;
   }
 
