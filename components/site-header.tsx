@@ -126,7 +126,30 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
 
         {session?.user ? (
           <div className="mt-2 flex justify-end">
-            <GameInfoFab />
+            <div className="flex flex-col items-end gap-2">
+              {session.user.role === "ADMIN" ? (
+                <Link
+                  href="/admin"
+                  aria-label="Otevřít administraci"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-orange-300/45 bg-[#1a140d]/88 text-orange-100/80 shadow-[0_8px_16px_rgba(0,0,0,0.28)] transition-colors hover:bg-[#241b12]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3l7 3v5c0 5.1-2.5 8.8-7 10-4.5-1.2-7-4.9-7-10V6l7-3z" />
+                    <path d="M9.5 12.5l1.8 1.8 3.2-3.3" />
+                  </svg>
+                </Link>
+              ) : null}
+              <GameInfoFab />
+            </div>
           </div>
         ) : null}
 
