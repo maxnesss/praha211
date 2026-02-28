@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
+import { SITE_DESCRIPTION } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: "Domů",
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "PRAHA 112",
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+};
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
