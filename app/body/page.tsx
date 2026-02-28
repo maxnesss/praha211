@@ -126,7 +126,7 @@ export default async function BodyPage() {
                           {claim.claimedAt.toLocaleString("cs-CZ")}
                         </td>
                         <td className="px-4 py-2">
-                          {claim.districtName} ({claim.districtCode})
+                          {claim.districtName}
                         </td>
                         <td className={`${metro.monoDigit} px-4 py-2`}>{claim.basePoints}</td>
                         <td className={`${metro.monoDigit} px-4 py-2`}>{claim.sameDayMultiplier.toFixed(2)}x</td>
