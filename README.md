@@ -28,6 +28,9 @@ Aplikace běží na `http://localhost:3000`.
   - základní body za část
   - násobitel za více potvrzení ve stejný den
   - bonus za sérii dní
+  - přesný výpočet: `awardedPoints = round(basePoints * sameDayMultiplier + streakBonus)`
+  - `sameDayMultiplier = min(2, 1 + claimsTodayBefore * 0.15)`
+  - `streakBonus = streakAfterClaim * 5`
 - Pravidla V1 jsou trust-based:
   - hráč potvrzuje fyzickou návštěvu
   - hráč potvrzuje viditelnost oficiální cedule
@@ -47,6 +50,7 @@ Aplikace běží na `http://localhost:3000`.
 - Žebříček:
   - rychlý náhled (top + tvoje pozice)
   - kompletní stránkovaný seznam
+  - řazení: nejdřív body, při shodě počet odemčených částí
 - Veřejný hráčský profil:
   - přezdívka (fallback iniciály)
   - tým
