@@ -95,7 +95,7 @@ export default async function BadgesPage() {
 
       <section className={metro.shellContent}>
         <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
-          <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
                 Odznaky
@@ -107,13 +107,6 @@ export default async function BadgesPage() {
                 Každý odznak je zpočátku duch (šedý). Po odemknutí se rozsvítí do barvy.
               </p>
             </div>
-
-            <Link
-              href="/overview"
-              className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
-            >
-              Zpět na přehled
-            </Link>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
