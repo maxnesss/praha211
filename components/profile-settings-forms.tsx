@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { DEFAULT_USER_AVATAR, USER_AVATAR_OPTIONS } from "@/lib/profile-avatars";
+import { PasswordField } from "@/components/password-field";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
   changePasswordSchema,
@@ -447,10 +448,9 @@ export function ProfileSettingsForms({
                   <label htmlFor="currentPassword" className="text-sm font-medium text-cyan-100">
                     Aktuální heslo
                   </label>
-                  <input
+                  <PasswordField
                     id="currentPassword"
                     name="currentPassword"
-                    type="password"
                     autoComplete="off"
                     required={hasPassword}
                     className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
@@ -462,10 +462,9 @@ export function ProfileSettingsForms({
                 <label htmlFor="newPassword" className="text-sm font-medium text-cyan-100">
                   Nové heslo
                 </label>
-                <input
+                <PasswordField
                   id="newPassword"
                   name="newPassword"
-                  type="password"
                   autoComplete="off"
                   minLength={8}
                   required
@@ -477,10 +476,9 @@ export function ProfileSettingsForms({
                 <label htmlFor="confirmNewPassword" className="text-sm font-medium text-cyan-100">
                   Potvrdit nové heslo
                 </label>
-                <input
+                <PasswordField
                   id="confirmNewPassword"
                   name="confirmNewPassword"
-                  type="password"
                   autoComplete="off"
                   minLength={8}
                   required

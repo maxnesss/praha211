@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import metro from "@/app/metro-theme.module.css";
+import { PasswordField } from "@/components/password-field";
 import { getFirstZodErrorMessage, signInSchema } from "@/lib/validation/auth";
 
 export default function SignInPage() {
@@ -107,10 +108,9 @@ export default function SignInPage() {
               <label htmlFor="password" className="text-sm font-medium text-cyan-100">
                 Heslo
               </label>
-              <input
+              <PasswordField
                 id="password"
                 name="password"
-                type="password"
                 autoComplete="current-password"
                 required
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"

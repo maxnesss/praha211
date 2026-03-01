@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import metro from "@/app/metro-theme.module.css";
+import { PasswordField } from "@/components/password-field";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
 
 export default function SignUpPage() {
@@ -132,10 +133,9 @@ export default function SignUpPage() {
               <label htmlFor="password" className="text-sm font-medium text-cyan-100">
                 Heslo
               </label>
-              <input
+              <PasswordField
                 id="password"
                 name="password"
-                type="password"
                 autoComplete="new-password"
                 minLength={8}
                 required
