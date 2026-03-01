@@ -165,7 +165,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
                 prominent
                 className="col-span-2 sm:col-span-1"
               />
-              <NavStatTile label="Kniha hrdinů" value={navStats.ranking} href="/leaderboard" />
+              <NavStatTile label="Kniha hrdinů" value={navStats.ranking} href="/kniha-hrdinu" />
               <NavStatTile
                 label="Tým"
                 value={navStats.teamName}

@@ -95,8 +95,8 @@ UI:
 - `/district/[code]` - detail městské části
 - `/body` - body
 - `/pokladnice` - odznaky
-- `/leaderboard` - rychlý žebříček
-- `/leaderboard/list` - kompletní žebříček (stránkovaný)
+- `/kniha-hrdinu` - rychlý žebříček
+- `/kniha-hrdinu/list` - kompletní žebříček (stránkovaný)
 - `/teams` - seznam týmů + vytvoření týmu
 - `/team/[slug]` - detail týmu
 - `/player/[userId]` - veřejný profil hráče
