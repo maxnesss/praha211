@@ -119,7 +119,7 @@ export default async function OverviewPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect("/sign-in?callbackUrl=%2Foverview");
+    redirect("/sign-in?callbackUrl=%2Fradnice");
   }
 
   const claims = await getUserGameClaims(session.user.id);

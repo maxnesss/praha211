@@ -19,10 +19,10 @@ export default function NotFound() {
             Odkaz je neplatný nebo stránka už neexistuje.
           </p>
           <Link
-            href="/"
+            href="/radnice"
             className="mt-6 inline-flex rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30"
           >
-            Zpět na přehled
+            Zpět do radnice
           </Link>
         </div>
       </section>

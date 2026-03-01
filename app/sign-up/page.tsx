@@ -15,7 +15,7 @@ export default function SignUpPage() {
   async function handleGoogleSignIn() {
     setError(null);
     setIsSubmitting(true);
-    await signIn("google", { callbackUrl: "/overview" });
+    await signIn("google", { callbackUrl: "/radnice" });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -58,7 +58,7 @@ export default function SignUpPage() {
     const signInResult = await signIn("credentials", {
       email,
       password,
-      callbackUrl: "/overview",
+      callbackUrl: "/radnice",
       redirect: false,
     });
 
@@ -67,7 +67,7 @@ export default function SignUpPage() {
       return;
     }
 
-    router.push(signInResult.url || "/overview");
+    router.push(signInResult.url || "/radnice");
     router.refresh();
   }
 

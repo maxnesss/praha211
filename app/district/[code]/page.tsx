@@ -55,7 +55,7 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
       <section className={metro.shellContent}>
         <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
           <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.18em]">
-            <Link href="/overview" className="text-cyan-200/70 hover:text-cyan-100">
+            <Link href="/radnice" className="text-cyan-200/70 hover:text-cyan-100">
               Přehled
             </Link>
             <span className="text-cyan-200/45">/</span>

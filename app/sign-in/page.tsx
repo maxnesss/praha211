@@ -16,7 +16,7 @@ export default function SignInPage() {
     setError(null);
     setIsSubmitting(true);
     const callbackUrl =
-      new URLSearchParams(window.location.search).get("callbackUrl") || "/overview";
+      new URLSearchParams(window.location.search).get("callbackUrl") || "/radnice";
     await signIn("google", { callbackUrl });
   }
 
@@ -40,7 +40,7 @@ export default function SignInPage() {
 
     const { email, password } = parsed.data;
     const callbackUrl =
-      new URLSearchParams(window.location.search).get("callbackUrl") || "/overview";
+      new URLSearchParams(window.location.search).get("callbackUrl") || "/radnice";
 
     const result = await signIn("credentials", {
       email,

@@ -34,7 +34,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   }
 
   if (session.user.role !== "ADMIN") {
-    redirect("/overview");
+    redirect("/radnice");
   }
 
   const { page } = await searchParams;

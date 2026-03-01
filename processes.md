@@ -14,7 +14,7 @@ Primarne pokryva: registraci, prihlaseni a potvrzeni mestske casti (claim).
 2. Probehne klientska validace (Zod) v prohlizeci.
 3. Frontend posle `POST /api/auth/register` s JSON payloadem.
 4. Po uspesne registraci frontend automaticky vola `signIn("credentials")`.
-5. Pri uspechu dojde k redirectu na `/overview`.
+5. Pri uspechu dojde k redirectu na `/radnice`.
 
 ### Backend kroky (`POST /api/auth/register`)
 1. Rate-limit (`auth-register`): max 6 pokusu / 15 minut (IP).
@@ -46,7 +46,7 @@ Primarne pokryva: registraci, prihlaseni a potvrzeni mestske casti (claim).
 1. `app/sign-in/page.tsx` nacte `email`, `password`.
 2. Klientska validace pres `signInSchema`.
 3. Volani `signIn("credentials", { redirect: false })`.
-4. Pri uspechu redirect na `callbackUrl` nebo `/overview`.
+4. Pri uspechu redirect na `callbackUrl` nebo `/radnice`.
 
 ### Backend kroky (NextAuth Credentials provider)
 1. Validace credentials pres `signInSchema`.
@@ -83,7 +83,7 @@ Primarne pokryva: registraci, prihlaseni a potvrzeni mestske casti (claim).
 Aplikace nepouziva globalni middleware pro auth; ochrana probiha na urovni stranek/API.
 
 ### Chranene server stranky (priklad)
-- `app/overview/page.tsx`, `app/district/[code]/page.tsx`, `app/profile/page.tsx`, `app/teams/page.tsx`.
+- `app/radnice/page.tsx`, `app/district/[code]/page.tsx`, `app/profile/page.tsx`, `app/teams/page.tsx`.
 
 Krok:
 1. `getServerSession(authOptions)`.
@@ -348,9 +348,9 @@ Zakladni pravidla podle implementace:
 
 ## 9. Rychly seznam procesu (mapa)
 
-1. Landing (`/`) -> pokud login existuje, redirect `/overview`.
-2. Registrace (`/sign-up`) -> `POST /api/auth/register` -> auto login -> `/overview`.
-3. Prihlaseni (`/sign-in`) -> NextAuth credentials/google -> `/overview` nebo callback URL.
+1. Landing (`/`) -> pokud login existuje, redirect `/radnice`.
+2. Registrace (`/sign-up`) -> `POST /api/auth/register` -> auto login -> `/radnice`.
+3. Prihlaseni (`/sign-in`) -> NextAuth credentials/google -> `/radnice` nebo callback URL.
 4. Claim district (`/district/[code]`) -> sign upload -> upload do R2 -> claim API -> prepocet score.
 5. Zobrazeni selfie -> private signed view link.
 6. Tym create (`/api/teams`) -> zadost (`/apply`) -> schvaleni/zamitnuti velitelem.

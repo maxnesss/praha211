@@ -62,7 +62,7 @@ npm run dev
 ## UI routes
 
 - Main landing page (public): `/`
-- Overview (requires login): `/overview`
+- Overview (requires login): `/radnice`
 - Chapter: `/chapter/[slug]`
 - District detail/claim: `/district/[code]`
 - Sign in: `/sign-in`

@@ -58,7 +58,7 @@ function NavStatTile({ label, value, href, prominent = false, className }: NavSt
 }
 
 export async function SiteHeader({ session }: SiteHeaderProps) {
-  const homeHref = session?.user ? "/overview" : "/";
+  const homeHref = session?.user ? "/radnice" : "/";
   const headerAvatar = session?.user?.avatar ?? DEFAULT_USER_AVATAR;
   let navStats: UserNavStats | null = null;
 
@@ -161,7 +161,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
               <NavStatTile
                 label="Radnice"
                 value={navStats.completion}
-                href="/overview"
+                href="/radnice"
                 prominent
                 className="col-span-2 sm:col-span-1"
               />

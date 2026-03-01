@@ -90,7 +90,7 @@ npm run users:seed:random -- --count 30 --min-progress 5 --max-progress 70 --pas
 
 UI:
 - `/` - veřejný landing
-- `/overview` - přehled hráče
+- `/radnice` - přehled hráče
 - `/chapter/[slug]` - kapitola
 - `/district/[code]` - detail městské části
 - `/body` - body
