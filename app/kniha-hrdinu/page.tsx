@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { toLeaderboardPlayerLabel } from "@/lib/game/leaderboard-display";
+import { getPodiumMedal } from "@/lib/game/leaderboard-podium";
 import { getPointsLeaderboardPreview } from "@/lib/game/queries";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 
@@ -23,6 +24,7 @@ export default async function LeaderboardPage() {
     preview.showMyEntrySeparately && myEntry
       ? Math.max(0, myEntry.rank - leaderboard.length - 1)
       : 0;
+  const myPodiumMedal = myEntry ? getPodiumMedal(myEntry.rank) : null;
 
   return (
     <main className={`${metro.routeShell}`}>
@@ -80,6 +82,7 @@ export default async function LeaderboardPage() {
               {leaderboard.length > 0 ? (
                 leaderboard.map((entry) => {
                   const isCurrentUser = entry.userId === session.user.id;
+                  const podiumMedal = getPodiumMedal(entry.rank);
 
                   return (
                     <article
@@ -91,10 +94,24 @@ export default async function LeaderboardPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className={`${metro.monoDigit} text-sm font-semibold`}>#{entry.rank}</p>
+                        <p
+                          className={`${metro.monoDigit} text-sm font-semibold ${
+                            podiumMedal?.rankClassName ?? ""
+                          }`}
+                        >
+                          #{entry.rank}
+                        </p>
                         <p className={`${metro.monoDigit} text-sm`}>{entry.completed} / 112</p>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
+                        <span
+                          aria-hidden={!podiumMedal}
+                          aria-label={podiumMedal?.medalLabel}
+                          title={podiumMedal?.medalLabel}
+                          className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm leading-none"
+                        >
+                          {podiumMedal?.medal ?? ""}
+                        </span>
                         <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
                           <Image
                             src={`/user_icons/${entry.avatar ?? DEFAULT_USER_AVATAR}.webp`}
@@ -139,6 +156,14 @@ export default async function LeaderboardPage() {
                       <p className={`${metro.monoDigit} text-sm`}>{myEntry.completed} / 112</p>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
+                      <span
+                        aria-hidden={!myPodiumMedal}
+                        aria-label={myPodiumMedal?.medalLabel}
+                        title={myPodiumMedal?.medalLabel}
+                        className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm leading-none"
+                      >
+                        {myPodiumMedal?.medal ?? ""}
+                      </span>
                       <span className="relative h-7 w-7 overflow-hidden rounded-full border border-orange-300/35">
                         <Image
                           src={`/user_icons/${myEntry.avatar ?? DEFAULT_USER_AVATAR}.webp`}
@@ -177,19 +202,30 @@ export default async function LeaderboardPage() {
                   {leaderboard.length > 0 ? (
                     leaderboard.map((entry) => {
                       const isCurrentUser = entry.userId === session.user.id;
+                      const podiumMedal = getPodiumMedal(entry.rank);
 
                       return (
                         <tr
                           key={entry.userId}
                           className={`border-t border-cyan-300/20 ${
                             isCurrentUser
-                              ? "bg-orange-400/10 text-orange-100"
+                              ? "border-cyan-300/20 bg-orange-400/10 text-orange-100"
                               : "text-cyan-50/90"
                           }`}
                         >
-                          <td className={`${metro.monoDigit} px-4 py-3 font-semibold`}>#{entry.rank}</td>
+                          <td className={`${metro.monoDigit} px-4 py-3 font-semibold`}>
+                            <span className={podiumMedal?.rankClassName ?? ""}>#{entry.rank}</span>
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
+                              <span
+                                aria-hidden={!podiumMedal}
+                                aria-label={podiumMedal?.medalLabel}
+                                title={podiumMedal?.medalLabel}
+                                className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm leading-none"
+                              >
+                                {podiumMedal?.medal ?? ""}
+                              </span>
                               <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
                                 <Image
                                   src={`/user_icons/${entry.avatar ?? DEFAULT_USER_AVATAR}.webp`}
@@ -245,6 +281,14 @@ export default async function LeaderboardPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
+                            <span
+                              aria-hidden={!myPodiumMedal}
+                              aria-label={myPodiumMedal?.medalLabel}
+                              title={myPodiumMedal?.medalLabel}
+                              className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm leading-none"
+                            >
+                              {myPodiumMedal?.medal ?? ""}
+                            </span>
                             <span className="relative h-7 w-7 overflow-hidden rounded-full border border-orange-300/35">
                               <Image
                                 src={`/user_icons/${myEntry.avatar ?? DEFAULT_USER_AVATAR}.webp`}

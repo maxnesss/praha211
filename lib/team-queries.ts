@@ -139,6 +139,7 @@ export async function getTeamDetailBySlug(
           name: true,
           nickname: true,
           email: true,
+          avatar: true,
           createdAt: true,
         },
         orderBy: { createdAt: "asc" },
@@ -156,6 +157,7 @@ export async function getTeamDetailBySlug(
     return {
       id: user.id,
       displayName: getPublicPlayerName(user),
+      avatar: user.avatar ?? null,
       points: aggregate?.points ?? 0,
       completed: aggregate?.completed ?? 0,
       isCurrentUser: currentUserId === user.id,

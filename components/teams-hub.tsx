@@ -131,39 +131,53 @@ export function TeamsHub({
         {filteredTeams.length > 0 ? (
           <ul className="mt-4 divide-y divide-cyan-300/20 overflow-hidden rounded-xl border border-cyan-300/25 bg-cyan-500/5">
             {filteredTeams.map((team) => (
-              <li key={team.id} className="p-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-lg font-semibold text-cyan-50">{team.name}</p>
+              <li key={team.id} className="px-3 py-3 sm:px-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/tym/${team.slug}`}
+                        className="text-base font-semibold text-cyan-50 transition-colors hover:text-cyan-100"
+                      >
+                        {team.name}
+                      </Link>
                       {currentTeamSlug === team.slug ? (
                         <span className="rounded bg-orange-400/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
                           Váš tým
                         </span>
                       ) : null}
+                      <span className="rounded border border-cyan-300/30 bg-cyan-400/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-100/90">
+                        {team.isFull ? "Plný tým" : "Volná místa"}
+                      </span>
                     </div>
-                    <p className="mt-1 text-xs uppercase tracking-[0.12em] text-cyan-200/70">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-200/70">
                       /tym/{team.slug}
                     </p>
-                    <p className="mt-2 text-xs text-cyan-100/70">
+                    <p className="truncate text-xs text-cyan-100/70">
                       {team.previewMembers.length > 0
                         ? `Členové: ${team.previewMembers.join(", ")}`
                         : "Zatím bez členů"}
                     </p>
                   </div>
 
-                  <div className="flex flex-col items-start gap-2 text-sm text-cyan-100/90 sm:items-end">
-                    <p>Body: {team.points}</p>
-                    <p>Odemčeno: {team.completed}</p>
-                    <p>
-                      Členové: {team.membersCount}/{TEAM_MAX_MEMBERS}
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-cyan-100/90 sm:justify-end">
+                    <p className="rounded-md border border-cyan-300/30 bg-cyan-400/10 px-2 py-1">
+                      Body {team.points}
                     </p>
-                    <p>{team.isFull ? "Plný tým" : "Volná místa"}</p>
+                    <p className="rounded-md border border-cyan-300/30 bg-cyan-400/10 px-2 py-1">
+                      Odemčeno {team.completed}
+                    </p>
+                    <p className="rounded-md border border-cyan-300/30 bg-cyan-400/10 px-2 py-1">
+                      Členové {team.membersCount}/{TEAM_MAX_MEMBERS}
+                    </p>
+                  </div>
+
+                  <div className="sm:w-[88px] sm:text-right">
                     <Link
                       href={`/tym/${team.slug}`}
-                      className="mt-1 inline-flex rounded-md border border-cyan-300/40 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
+                      className="inline-flex rounded-md border border-cyan-300/40 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
                     >
-                      Detail týmu
+                      Otevřít
                     </Link>
                   </div>
                 </div>

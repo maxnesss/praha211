@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
@@ -6,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { TeamMembershipActions } from "@/components/team-membership-actions";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
+import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { getCurrentUserTeam, getTeamDetailBySlug } from "@/lib/team-queries";
 import { TEAM_MAX_MEMBERS } from "@/lib/team-utils";
 
@@ -132,6 +134,15 @@ export default async function TeamPage({ params }: TeamPageContext) {
                       <p className={`${metro.monoDigit} text-sm`}>{member.points}</p>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
+                      <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
+                        <Image
+                          src={`/user_icons/${member.avatar ?? DEFAULT_USER_AVATAR}.webp`}
+                          alt={`Avatar hráče ${member.displayName}`}
+                          fill
+                          sizes="28px"
+                          className="object-cover"
+                        />
+                      </span>
                       <Link
                         href={`/player/${member.id}`}
                         className="text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
@@ -172,6 +183,15 @@ export default async function TeamPage({ params }: TeamPageContext) {
                       <tr key={member.id} className="border-t border-cyan-300/20 text-cyan-50/90">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
+                            <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
+                              <Image
+                                src={`/user_icons/${member.avatar ?? DEFAULT_USER_AVATAR}.webp`}
+                                alt={`Avatar hráče ${member.displayName}`}
+                                fill
+                                sizes="28px"
+                                className="object-cover"
+                              />
+                            </span>
                             <Link
                               href={`/player/${member.id}`}
                               className="underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"

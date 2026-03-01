@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import type { TeamJoinRequestOverview, TeamMemberOverview } from "@/lib/team-types";
 
 type TeamLeaderPanelProps = {
@@ -120,7 +122,16 @@ export function TeamLeaderPanel({
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-cyan-300/20 bg-cyan-500/5 px-3 py-2"
                 >
                   <div>
-                    <p className="text-sm text-cyan-50">
+                    <p className="flex items-center gap-2 text-sm text-cyan-50">
+                      <span className="relative h-6 w-6 overflow-hidden rounded-full border border-cyan-300/30">
+                        <Image
+                          src={`/user_icons/${member.avatar ?? DEFAULT_USER_AVATAR}.webp`}
+                          alt={`Avatar hráče ${member.displayName}`}
+                          fill
+                          sizes="24px"
+                          className="object-cover"
+                        />
+                      </span>
                       <Link
                         href={`/player/${member.id}`}
                         className="underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"

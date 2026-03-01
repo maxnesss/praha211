@@ -12,6 +12,7 @@ export type TeamDirectoryItem = {
 export type TeamMemberOverview = {
   id: string;
   displayName: string;
+  avatar: string | null;
   points: number;
   completed: number;
   isCurrentUser: boolean;
