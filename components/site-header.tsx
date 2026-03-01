@@ -156,7 +156,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
         {session?.user && navStats ? (
           <div className="mt-2 border-t border-cyan-300/20 pt-2">
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
-              <NavStatTile label="Body" value={navStats.points} href="/body" />
+              <NavStatTile label="Skóre" value={navStats.points} href="/skore" />
               <NavStatTile label="Pokladnice" value={navStats.badgesCount} href="/pokladnice" />
               <NavStatTile
                 label="Radnice"
@@ -169,7 +169,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
               <NavStatTile
                 label="Tým"
                 value={navStats.teamName}
-                href={navStats.teamSlug ? `/team/${navStats.teamSlug}` : "/teams"}
+                href={navStats.teamSlug ? `/tym/${navStats.teamSlug}` : "/tym"}
               />
             </div>
           </div>

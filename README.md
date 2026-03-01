@@ -93,12 +93,12 @@ UI:
 - `/radnice` - přehled hráče
 - `/chapter/[slug]` - kapitola
 - `/district/[code]` - detail městské části
-- `/body` - body
+- `/skore` - skóre
 - `/pokladnice` - odznaky
 - `/kniha-hrdinu` - rychlý žebříček
 - `/kniha-hrdinu/list` - kompletní žebříček (stránkovaný)
-- `/teams` - seznam týmů + vytvoření týmu
-- `/team/[slug]` - detail týmu
+- `/tym` - seznam týmů + vytvoření týmu
+- `/tym/[slug]` - detail týmu
 - `/player/[userId]` - veřejný profil hráče
 - `/profile` - nastavení účtu
 - `/sign-in` - přihlášení

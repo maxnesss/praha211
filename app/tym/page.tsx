@@ -10,7 +10,7 @@ export default async function TeamsPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect("/sign-in?callbackUrl=%2Fteams");
+    redirect("/sign-in?callbackUrl=%2Ftym");
   }
 
   const [teams, currentTeam] = await Promise.all([

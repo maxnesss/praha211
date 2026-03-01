@@ -72,7 +72,7 @@ export function TeamsHub({
     setIsCreateModalOpen(false);
 
     if (payload?.team?.slug) {
-      router.push(`/team/${payload.team.slug}`);
+      router.push(`/tym/${payload.team.slug}`);
     } else {
       router.refresh();
     }
@@ -93,7 +93,7 @@ export function TeamsHub({
 
           {currentTeamSlug ? (
             <Link
-              href={`/team/${currentTeamSlug}`}
+              href={`/tym/${currentTeamSlug}`}
               className="rounded-md border border-orange-300/55 bg-orange-400/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-orange-50 transition-colors hover:bg-orange-400/25"
             >
               Přejít na můj tým
@@ -143,7 +143,7 @@ export function TeamsHub({
                       ) : null}
                     </div>
                     <p className="mt-1 text-xs uppercase tracking-[0.12em] text-cyan-200/70">
-                      /team/{team.slug}
+                      /tym/{team.slug}
                     </p>
                     <p className="mt-2 text-xs text-cyan-100/70">
                       {team.previewMembers.length > 0
@@ -160,7 +160,7 @@ export function TeamsHub({
                     </p>
                     <p>{team.isFull ? "Plný tým" : "Volná místa"}</p>
                     <Link
-                      href={`/team/${team.slug}`}
+                      href={`/tym/${team.slug}`}
                       className="mt-1 inline-flex rounded-md border border-cyan-300/40 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
                     >
                       Detail týmu

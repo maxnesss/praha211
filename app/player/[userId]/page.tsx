@@ -131,7 +131,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                   <>
                     Tým:{" "}
                     <Link
-                      href={`/team/${profile.teamSlug}`}
+                      href={`/tym/${profile.teamSlug}`}
                       className="font-semibold text-cyan-50 underline decoration-cyan-300/45 underline-offset-2 hover:text-white"
                     >
                       {profile.teamName}

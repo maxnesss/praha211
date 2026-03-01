@@ -83,7 +83,7 @@ Primarne pokryva: registraci, prihlaseni a potvrzeni mestske casti (claim).
 Aplikace nepouziva globalni middleware pro auth; ochrana probiha na urovni stranek/API.
 
 ### Chranene server stranky (priklad)
-- `app/radnice/page.tsx`, `app/district/[code]/page.tsx`, `app/profile/page.tsx`, `app/teams/page.tsx`.
+- `app/radnice/page.tsx`, `app/district/[code]/page.tsx`, `app/profile/page.tsx`, `app/tym/page.tsx`.
 
 Krok:
 1. `getServerSession(authOptions)`.

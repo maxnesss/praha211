@@ -68,7 +68,7 @@ export function TeamMembershipActions({
     }
 
     setIsSubmitting(false);
-    router.push("/teams");
+    router.push("/tym");
     router.refresh();
   }
 
@@ -100,7 +100,7 @@ export function TeamMembershipActions({
           <p>Už jste v jiném týmu. Nejprve ho opusťte.</p>
           {currentTeamSlug ? (
             <Link
-              href={`/team/${currentTeamSlug}`}
+              href={`/tym/${currentTeamSlug}`}
               className="inline-flex rounded-md border border-cyan-300/40 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
             >
               Přejít na můj tým

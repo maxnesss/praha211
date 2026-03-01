@@ -11,7 +11,7 @@ export default async function BodyPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect("/sign-in?callbackUrl=%2Fbody");
+    redirect("/sign-in?callbackUrl=%2Fskore");
   }
 
   const claims = await prisma.districtClaim.findMany({
@@ -51,10 +51,10 @@ export default async function BodyPage() {
       <section className={metro.shellContent}>
         <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
-            Body
+            Skóre
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-cyan-50 sm:text-4xl">
-            Přehled vašich bodů
+            Přehled vašeho skóre
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/75 sm:text-base">
             Tady vidíte souhrn bodového výkonu a poslední potvrzené městské části.

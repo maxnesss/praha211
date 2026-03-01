@@ -18,7 +18,7 @@ export default async function TeamPage({ params }: TeamPageContext) {
   const { slug } = await params;
 
   if (!session?.user?.id) {
-    redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/team/${slug}`)}`);
+    redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/tym/${slug}`)}`);
   }
 
   const [team, currentTeam] = await Promise.all([
@@ -52,7 +52,7 @@ export default async function TeamPage({ params }: TeamPageContext) {
                 {team.name}
               </h1>
               <p className="mt-2 text-xs uppercase tracking-[0.14em] text-cyan-100/70">
-                /team/{team.slug}
+                /tym/{team.slug}
               </p>
               <p className="mt-2 text-sm text-cyan-100/80">
                 Velitel: <span className="font-semibold text-cyan-50">{team.leaderDisplayName}</span>
@@ -60,7 +60,7 @@ export default async function TeamPage({ params }: TeamPageContext) {
             </div>
 
             <Link
-              href="/teams"
+              href="/tym"
               className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
             >
               Zpět na týmy
