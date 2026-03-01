@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -6,6 +7,7 @@ import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { toLeaderboardPlayerLabel } from "@/lib/game/leaderboard-display";
 import { getPointsLeaderboardPage } from "@/lib/game/queries";
+import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 
 const PAGE_SIZE = 50;
 
@@ -117,6 +119,15 @@ export default async function LeaderboardListPage({
                         <p className={`${metro.monoDigit} text-sm`}>{entry.completed} / 112</p>
                       </div>
                       <div className="mt-2 flex items-center gap-2">
+                        <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
+                          <Image
+                            src={`/user_icons/${entry.avatar ?? DEFAULT_USER_AVATAR}.webp`}
+                            alt={`Avatar hráče ${toLeaderboardPlayerLabel(entry)}`}
+                            fill
+                            sizes="28px"
+                            className="object-cover"
+                          />
+                        </span>
                         <Link
                           href={`/player/${entry.userId}`}
                           className="text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
@@ -166,6 +177,15 @@ export default async function LeaderboardListPage({
                           <td className={`${metro.monoDigit} px-4 py-3 font-semibold`}>#{entry.rank}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
+                              <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
+                                <Image
+                                  src={`/user_icons/${entry.avatar ?? DEFAULT_USER_AVATAR}.webp`}
+                                  alt={`Avatar hráče ${toLeaderboardPlayerLabel(entry)}`}
+                                  fill
+                                  sizes="28px"
+                                  className="object-cover"
+                                />
+                              </span>
                               <Link
                                 href={`/player/${entry.userId}`}
                                 className="underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"

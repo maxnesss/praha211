@@ -9,6 +9,7 @@ export type LeaderboardEntry = {
   nickname: string | null;
   name: string | null;
   email: string | null;
+  avatar: string | null;
   points: number;
   completed: number;
   rank: number;
@@ -117,6 +118,7 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
       nickname: true,
       name: true,
       email: true,
+      avatar: true,
     },
   });
 
@@ -149,6 +151,7 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
       nickname: user?.nickname ?? null,
       name: user?.name ?? null,
       email: user?.email ?? null,
+      avatar: user?.avatar ?? null,
       points,
       completed,
       rank: currentRank,
@@ -160,7 +163,7 @@ async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
 
 const getCachedLeaderboardSnapshot = unstable_cache(
   async () => buildLeaderboardSnapshot(),
-  ["leaderboard-snapshot-v3"],
+  ["leaderboard-snapshot-v4"],
   {
     revalidate: LEADERBOARD_CACHE_SECONDS,
     tags: [LEADERBOARD_CACHE_TAG],
