@@ -1,7 +1,43 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+function getHealthAccessError(request: Request) {
+  if (process.env.NODE_ENV !== "production") {
+    return null;
+  }
+
+  const configuredSecret = process.env.HEALTHCHECK_SECRET?.trim();
+  if (!configuredSecret) {
+    console.error("HEALTHCHECK_SECRET není nastaveno. /api/health/db je v produkci vypnuto.");
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Health endpoint není v produkci nakonfigurován.",
+      },
+      { status: 503 },
+    );
+  }
+
+  const providedSecret = request.headers.get("x-health-check-secret")?.trim();
+  if (!providedSecret || providedSecret !== configuredSecret) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Přístup odepřen.",
+      },
+      { status: 403 },
+    );
+  }
+
+  return null;
+}
+
+export async function GET(request: Request) {
+  const accessError = getHealthAccessError(request);
+  if (accessError) {
+    return accessError;
+  }
+
   try {
     await prisma.$queryRaw`SELECT 1`;
 

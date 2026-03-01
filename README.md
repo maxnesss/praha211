@@ -138,13 +138,29 @@ Poznámky:
 
 ## Bezpečnost a API poznámky
 
-- Vybrané write endpointy mají rate limiting (registrace, kontakt, claim, týmové akce, změna hesla).
+- Veřejně volatelné write/mutate endpointy mají explicitní rate limiting (viz přehled níže).
 - Claim endpoint ošetřuje závodní stav (duplicate claim) a vrací konzistentní `409`.
-- Health endpoint (`/api/health/db`) je určen primárně pro monitoring konektivity DB.
+- Health endpoint (`/api/health/db`) je v produkci chráněn hlavičkou `x-health-check-secret` (`HEALTHCHECK_SECRET` v env).
+  - Příklad: `curl -H "x-health-check-secret: <HEALTHCHECK_SECRET>" https://.../api/health/db`
 - Selfie se ukládají privátně do Cloudflare R2:
   - klient si vyžádá podepsaný upload URL (`/api/uploads/selfie/sign`)
   - do DB se ukládá klíč objektu (`selfies/...`), ne veřejná URL
   - zobrazení probíhá přes podepsaný download URL (`/api/uploads/selfie/view`)
+
+### API limity (write/mutate)
+
+- `POST /api/auth/register`: `6 / 15 min` (IP)
+- `POST /api/contact`: `8 / 10 min` (IP)
+- `POST /api/districts/[code]/claim`: `30 / 5 min` (uživatel)
+- `POST /api/profile/password`: `8 / 60 min` (uživatel)
+- `POST /api/profile/nickname`: `8 / 10 min` (uživatel)
+- `POST /api/profile/avatar`: `12 / 10 min` (uživatel)
+- `POST /api/teams`: `5 / 60 min` (uživatel)
+- `POST /api/teams/[slug]/apply`: `20 / 10 min` (uživatel)
+- `POST /api/teams/[slug]/leave`: `8 / 5 min` (uživatel)
+- `POST /api/teams/[slug]/members/[memberId]/remove`: `15 / 5 min` (uživatel)
+- `POST /api/teams/[slug]/requests/[requestId]/approve`: `20 / 5 min` (uživatel)
+- `POST /api/teams/[slug]/requests/[requestId]/reject`: `20 / 5 min` (uživatel)
 
 ## Auth a role
 

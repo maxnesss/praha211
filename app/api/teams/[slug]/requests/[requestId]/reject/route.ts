@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
+import { requireAuthedUser } from "@/lib/api/route-hardening";
 import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
@@ -11,15 +10,22 @@ type RejectJoinRequestRouteContext = {
 };
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: RejectJoinRequestRouteContext,
 ) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  const authResult = await requireAuthedUser({
+    request,
+    rateLimit: {
+      prefix: "teams-reject-request",
+      max: 20,
+      windowMs: 5 * 60 * 1000,
+      message: "Příliš mnoho zamítnutí žádostí v krátkém čase. Zkuste to prosím později.",
+    },
+  });
+  if (authResult instanceof NextResponse) {
+    return authResult;
   }
+  const { userId } = authResult;
 
   const { slug, requestId } = await context.params;
 

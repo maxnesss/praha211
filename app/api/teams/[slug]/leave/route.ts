@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
+import { requireAuthedUser } from "@/lib/api/route-hardening";
 import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
@@ -10,13 +9,20 @@ type LeaveTeamRouteContext = {
   params: Promise<{ slug: string }>;
 };
 
-export async function POST(_request: Request, context: LeaveTeamRouteContext) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+export async function POST(request: Request, context: LeaveTeamRouteContext) {
+  const authResult = await requireAuthedUser({
+    request,
+    rateLimit: {
+      prefix: "teams-leave",
+      max: 8,
+      windowMs: 5 * 60 * 1000,
+      message: "Příliš mnoho pokusů o opuštění týmu. Zkuste to prosím později.",
+    },
+  });
+  if (authResult instanceof NextResponse) {
+    return authResult;
   }
+  const { userId } = authResult;
 
   const { slug } = await context.params;
 

@@ -1,7 +1,9 @@
 import { Prisma } from "@prisma/client";
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
+import {
+  parseJsonWithSchema,
+  requireAuthedUser,
+} from "@/lib/api/route-hardening";
 import { isNicknameTaken } from "@/lib/nickname-utils";
 import { prisma } from "@/lib/prisma";
 import {
@@ -10,35 +12,33 @@ import {
 } from "@/lib/validation/profile";
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  const authResult = await requireAuthedUser({
+    request,
+    rateLimit: {
+      prefix: "profile-nickname",
+      max: 8,
+      windowMs: 10 * 60 * 1000,
+      message: "Příliš mnoho pokusů o změnu přezdívky. Zkuste to prosím později.",
+    },
+  });
+  if (authResult instanceof NextResponse) {
+    return authResult;
   }
+  const { userId } = authResult;
 
   try {
-    let body: unknown;
-
-    try {
-      body = (await request.json()) as unknown;
-    } catch {
-      return NextResponse.json(
-        { message: "Neplatné tělo požadavku." },
-        { status: 400 },
-      );
+    const parsedBody = await parseJsonWithSchema({
+      request,
+      schema: updateNicknameSchema,
+      getValidationMessage: getProfileValidationMessage,
+    });
+    if (parsedBody instanceof NextResponse) {
+      return parsedBody;
     }
+    const { data } = parsedBody;
 
-    const parsed = updateNicknameSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { message: getProfileValidationMessage(parsed.error) },
-        { status: 400 },
-      );
-    }
-
-    if (parsed.data.nickname) {
-      const taken = await isNicknameTaken(parsed.data.nickname, userId);
+    if (data.nickname) {
+      const taken = await isNicknameTaken(data.nickname, userId);
       if (taken) {
         return NextResponse.json(
           { message: "Tuto přezdívku už používá jiný hráč." },
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { nickname: parsed.data.nickname },
+      data: { nickname: data.nickname },
       select: { id: true },
     });
 

@@ -1,6 +1,8 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
+import {
+  parseJsonWithSchema,
+  requireAuthedUser,
+} from "@/lib/api/route-hardening";
 import { prisma } from "@/lib/prisma";
 import {
   getProfileValidationMessage,
@@ -8,36 +10,34 @@ import {
 } from "@/lib/validation/profile";
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  const authResult = await requireAuthedUser({
+    request,
+    rateLimit: {
+      prefix: "profile-avatar",
+      max: 12,
+      windowMs: 10 * 60 * 1000,
+      message: "Příliš mnoho pokusů o změnu avataru. Zkuste to prosím později.",
+    },
+  });
+  if (authResult instanceof NextResponse) {
+    return authResult;
   }
+  const { userId } = authResult;
 
   try {
-    let body: unknown;
-
-    try {
-      body = (await request.json()) as unknown;
-    } catch {
-      return NextResponse.json(
-        { message: "Neplatné tělo požadavku." },
-        { status: 400 },
-      );
+    const parsedBody = await parseJsonWithSchema({
+      request,
+      schema: updateAvatarSchema,
+      getValidationMessage: getProfileValidationMessage,
+    });
+    if (parsedBody instanceof NextResponse) {
+      return parsedBody;
     }
-
-    const parsed = updateAvatarSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { message: getProfileValidationMessage(parsed.error) },
-        { status: 400 },
-      );
-    }
+    const { data } = parsedBody;
 
     await prisma.user.update({
       where: { id: userId },
-      data: { avatar: parsed.data.avatar },
+      data: { avatar: data.avatar },
       select: { id: true },
     });
 
