@@ -6,7 +6,7 @@ Stack:
 - Next.js 16 (App Router)
 - TypeScript
 - Prisma + PostgreSQL
-- NextAuth (Credentials + Google)
+- NextAuth (Credentials)
 - Zod
 
 ## Rychlý start
@@ -39,7 +39,7 @@ Aplikace běží na `http://localhost:3000`.
 
 ## Hlavní funkce
 
-- Přihlášení přes e-mail/heslo i Google
+- Přihlášení přes e-mail/heslo
 - Přehled postupu, bodů, série a odznaků
 - Kapitoly a detail městské části
 - Týmy:
@@ -177,17 +177,6 @@ npm run user:add -- --email admin@praha211.com --password "AdminPass123" --role 
 Assety patří do `public/coats/`:
 - `<district_slug>.webp` a volitelně `<district_slug>@2x.webp`
 - `<district_slug>.png` a volitelně `<district_slug>@2x.png`
-
-## Google OAuth setup
-
-1. Vytvořte OAuth credentials v Google Cloud Console.
-2. Přidejte redirecty:
-   - JavaScript origin: `http://localhost:3000`
-   - Redirect URI: `http://localhost:3000/api/auth/callback/google`
-3. Uložte do `.env`:
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET`
-4. Restartujte dev server.
 
 ## Cloudflare R2 setup (privátní selfie)
 

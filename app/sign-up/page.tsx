@@ -13,12 +13,6 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleGoogleSignIn() {
-    setError(null);
-    setIsSubmitting(true);
-    await signIn("google", { callbackUrl: "/radnice" });
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -30,6 +24,7 @@ export default function SignUpPage() {
       name: String(formData.get("name") || ""),
       email: String(formData.get("email") || ""),
       password: String(formData.get("password") || ""),
+      registrationCode: String(formData.get("registrationCode") || ""),
     });
 
     if (!parsed.success) {
@@ -38,12 +33,12 @@ export default function SignUpPage() {
       return;
     }
 
-    const { name, email, password } = parsed.data;
+    const { name, email, password, registrationCode } = parsed.data;
 
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, registrationCode }),
     });
 
     if (!response.ok) {
@@ -84,23 +79,6 @@ export default function SignUpPage() {
             Vytvořte si účet. Noví uživatelé dostanou roli <code>USER</code>.
           </p>
 
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isSubmitting}
-            className="mt-6 flex w-full items-center justify-center rounded-md border border-cyan-300/45 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-50 transition-colors hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            Pokračovat přes Google
-          </button>
-
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-cyan-300/25" />
-            <span className="text-xs font-medium uppercase tracking-wider text-cyan-200/70">
-              Nebo
-            </span>
-            <div className="h-px flex-1 bg-cyan-300/25" />
-          </div>
-
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
               <label htmlFor="name" className="text-sm font-medium text-cyan-100">
@@ -124,6 +102,20 @@ export default function SignUpPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
+                required
+                className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="registrationCode" className="text-sm font-medium text-cyan-100">
+                Registrační kód
+              </label>
+              <input
+                id="registrationCode"
+                name="registrationCode"
+                type="text"
+                autoComplete="off"
                 required
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />

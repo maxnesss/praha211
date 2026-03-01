@@ -60,23 +60,18 @@ Primarne pokryva: registraci, prihlaseni a potvrzeni mestske casti (claim).
 ### Chybove vetve
 - Neplatne credentials => `authorize` vraci `null`, UI zobrazi "Neplatny e-mail nebo heslo.".
 
-## 3. Proces: Prihlaseni/registrace pres Google
+## 3. Proces: Beta kod pri registraci
 
 ### Spoustec
-- Uzivatel klikne na "Pokracovat pres Google" na `/sign-in` nebo `/sign-up`.
+- Uzivatel odesle formular na `/sign-up` s polem `registrationCode`.
 
-### Backend kroky (NextAuth `signIn` callback)
-1. Overi se provider `google`.
-2. E-mail se normalizuje (`trim().toLowerCase()`).
-3. Pokud Google vrati `email_verified === false`, prihlaseni je zamitnuto.
-4. Pokud uzivatel neexistuje:
-   - vytvori se `User` s `role=USER`, default avatar, unikatni prezdivka.
-5. Pokud uzivatel existuje, ale chybi `name` / `nickname` / `avatar`:
-   - doplni se chybejici pole.
-6. JWT callback pripadne dovyplni token daty z DB.
+### Validace
+1. Klient i server validuji `registrationCode` pres `registerSchema`.
+2. Kod je povinny, normalizuje se na lowercase.
+3. Pri beta testu plati pevna hodnota `sokol`.
 
-### Datove efekty
-- "Just-in-time" zalozeni uzivatele pri prvnim Google loginu.
+### Chybove vetve
+- Pri spatnem kodu vrati API `400` s hlaskou `Neplatny registracni kod.`.
 
 ## 4. Proces: Autorizace a pristup na chranene stranky
 
@@ -350,7 +345,7 @@ Zakladni pravidla podle implementace:
 
 1. Landing (`/`) -> pokud login existuje, redirect `/radnice`.
 2. Registrace (`/sign-up`) -> `POST /api/auth/register` -> auto login -> `/radnice`.
-3. Prihlaseni (`/sign-in`) -> NextAuth credentials/google -> `/radnice` nebo callback URL.
+3. Prihlaseni (`/sign-in`) -> NextAuth credentials -> `/radnice` nebo callback URL.
 4. Claim district (`/district/[code]`) -> sign upload -> upload do R2 -> claim API -> prepocet score.
 5. Zobrazeni selfie -> private signed view link.
 6. Tym create (`/api/teams`) -> zadost (`/apply`) -> schvaleni/zamitnuti velitelem.

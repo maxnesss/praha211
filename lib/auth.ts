@@ -1,8 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
-import { generateUniqueNickname } from "@/lib/nickname-utils";
 import { DEFAULT_USER_AVATAR, USER_AVATAR_VALUES } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { signInSchema } from "@/lib/validation/auth";
@@ -54,67 +52,8 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-    }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account?.provider !== "google") {
-        return true;
-      }
-
-      const email = user.email?.trim().toLowerCase();
-      if (!email) {
-        return false;
-      }
-
-      const emailVerified = (profile as { email_verified?: boolean } | undefined)
-        ?.email_verified;
-      if (emailVerified === false) {
-        return false;
-      }
-
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
-        select: { id: true, name: true, nickname: true, avatar: true },
-      });
-
-      if (!existingUser) {
-        const nickname = await generateUniqueNickname(user.name ?? email.split("@")[0] ?? null);
-
-        await prisma.user.create({
-          data: {
-            email,
-            name: user.name ?? null,
-            nickname,
-            avatar: DEFAULT_USER_AVATAR,
-            role: "USER",
-          },
-          select: { id: true },
-        });
-      } else if (!existingUser.name || !existingUser.nickname || !existingUser.avatar) {
-        const generatedNickname = !existingUser.nickname
-          ? await generateUniqueNickname(
-            user.name ?? email.split("@")[0] ?? null,
-            existingUser.id,
-          )
-          : existingUser.nickname;
-
-        await prisma.user.update({
-          where: { email },
-          data: {
-            name: existingUser.name ?? user.name ?? null,
-            nickname: generatedNickname,
-            avatar: existingUser.avatar ?? DEFAULT_USER_AVATAR,
-          },
-          select: { id: true },
-        });
-      }
-
-      return true;
-    },
     async jwt({ token, user, account, trigger, session }) {
       if (account?.provider === "credentials" && user) {
         token.id = user.id;
@@ -131,8 +70,7 @@ export const authOptions: NextAuthOptions = {
         token.avatar = session.avatar;
       }
 
-      const shouldHydrateFromDb =
-        account?.provider === "google" || !token.id || !token.role || !token.avatar;
+      const shouldHydrateFromDb = !token.id || !token.role || !token.avatar;
 
       if (shouldHydrateFromDb && typeof token.email === "string") {
         const dbUser = await prisma.user.findUnique({

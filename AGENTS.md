@@ -13,7 +13,7 @@
 - Next.js 16 (App Router)
 - TypeScript
 - Prisma + PostgreSQL
-- NextAuth (Credentials + Google)
+- NextAuth (Credentials)
 - Zod validation
 
 ## Local setup

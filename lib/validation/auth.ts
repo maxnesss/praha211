@@ -10,6 +10,13 @@ const passwordSchema = z
   .string()
   .min(8, "Heslo musí mít alespoň 8 znaků.");
 
+const registrationCodeSchema = z
+  .string()
+  .trim()
+  .min(1, "Registrační kód je povinný.")
+  .transform((value) => value.toLowerCase())
+  .refine((value) => value === "sokol", "Neplatný registrační kód.");
+
 const nameSchema = z
   .string()
   .trim()
@@ -26,6 +33,7 @@ export const registerSchema = z.object({
   name: nameSchema,
   email: emailSchema,
   password: passwordSchema,
+  registrationCode: registrationCodeSchema,
 });
 
 export const userRoleSchema = z.enum(["ADMIN", "USER"]);

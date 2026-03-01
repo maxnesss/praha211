@@ -13,14 +13,6 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleGoogleSignIn() {
-    setError(null);
-    setIsSubmitting(true);
-    const callbackUrl =
-      new URLSearchParams(window.location.search).get("callbackUrl") || "/radnice";
-    await signIn("google", { callbackUrl });
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -71,23 +63,6 @@ export default function SignInPage() {
           <p className="mt-2 text-sm text-cyan-100/75">
             Přistupte ke svému účtu pomocí e-mailu a hesla.
           </p>
-
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isSubmitting}
-            className="mt-6 flex w-full items-center justify-center rounded-md border border-cyan-300/45 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-50 transition-colors hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            Pokračovat přes Google
-          </button>
-
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-cyan-300/25" />
-            <span className="text-xs font-medium uppercase tracking-wider text-cyan-200/70">
-              Nebo
-            </span>
-            <div className="h-px flex-1 bg-cyan-300/25" />
-          </div>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
