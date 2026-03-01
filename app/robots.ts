@@ -17,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
           "/chapter",
           "/district",
           "/body",
-          "/badges",
+          "/pokladnice",
           "/leaderboard",
           "/teams",
           "/team",

@@ -157,7 +157,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
           <div className="mt-2 border-t border-cyan-300/20 pt-2">
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
               <NavStatTile label="Body" value={navStats.points} href="/body" />
-              <NavStatTile label="Pokladnice" value={navStats.badgesCount} href="/badges" />
+              <NavStatTile label="Pokladnice" value={navStats.badgesCount} href="/pokladnice" />
               <NavStatTile
                 label="Radnice"
                 value={navStats.completion}

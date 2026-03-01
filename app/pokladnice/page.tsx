@@ -66,7 +66,7 @@ export default async function BadgesPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect("/sign-in?callbackUrl=%2Fbadges");
+    redirect("/sign-in?callbackUrl=%2Fpokladnice");
   }
 
   const claimedCodes = await getUserClaimedDistrictCodes(session.user.id);

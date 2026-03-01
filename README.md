@@ -94,7 +94,7 @@ UI:
 - `/chapter/[slug]` - kapitola
 - `/district/[code]` - detail městské části
 - `/body` - body
-- `/badges` - odznaky
+- `/pokladnice` - odznaky
 - `/leaderboard` - rychlý žebříček
 - `/leaderboard/list` - kompletní žebříček (stránkovaný)
 - `/teams` - seznam týmů + vytvoření týmu
