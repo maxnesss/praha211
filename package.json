@@ -16,6 +16,7 @@
     "prisma:studio": "prisma studio",
     "score:backfill": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env scripts/backfill-score-events.mjs",
     "user:add": "node --env-file=.env scripts/add-user.mjs",
+    "user:remove:remote": "node scripts/remove-remote-user.mjs",
     "users:seed:random": "node --env-file=.env scripts/seed-random-users.mjs",
     "r2:smoke": "node --env-file=.env scripts/r2-upload-download-smoke.mjs",
     "test:integration:core": "node --env-file=.env scripts/test-integration-core-flows.mjs",

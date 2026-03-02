@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
-import { hashEmailVerificationToken } from "@/lib/email-verification";
+import {
+  hashEmailVerificationToken,
+  sendWelcomeEmail,
+} from "@/lib/email-verification";
 import { prisma } from "@/lib/prisma";
 import { verifyEmailQuerySchema } from "@/lib/validation/auth";
 
@@ -41,6 +44,7 @@ export async function GET(request: Request) {
       where: { email },
       select: {
         id: true,
+        email: true,
         emailVerifiedAt: true,
         emailVerificationTokenHash: true,
         emailVerificationTokenExpiresAt: true,
@@ -76,6 +80,12 @@ export async function GET(request: Request) {
         emailVerificationTokenExpiresAt: null,
       },
     });
+
+    try {
+      await sendWelcomeEmail({ email: user.email });
+    } catch (error) {
+      console.error("Odeslání uvítacího e-mailu selhalo:", error);
+    }
 
     return redirectToSignIn(request, "success");
   } catch (error) {

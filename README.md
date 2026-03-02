@@ -81,6 +81,7 @@ Produkční doména: `https://www.praha112.cz`.
 - `npm run prisma:studio` - Prisma Studio
 - `npm run score:backfill` - jednorázová synchronizace `ScoreEvent` z existujících claimů
 - `npm run user:add -- --email ... --password ...` - přidání uživatele přes CLI
+- `npm run user:remove:remote -- --email ... [--dry-run] [--yes]` - smazání uživatele na remote DB podle e-mailu
 - `npm run users:seed:random -- [parametry]` - seed náhodných uživatelů
 - `npm run r2:smoke` - ověření Cloudflare R2 (1 upload + 1 download + verifikace + delete)
 - `npm run test:integration:core` - integrační API test hlavních flow (auth + claim + selfie ownership + týmy)
@@ -203,6 +204,7 @@ Poznámky:
 - Noví uživatelé defaultně dostávají `USER`
 - Registrace vyžaduje potvrzení zásad ochrany osobních údajů (GDPR)
 - Po registraci je nutné potvrdit e-mail přes odkaz zaslaný přes Resend (`RESEND_API_KEY`, `RESEND_FROM`)
+- Po úspěšném ověření e-mailu se odesílá uvítací e-mail
 - Veřejná je pouze landing stránka `/`
 - Herní části a týmové části vyžadují přihlášení
 
