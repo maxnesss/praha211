@@ -18,6 +18,12 @@ enum TeamJoinRequestStatus {
   REJECTED
 }
 
+enum ScoreEventType {
+  DISTRICT_CLAIM
+  CHAPTER_COMPLETE
+  PRAHA_PART_COMPLETE
+}
+
 model User {
   id                String            @id @default(cuid())
   email             String            @unique
@@ -32,6 +38,7 @@ model User {
   ledTeam           Team?             @relation("TeamLeader")
   teamJoinRequests  TeamJoinRequest[]
   claims            DistrictClaim[]
+  scoreEvents       ScoreEvent[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
@@ -86,4 +93,19 @@ model DistrictClaim {
 
   @@unique([userId, districtCode])
   @@index([userId, claimedAt])
+}
+
+model ScoreEvent {
+  id         String         @id @default(cuid())
+  userId     String
+  eventType  ScoreEventType
+  eventKey   String
+  points     Int
+  occurredAt DateTime       @default(now())
+  metadata   Json?
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventKey])
+  @@index([userId, occurredAt])
+  @@index([eventType])
 }

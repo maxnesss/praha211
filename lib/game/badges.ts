@@ -1,13 +1,13 @@
-import { DISTRICT_STORIES } from "@/lib/game/district-stories";
-import { resolveCoatAssetKey } from "@/lib/game/coat-assets";
+import { DISTRICT_STORIES } from "./district-stories.ts";
+import { resolveCoatAssetKey } from "./coat-assets.ts";
 import {
   CHAPTERS,
   DISTRICTS,
   getDistrictsByChapter,
   type ChapterSlug,
-} from "@/lib/game/district-catalog";
+} from "./district-catalog.ts";
 
-const PRAHA_BADGE_NUMBERS = Array.from({ length: 22 }, (_, index) => index + 1);
+export const PRAHA_BADGE_NUMBERS = Array.from({ length: 22 }, (_, index) => index + 1);
 
 const chapterAccentBySlug = new Map(
   CHAPTERS.map((chapter) => [chapter.slug, chapter.accentColor]),
@@ -49,6 +49,10 @@ for (const district of DISTRICTS) {
   for (const number of numbers) {
     prahaDistrictCodes.get(number)?.add(district.code);
   }
+}
+
+export function getPrahaBadgeDistrictCodes(number: number) {
+  return [...(prahaDistrictCodes.get(number) ?? new Set<string>())];
 }
 
 export type DistrictBadge = {

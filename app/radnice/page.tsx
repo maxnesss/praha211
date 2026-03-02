@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { authOptions } from "@/lib/auth";
 import { getUserGameClaims } from "@/lib/game/queries";
 import { buildOverview } from "@/lib/game/progress";
+import { getUserScoreTotal } from "@/lib/game/score-ledger";
 import metro from "@/app/metro-theme.module.css";
 
 const integerFormatter = new Intl.NumberFormat("cs-CZ");
@@ -122,7 +123,10 @@ export default async function OverviewPage() {
     redirect("/sign-in?callbackUrl=%2Fradnice");
   }
 
-  const claims = await getUserGameClaims(session.user.id);
+  const [claims, totalPoints] = await Promise.all([
+    getUserGameClaims(session.user.id),
+    getUserScoreTotal(session.user.id),
+  ]);
   const overview = buildOverview(claims);
   const completedChapters = overview.chapterCards.filter(
     (chapter) => chapter.progressPercent === 100,
@@ -157,7 +161,7 @@ export default async function OverviewPage() {
                 </>
               )}
             />
-            <OverviewStatCard label="Body" value={formatInt(overview.totalPoints)} />
+            <OverviewStatCard label="Body" value={formatInt(totalPoints)} />
             <OverviewStatCard label="Denní série" value={overview.currentStreak} />
             <OverviewStatCard label="Kapitoly hotovo" value={completedChapters} />
           </div>

@@ -303,10 +303,12 @@ async function main() {
     { DISTRICTS },
     { USER_AVATAR_VALUES, DEFAULT_USER_AVATAR },
     { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday },
+    { syncUserScoreEvents },
   ] = await Promise.all([
     import("../lib/game/district-catalog.ts"),
     import("../lib/profile-avatars.ts"),
     import("../lib/game/scoring-core.ts"),
+    import("../lib/game/score-ledger.ts"),
   ]);
 
   const totalDistricts = DISTRICTS.length;
@@ -414,6 +416,11 @@ async function main() {
     createdUsers += 1;
     createdClaims += claimsData.length;
     seededUsers.push(user);
+
+    await syncUserScoreEvents({
+      db: prisma,
+      userId: user.id,
+    });
   }
 
   if (options.teams && seededUsers.length > 0) {

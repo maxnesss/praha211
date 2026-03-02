@@ -6,6 +6,7 @@ import { applyRateLimit } from "@/lib/api/rate-limit";
 import { authOptions } from "@/lib/auth";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday } from "@/lib/game/progress";
+import { syncUserScoreEvents } from "@/lib/game/score-ledger";
 import { getDistrictByCode } from "@/lib/game/district-catalog";
 import { prisma } from "@/lib/prisma";
 import { districtClaimSchema, getValidationMessage } from "@/lib/validation/game";
@@ -108,28 +109,37 @@ export async function POST(request: Request, context: ClaimRouteContext) {
   });
 
   try {
-    const claim = await prisma.districtClaim.create({
-      data: {
+    const claim = await prisma.$transaction(async (tx) => {
+      const createdClaim = await tx.districtClaim.create({
+        data: {
+          userId,
+          districtCode: district.code,
+          chapterSlug: district.chapterSlug,
+          districtName: district.name,
+          selfieUrl: parsed.data.selfieUrl,
+          signVisible: parsed.data.attestSignVisible,
+          claimedAt: now,
+          basePoints: district.basePoints,
+          sameDayMultiplier: scoring.sameDayMultiplier,
+          streakBonus: scoring.streakBonus,
+          awardedPoints: scoring.awardedPoints,
+        },
+        select: {
+          id: true,
+          districtCode: true,
+          districtName: true,
+          chapterSlug: true,
+          claimedAt: true,
+          selfieUrl: true,
+        },
+      });
+
+      await syncUserScoreEvents({
+        db: tx,
         userId,
-        districtCode: district.code,
-        chapterSlug: district.chapterSlug,
-        districtName: district.name,
-        selfieUrl: parsed.data.selfieUrl,
-        signVisible: parsed.data.attestSignVisible,
-        claimedAt: now,
-        basePoints: district.basePoints,
-        sameDayMultiplier: scoring.sameDayMultiplier,
-        streakBonus: scoring.streakBonus,
-        awardedPoints: scoring.awardedPoints,
-      },
-      select: {
-        id: true,
-        districtCode: true,
-        districtName: true,
-        chapterSlug: true,
-        claimedAt: true,
-        selfieUrl: true,
-      },
+      });
+
+      return createdClaim;
     });
 
     revalidateTag(LEADERBOARD_CACHE_TAG, "max");

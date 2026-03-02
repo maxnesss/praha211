@@ -43,6 +43,22 @@ async function createClaim(userId, districtCode, points, claimedAt) {
       streakBonus: 0,
       awardedPoints: points,
     },
+    select: { id: true, districtCode: true },
+  });
+}
+
+async function createScoreEvent(userId, districtCode, points, occurredAt) {
+  return prisma.scoreEvent.create({
+    data: {
+      userId,
+      eventType: "DISTRICT_CLAIM",
+      eventKey: `district_claim:${districtCode.toUpperCase()}`,
+      points,
+      occurredAt,
+      metadata: {
+        districtCode,
+      },
+    },
     select: { id: true },
   });
 }
@@ -50,17 +66,30 @@ async function createClaim(userId, districtCode, points, claimedAt) {
 async function fetchFixtureRanks(userIds) {
   return prisma.$queryRaw`
     WITH fixture_claims AS (
-      SELECT dc."userId", dc."awardedPoints"
+      SELECT dc."userId", COUNT(*)::int AS completed
       FROM "DistrictClaim" dc
       WHERE dc."userId" IN (${Prisma.join(userIds)})
+      GROUP BY dc."userId"
+    ),
+    fixture_scores AS (
+      SELECT se."userId", COALESCE(SUM(se."points"), 0)::int AS points
+      FROM "ScoreEvent" se
+      WHERE se."userId" IN (${Prisma.join(userIds)})
+      GROUP BY se."userId"
+    ),
+    active_users AS (
+      SELECT fc."userId" FROM fixture_claims fc
+      UNION
+      SELECT fs."userId" FROM fixture_scores fs
     ),
     user_stats AS (
       SELECT
-        fc."userId",
-        COALESCE(SUM(fc."awardedPoints"), 0)::int AS points,
-        COUNT(*)::int AS completed
-      FROM fixture_claims fc
-      GROUP BY fc."userId"
+        au."userId",
+        COALESCE(fs.points, 0)::int AS points,
+        COALESCE(fc.completed, 0)::int AS completed
+      FROM active_users au
+      LEFT JOIN fixture_scores fs ON fs."userId" = au."userId"
+      LEFT JOIN fixture_claims fc ON fc."userId" = au."userId"
     ),
     ranked AS (
       SELECT
@@ -81,6 +110,12 @@ async function fetchFixtureRanks(userIds) {
 }
 
 async function cleanupFixtures(claimIds, userIds) {
+  if (userIds.length > 0) {
+    await prisma.scoreEvent.deleteMany({
+      where: { userId: { in: userIds } },
+    });
+  }
+
   if (claimIds.length > 0) {
     await prisma.districtClaim.deleteMany({
       where: { id: { in: claimIds } },
@@ -119,6 +154,14 @@ async function main() {
     ]);
 
     createdClaimIds.push(...claims.map((claim) => claim.id));
+
+    await Promise.all([
+      createScoreEvent(alpha.id, `${namespace}-a-1`, 60, new Date(now - 4_000)),
+      createScoreEvent(alpha.id, `${namespace}-a-2`, 40, new Date(now - 3_500)),
+      createScoreEvent(beta.id, `${namespace}-b-1`, 100, new Date(now - 3_000)),
+      createScoreEvent(delta.id, `${namespace}-d-1`, 100, new Date(now - 2_500)),
+      createScoreEvent(gamma.id, `${namespace}-g-1`, 50, new Date(now - 2_000)),
+    ]);
 
     const rows = await fetchFixtureRanks(createdUserIds);
     const byId = new Map(rows.map((row) => [row.userId, row]));

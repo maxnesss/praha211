@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { TeamDetail, TeamDirectoryItem } from "@/lib/team-types";
 import { getPublicPlayerName, TEAM_MAX_MEMBERS } from "@/lib/team-utils";
+import { getUserScoreTotalsByUserIds } from "@/lib/game/score-ledger";
 
 type ClaimAggregate = {
   points: number;
@@ -12,21 +13,27 @@ async function getClaimAggregateByUserIds(userIds: string[]) {
     return new Map<string, ClaimAggregate>();
   }
 
-  const grouped = await prisma.districtClaim.groupBy({
-    by: ["userId"],
-    where: { userId: { in: userIds } },
-    _sum: { awardedPoints: true },
-    _count: { _all: true },
-  });
+  const [scoreByUserId, completionGrouped] = await Promise.all([
+    getUserScoreTotalsByUserIds(userIds),
+    prisma.districtClaim.groupBy({
+      by: ["userId"],
+      where: { userId: { in: userIds } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const completedByUserId = new Map(
+    completionGrouped.map((entry) => [entry.userId, entry._count._all ?? 0] as const),
+  );
 
   return new Map(
-    grouped.map((entry) => [
-      entry.userId,
+    userIds.map((userId) => [
+      userId,
       {
-        points: entry._sum.awardedPoints ?? 0,
-        completed: entry._count._all ?? 0,
+        points: scoreByUserId.get(userId) ?? 0,
+        completed: completedByUserId.get(userId) ?? 0,
       },
-    ]),
+    ] as const),
   );
 }
 

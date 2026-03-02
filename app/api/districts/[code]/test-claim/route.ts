@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday } from "@/lib/game/progress";
+import { syncUserScoreEvents } from "@/lib/game/score-ledger";
 import { getDistrictByCode } from "@/lib/game/district-catalog";
 import { prisma } from "@/lib/prisma";
 
@@ -85,20 +86,27 @@ export async function POST(_request: Request, context: TestClaimRouteContext) {
     streakAfterClaim,
   });
 
-  await prisma.districtClaim.create({
-    data: {
+  await prisma.$transaction(async (tx) => {
+    await tx.districtClaim.create({
+      data: {
+        userId,
+        districtCode: district.code,
+        chapterSlug: district.chapterSlug,
+        districtName: district.name,
+        selfieUrl: `https://praha112.local/admin-test/${district.code.toLowerCase()}`,
+        signVisible: true,
+        claimedAt: now,
+        basePoints: district.basePoints,
+        sameDayMultiplier: scoring.sameDayMultiplier,
+        streakBonus: scoring.streakBonus,
+        awardedPoints: scoring.awardedPoints,
+      },
+    });
+
+    await syncUserScoreEvents({
+      db: tx,
       userId,
-      districtCode: district.code,
-      chapterSlug: district.chapterSlug,
-      districtName: district.name,
-      selfieUrl: `https://praha112.local/admin-test/${district.code.toLowerCase()}`,
-      signVisible: true,
-      claimedAt: now,
-      basePoints: district.basePoints,
-      sameDayMultiplier: scoring.sameDayMultiplier,
-      streakBonus: scoring.streakBonus,
-      awardedPoints: scoring.awardedPoints,
-    },
+    });
   });
 
   revalidateTag(LEADERBOARD_CACHE_TAG, "max");
@@ -137,13 +145,20 @@ export async function DELETE(_request: Request, context: TestClaimRouteContext) 
     );
   }
 
-  await prisma.districtClaim.delete({
-    where: {
-      userId_districtCode: {
-        userId,
-        districtCode: district.code,
+  await prisma.$transaction(async (tx) => {
+    await tx.districtClaim.delete({
+      where: {
+        userId_districtCode: {
+          userId,
+          districtCode: district.code,
+        },
       },
-    },
+    });
+
+    await syncUserScoreEvents({
+      db: tx,
+      userId,
+    });
   });
 
   revalidateTag(LEADERBOARD_CACHE_TAG, "max");

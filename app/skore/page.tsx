@@ -5,6 +5,7 @@ import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { calculateCurrentStreak } from "@/lib/game/progress";
 import { getUserPointsRanking } from "@/lib/game/queries";
+import { getUserScoreTotal } from "@/lib/game/score-ledger";
 import { prisma } from "@/lib/prisma";
 
 export default async function BodyPage() {
@@ -29,8 +30,10 @@ export default async function BodyPage() {
     orderBy: { claimedAt: "desc" },
   });
 
-  const ranking = await getUserPointsRanking(session.user.id);
-  const totalPoints = claims.reduce((sum, claim) => sum + claim.awardedPoints, 0);
+  const [ranking, totalPoints] = await Promise.all([
+    getUserPointsRanking(session.user.id),
+    getUserScoreTotal(session.user.id),
+  ]);
   const totalUnlocks = claims.length;
   const averagePoints = totalUnlocks > 0 ? Math.round(totalPoints / totalUnlocks) : 0;
   const currentStreak = calculateCurrentStreak(claims.map((claim) => claim.claimedAt));

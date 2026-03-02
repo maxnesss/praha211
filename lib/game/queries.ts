@@ -3,6 +3,7 @@ import { cache } from "react";
 import { Prisma } from "@prisma/client";
 import { buildBadgeOverview, type BadgeOverview } from "@/lib/game/badges";
 import { buildOverview, countClaimsToday } from "@/lib/game/progress";
+import { getUserScoreTotal } from "@/lib/game/score-ledger";
 import { prisma } from "@/lib/prisma";
 
 export type LeaderboardEntry = {
@@ -87,13 +88,35 @@ export async function getUserClaimedDistrictCodes(userId: string) {
 }
 
 const LEADERBOARD_RANKING_CTE = Prisma.sql`
-  WITH user_stats AS (
+  WITH active_users AS (
+    SELECT DISTINCT dc."userId"
+    FROM "DistrictClaim" dc
+    UNION
+    SELECT DISTINCT se."userId"
+    FROM "ScoreEvent" se
+  ),
+  score_totals AS (
+    SELECT
+      se."userId",
+      COALESCE(SUM(se."points"), 0)::int AS points
+    FROM "ScoreEvent" se
+    GROUP BY se."userId"
+  ),
+  claim_totals AS (
     SELECT
       dc."userId" AS "userId",
-      COALESCE(SUM(dc."awardedPoints"), 0)::int AS points,
       COUNT(*)::int AS completed
     FROM "DistrictClaim" dc
     GROUP BY dc."userId"
+  ),
+  user_stats AS (
+    SELECT
+      au."userId" AS "userId",
+      COALESCE(st.points, 0)::int AS points,
+      COALESCE(ct.completed, 0)::int AS completed
+    FROM active_users au
+    LEFT JOIN score_totals st ON st."userId" = au."userId"
+    LEFT JOIN claim_totals ct ON ct."userId" = au."userId"
   ),
   ranked AS (
     SELECT
@@ -298,7 +321,10 @@ export async function getPublicPlayerProfile(userId: string): Promise<PublicPlay
     return null;
   }
 
-  const claims = await getUserGameClaims(user.id);
+  const [claims, points] = await Promise.all([
+    getUserGameClaims(user.id),
+    getUserScoreTotal(user.id),
+  ]);
   const overview = buildOverview(claims);
   const badges = buildBadgeOverview(overview.completedCodes);
 
@@ -310,7 +336,7 @@ export async function getPublicPlayerProfile(userId: string): Promise<PublicPlay
     avatar: user.avatar,
     teamName: user.team?.name ?? null,
     teamSlug: user.team?.slug ?? null,
-    points: overview.totalPoints,
+    points,
     completed: overview.totalCompleted,
     totalDistricts: overview.totalDistricts,
     completionPercent: overview.completionPercent,
@@ -319,9 +345,10 @@ export async function getPublicPlayerProfile(userId: string): Promise<PublicPlay
 }
 
 const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats> => {
-  const [claims, ranking, user] = await Promise.all([
+  const [claims, ranking, points, user] = await Promise.all([
     getUserGameClaims(userId),
     getUserPointsRanking(userId),
+    getUserScoreTotal(userId),
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -344,7 +371,7 @@ const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats
     : "Začni dnes.";
 
   return {
-    points: ranking.userPoints || overview.totalPoints,
+    points,
     completion: `${overview.totalCompleted}/${overview.totalDistricts}`,
     ranking:
       ranking.rank && ranking.totalPlayers > 0
