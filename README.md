@@ -19,6 +19,7 @@ npm run dev
 ```
 
 Aplikace běží na `http://localhost:3000`.
+Produkční doména: `https://www.praha112.cz`.
 
 ## Herní model
 
@@ -278,3 +279,6 @@ Poznámky:
 - Lokální deploy skript spouští vzdálený `scripts/deploy-remote.sh`.
 - Remote deploy dělá `git pull --ff-only`, `npm ci`, `prisma:migrate`, `score:backfill`, `build`, `pm2 reload` a health check.
 - Pokud je na serveru dirty worktree, deploy se bezpečně zastaví.
+- V produkčním `.env` musí být:
+  - `NEXTAUTH_URL=https://www.praha112.cz`
+  - `NEXT_PUBLIC_SITE_URL=https://www.praha112.cz`
