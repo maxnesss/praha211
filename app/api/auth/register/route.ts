@@ -2,10 +2,34 @@ import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import {
+  createEmailVerificationToken,
+  sendEmailVerificationEmail,
+} from "@/lib/email-verification";
 import { generateUniqueNickname } from "@/lib/nickname-utils";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
+
+async function rotateVerificationTokenAndSend(input: {
+  userId: string;
+  email: string;
+}) {
+  const verificationToken = createEmailVerificationToken();
+
+  await prisma.user.update({
+    where: { id: input.userId },
+    data: {
+      emailVerificationTokenHash: verificationToken.tokenHash,
+      emailVerificationTokenExpiresAt: verificationToken.expiresAt,
+    },
+  });
+
+  await sendEmailVerificationEmail({
+    email: input.email,
+    token: verificationToken.token,
+  });
+}
 
 export async function POST(request: Request) {
   const rateLimited = applyRateLimit({
@@ -43,21 +67,49 @@ export async function POST(request: Request) {
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
-      select: { id: true },
+      select: { id: true, email: true, emailVerifiedAt: true },
     });
 
     if (existingUser) {
+      if (!existingUser.emailVerifiedAt) {
+        try {
+          await rotateVerificationTokenAndSend({
+            userId: existingUser.id,
+            email: existingUser.email,
+          });
+        } catch (error) {
+          console.error("Odeslání ověřovacího e-mailu při opakované registraci selhalo:", error);
+
+          return NextResponse.json(
+            {
+              message:
+                "Účet už existuje, ale nepodařilo se odeslat nový ověřovací e-mail. Zkuste to prosím za chvíli znovu.",
+            },
+            { status: 500 },
+          );
+        }
+
+        return NextResponse.json(
+          {
+            message:
+              "Účet s tímto e-mailem už existuje, poslali jsme nový ověřovací e-mail.",
+          },
+          { status: 200 },
+        );
+      }
+
       return NextResponse.json(
         { message: "Účet s tímto e-mailem už existuje." },
         { status: 409 },
       );
     }
 
+    const verificationToken = createEmailVerificationToken();
     const passwordHash = await hash(password, 12);
 
     const nickname = await generateUniqueNickname(name ?? null);
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         name: name ?? null,
@@ -65,13 +117,35 @@ export async function POST(request: Request) {
         avatar: DEFAULT_USER_AVATAR,
         passwordHash,
         role: "USER",
+        emailVerificationTokenHash: verificationToken.tokenHash,
+        emailVerificationTokenExpiresAt: verificationToken.expiresAt,
         privacyPolicyAcceptedAt: privacyPolicyAccepted ? new Date() : null,
       },
-      select: { id: true },
+      select: { id: true, email: true },
     });
 
+    try {
+      await sendEmailVerificationEmail({
+        email: user.email,
+        token: verificationToken.token,
+      });
+    } catch (error) {
+      console.error("Odeslání ověřovacího e-mailu po registraci selhalo:", error);
+
+      return NextResponse.json(
+        {
+          message:
+            "Účet byl vytvořen, ale nepodařilo se odeslat ověřovací e-mail. Zkuste registraci se stejným e-mailem za chvíli znovu.",
+        },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json(
-      { message: "Účet byl úspěšně vytvořen." },
+      {
+        message:
+          "Účet byl vytvořen. Pro dokončení registrace potvrďte odkaz v ověřovacím e-mailu.",
+      },
       { status: 201 },
     );
   } catch (error) {

@@ -391,6 +391,15 @@ async function registerAndLogin(baseUrl, namespace, label, name) {
     expectedStatus: 201,
   });
 
+  await prisma.user.update({
+    where: { email },
+    data: {
+      emailVerifiedAt: new Date(),
+      emailVerificationTokenHash: null,
+      emailVerificationTokenExpiresAt: null,
+    },
+  });
+
   await client.login(email, PASSWORD);
 
   const dbUser = await prisma.user.findUnique({

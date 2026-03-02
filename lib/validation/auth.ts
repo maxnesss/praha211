@@ -10,6 +10,12 @@ const passwordSchema = z
   .string()
   .min(8, "Heslo musí mít alespoň 8 znaků.");
 
+const verificationTokenSchema = z
+  .string()
+  .trim()
+  .min(1, "Ověřovací token je povinný.")
+  .max(256, "Ověřovací token je příliš dlouhý.");
+
 const registrationCodeSchema = z
   .string()
   .trim()
@@ -39,6 +45,11 @@ export const registerSchema = z.object({
   password: passwordSchema,
   registrationCode: registrationCodeSchema,
   privacyPolicyAccepted: privacyPolicyAcceptedSchema,
+});
+
+export const verifyEmailQuerySchema = z.object({
+  email: emailSchema,
+  token: verificationTokenSchema,
 });
 
 export const userRoleSchema = z.enum(["ADMIN", "USER"]);

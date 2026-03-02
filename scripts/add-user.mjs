@@ -111,6 +111,7 @@ async function main() {
       avatar: "male/dobrodruh",
       passwordHash,
       role,
+      emailVerifiedAt: new Date(),
     },
     select: {
       id: true,

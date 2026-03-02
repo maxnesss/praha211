@@ -1,21 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { signIn } from "next-auth/react";
 import metro from "@/app/metro-theme.module.css";
 import { PasswordField } from "@/components/password-field";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
 
 export default function SignUpPage() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuccess(null);
     setIsSubmitting(true);
 
     const form = event.currentTarget;
@@ -64,20 +63,16 @@ export default function SignUpPage() {
       return;
     }
 
-    const signInResult = await signIn("credentials", {
-      email,
-      password,
-      callbackUrl: "/radnice",
-      redirect: false,
-    });
+    const payload = (await response.json().catch(() => null)) as
+      | { message?: string }
+      | null;
 
-    if (!signInResult || signInResult.error) {
-      router.push("/sign-in");
-      return;
-    }
-
-    router.push(signInResult.url || "/radnice");
-    router.refresh();
+    form.reset();
+    setSuccess(
+      payload?.message
+      || "Účet byl vytvořen. Pro dokončení registrace potvrďte odkaz v e-mailu.",
+    );
+    setIsSubmitting(false);
   }
 
   return (
@@ -174,6 +169,12 @@ export default function SignUpPage() {
             {error ? (
               <p className="rounded-md border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
                 {error}
+              </p>
+            ) : null}
+
+            {success ? (
+              <p className="rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                {success}
               </p>
             ) : null}
 

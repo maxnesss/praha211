@@ -8,10 +8,38 @@ import metro from "@/app/metro-theme.module.css";
 import { PasswordField } from "@/components/password-field";
 import { getFirstZodErrorMessage, signInSchema } from "@/lib/validation/auth";
 
+function toVerificationMessage(value: string | null) {
+  if (value === "success") {
+    return "E-mail byl úspěšně ověřen. Teď se můžete přihlásit.";
+  }
+
+  if (value === "already") {
+    return "E-mail už je ověřený. Stačí se přihlásit.";
+  }
+
+  if (value === "invalid") {
+    return "Ověřovací odkaz je neplatný nebo expirovaný.";
+  }
+
+  if (value === "error") {
+    return "Ověření e-mailu se nepodařilo. Zkuste to prosím znovu.";
+  }
+
+  return null;
+}
+
 export default function SignInPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [verificationMessage] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    const verificationState = new URLSearchParams(window.location.search).get("verification");
+    return toVerificationMessage(verificationState);
+  });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +71,11 @@ export default function SignInPage() {
     });
 
     if (!result || result.error) {
-      setError("Neplatný e-mail nebo heslo.");
+      if (result?.error?.includes("EMAIL_NOT_VERIFIED")) {
+        setError("E-mail ještě není ověřený. Otevřete odkaz z ověřovacího e-mailu.");
+      } else {
+        setError("Neplatný e-mail nebo heslo.");
+      }
       setIsSubmitting(false);
       return;
     }
@@ -95,6 +127,12 @@ export default function SignInPage() {
             {error ? (
               <p className="rounded-md border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
                 {error}
+              </p>
+            ) : null}
+
+            {!error && verificationMessage ? (
+              <p className="rounded-md border border-cyan-300/40 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
+                {verificationMessage}
               </p>
             ) : null}
 

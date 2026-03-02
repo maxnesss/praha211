@@ -43,6 +43,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        if (!user.emailVerifiedAt) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
+
         return {
           id: user.id,
           email: user.email,

@@ -139,6 +139,7 @@ UI:
 API:
 - `/api/auth/[...nextauth]`
 - `/api/auth/register`
+- `/api/auth/verify-email`
 - `/api/districts/[code]/claim`
 - `/api/districts/[code]/test-claim` (admin test endpoint)
 - `/api/profile/avatar`
@@ -183,6 +184,7 @@ Poznámky:
 ### API limity (write/mutate)
 
 - `POST /api/auth/register`: `6 / 15 min` (IP)
+- `GET /api/auth/verify-email`: `40 / 15 min` (IP)
 - `POST /api/contact`: `8 / 10 min` (IP)
 - `POST /api/districts/[code]/claim`: `30 / 5 min` (uživatel)
 - `POST /api/profile/password`: `8 / 60 min` (uživatel)
@@ -200,6 +202,7 @@ Poznámky:
 - Role: `USER`, `ADMIN`
 - Noví uživatelé defaultně dostávají `USER`
 - Registrace vyžaduje potvrzení zásad ochrany osobních údajů (GDPR)
+- Po registraci je nutné potvrdit e-mail přes odkaz zaslaný přes Resend (`RESEND_API_KEY`, `RESEND_FROM`)
 - Veřejná je pouze landing stránka `/`
 - Herní části a týmové části vyžadují přihlášení
 
