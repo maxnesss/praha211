@@ -11,6 +11,8 @@ const PASSWORD = "testpass123";
 const BASE_PORT = 4100;
 const PORT_SCAN_LIMIT = 40;
 const SERVER_BOOT_TIMEOUT_MS = 60_000;
+const SERVER_STOP_TIMEOUT_MS = 8_000;
+const SERVER_FORCE_STOP_TIMEOUT_MS = 3_000;
 
 function assert(condition, message) {
   if (!condition) {
@@ -233,6 +235,7 @@ async function startServer(baseUrl, port) {
     cwd: process.cwd(),
     env,
     stdio: ["ignore", "pipe", "pipe"],
+    detached: process.platform !== "win32",
   });
 
   let logs = "";
@@ -257,8 +260,7 @@ async function startServer(baseUrl, port) {
     await waitForServer(baseUrl);
     return { child, getRecentLogs: () => logs };
   } catch (error) {
-    child.kill("SIGTERM");
-    await once(child, "exit").catch(() => null);
+    await stopServer(child);
     throw new Error(
       [
         error instanceof Error ? error.message : String(error),
@@ -269,13 +271,56 @@ async function startServer(baseUrl, port) {
   }
 }
 
-async function stopServer(serverProcess) {
-  if (!serverProcess || serverProcess.killed) {
+function hasProcessExited(serverProcess) {
+  return (
+    serverProcess.exitCode !== null
+    || serverProcess.signalCode !== null
+  );
+}
+
+function sendSignalToServerProcess(serverProcess, signal) {
+  if (hasProcessExited(serverProcess)) {
     return;
   }
 
-  serverProcess.kill("SIGTERM");
-  await once(serverProcess, "exit").catch(() => null);
+  if (process.platform !== "win32" && typeof serverProcess.pid === "number") {
+    try {
+      process.kill(-serverProcess.pid, signal);
+      return;
+    } catch {
+      // Fall back to single-process signaling below.
+    }
+  }
+
+  serverProcess.kill(signal);
+}
+
+async function waitForProcessExit(serverProcess, timeoutMs) {
+  if (hasProcessExited(serverProcess)) {
+    return true;
+  }
+
+  const exited = await Promise.race([
+    once(serverProcess, "exit").then(() => true).catch(() => true),
+    delay(timeoutMs).then(() => false),
+  ]);
+
+  return exited;
+}
+
+async function stopServer(serverProcess) {
+  if (!serverProcess || hasProcessExited(serverProcess)) {
+    return;
+  }
+
+  sendSignalToServerProcess(serverProcess, "SIGTERM");
+  const exitedGracefully = await waitForProcessExit(serverProcess, SERVER_STOP_TIMEOUT_MS);
+  if (exitedGracefully) {
+    return;
+  }
+
+  sendSignalToServerProcess(serverProcess, "SIGKILL");
+  await waitForProcessExit(serverProcess, SERVER_FORCE_STOP_TIMEOUT_MS);
 }
 
 async function cleanupByNamespace(namespace) {
