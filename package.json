@@ -15,6 +15,8 @@
     "user:add": "node --env-file=.env scripts/add-user.mjs",
     "users:seed:random": "node --env-file=.env scripts/seed-random-users.mjs",
     "r2:smoke": "node --env-file=.env scripts/r2-upload-download-smoke.mjs",
+    "test:integration:core": "node --env-file=.env scripts/test-integration-core-flows.mjs",
+    "test:integration:all": "npm run test:integration:core && npm run test:leaderboard:tie && npm run test:teams:concurrency",
     "test:teams:concurrency": "node --env-file=.env scripts/test-team-concurrency.mjs",
     "test:leaderboard:tie": "node --env-file=.env scripts/test-leaderboard-tie-ranking.mjs"
   },
