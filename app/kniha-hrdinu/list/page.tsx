@@ -11,9 +11,10 @@ import { getPointsLeaderboardPage } from "@/lib/game/queries";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 
 const PAGE_SIZE = 50;
+const SEARCH_QUERY_MAX_LENGTH = 64;
 
 type LeaderboardListPageProps = {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 };
 
 function parsePage(input: string | undefined) {
@@ -24,8 +25,21 @@ function parsePage(input: string | undefined) {
   return value;
 }
 
-function toPageHref(page: number) {
-  return page <= 1 ? "/kniha-hrdinu/list" : `/kniha-hrdinu/list?page=${page}`;
+function parseSearchQuery(input: string | undefined) {
+  return input?.trim().slice(0, SEARCH_QUERY_MAX_LENGTH) ?? "";
+}
+
+function toPageHref(page: number, searchQuery: string) {
+  const params = new URLSearchParams();
+  if (page > 1) {
+    params.set("page", String(page));
+  }
+  if (searchQuery) {
+    params.set("q", searchQuery);
+  }
+
+  const query = params.toString();
+  return query ? `/kniha-hrdinu/list?${query}` : "/kniha-hrdinu/list";
 }
 
 export default async function LeaderboardListPage({
@@ -37,9 +51,10 @@ export default async function LeaderboardListPage({
     redirect("/sign-in?callbackUrl=%2Fkniha-hrdinu%2Flist");
   }
 
-  const { page } = await searchParams;
+  const { page, q } = await searchParams;
   const requestedPage = parsePage(page);
-  const leaderboard = await getPointsLeaderboardPage(requestedPage, PAGE_SIZE);
+  const searchQuery = parseSearchQuery(q);
+  const leaderboard = await getPointsLeaderboardPage(requestedPage, PAGE_SIZE, searchQuery);
 
   return (
     <main className={metro.routeShell}>
@@ -75,7 +90,9 @@ export default async function LeaderboardListPage({
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Hráčů v pořadí</p>
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">
+                {searchQuery ? "Nalezených hráčů" : "Hráčů v pořadí"}
+              </p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
                 {leaderboard.totalPlayers}
               </p>
@@ -93,6 +110,41 @@ export default async function LeaderboardListPage({
               </p>
             </article>
           </div>
+
+          <form action="/kniha-hrdinu/list" method="get" className="mt-6 rounded-xl border border-cyan-300/25 bg-cyan-500/5 p-4">
+            <label htmlFor="leaderboard-search" className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">
+              Vyhledat hráče
+            </label>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                id="leaderboard-search"
+                name="q"
+                defaultValue={searchQuery}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="Přezdívka, jméno nebo e-mail"
+                className="w-full rounded-md border border-cyan-300/35 bg-[#081823] px-3 py-2 text-sm text-cyan-50 outline-none transition placeholder:text-cyan-200/45 focus:border-cyan-200/80"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
+                >
+                  Hledat
+                </button>
+                {searchQuery ? (
+                  <Link
+                    href="/kniha-hrdinu/list"
+                    className="rounded-md border border-cyan-300/20 bg-cyan-400/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/85 transition-colors hover:bg-cyan-400/10"
+                  >
+                    Vyčistit
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          </form>
 
           <div className="mt-8 overflow-hidden rounded-xl border border-cyan-300/25 bg-[#091925]/75">
             <div className="space-y-3 px-4 py-4 sm:hidden">
@@ -156,7 +208,9 @@ export default async function LeaderboardListPage({
                 })
               ) : (
                 <p className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-4 text-sm text-cyan-100/65">
-                  Zatím nejsou v žebříčku žádní hráči.
+                  {searchQuery
+                    ? "Pro tento dotaz nebyl nalezen žádný hráč."
+                    : "Zatím nejsou v žebříčku žádní hráči."}
                 </p>
               )}
             </div>
@@ -228,7 +282,9 @@ export default async function LeaderboardListPage({
                   ) : (
                     <tr>
                       <td className="px-4 py-6 text-cyan-100/65" colSpan={4}>
-                        Zatím nejsou v žebříčku žádní hráči.
+                        {searchQuery
+                          ? "Pro tento dotaz nebyl nalezen žádný hráč."
+                          : "Zatím nejsou v žebříčku žádní hráči."}
                       </td>
                     </tr>
                   )}
@@ -240,7 +296,7 @@ export default async function LeaderboardListPage({
           <div className="mt-4 flex items-center justify-between gap-3">
             {leaderboard.page > 1 ? (
               <Link
-                href={toPageHref(leaderboard.page - 1)}
+                href={toPageHref(leaderboard.page - 1, searchQuery)}
                 className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
               >
                 Předchozí
@@ -253,7 +309,7 @@ export default async function LeaderboardListPage({
 
             {leaderboard.page < leaderboard.totalPages ? (
               <Link
-                href={toPageHref(leaderboard.page + 1)}
+                href={toPageHref(leaderboard.page + 1, searchQuery)}
                 className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
               >
                 Další

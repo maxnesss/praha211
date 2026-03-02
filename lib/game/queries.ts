@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
+import { Prisma } from "@prisma/client";
 import { buildBadgeOverview, type BadgeOverview } from "@/lib/game/badges";
 import { buildOverview, countClaimsToday } from "@/lib/game/progress";
 import { prisma } from "@/lib/prisma";
@@ -57,6 +58,12 @@ export type PublicPlayerProfile = {
 
 export const LEADERBOARD_CACHE_TAG = "leaderboard";
 const LEADERBOARD_CACHE_SECONDS = 60;
+const LEADERBOARD_SEARCH_MAX_LENGTH = 64;
+
+const LEADERBOARD_CACHE_CONFIG = {
+  revalidate: LEADERBOARD_CACHE_SECONDS,
+  tags: [LEADERBOARD_CACHE_TAG],
+};
 
 const getUserGameClaimsCached = cache(async (userId: string) => {
   return prisma.districtClaim.findMany({
@@ -79,101 +86,136 @@ export async function getUserClaimedDistrictCodes(userId: string) {
   return new Set(claims.map((claim) => claim.districtCode));
 }
 
-async function buildLeaderboardSnapshot(): Promise<LeaderboardEntry[]> {
-  const aggregated = await prisma.districtClaim.groupBy({
-    by: ["userId"],
-    _sum: { awardedPoints: true },
-    _count: { _all: true },
-  });
+const LEADERBOARD_RANKING_CTE = Prisma.sql`
+  WITH user_stats AS (
+    SELECT
+      dc."userId" AS "userId",
+      COALESCE(SUM(dc."awardedPoints"), 0)::int AS points,
+      COUNT(*)::int AS completed
+    FROM "DistrictClaim" dc
+    GROUP BY dc."userId"
+  ),
+  ranked AS (
+    SELECT
+      us."userId",
+      us.points,
+      us.completed,
+      RANK() OVER (ORDER BY us.points DESC, us.completed DESC)::int AS rank
+    FROM user_stats us
+  )
+`;
 
-  if (aggregated.length === 0) {
-    return [];
-  }
-
-  const byPoints = [...aggregated].sort((a, b) => {
-    const pointsA = a._sum.awardedPoints ?? 0;
-    const pointsB = b._sum.awardedPoints ?? 0;
-
-    if (pointsA !== pointsB) {
-      return pointsB - pointsA;
-    }
-
-    const completedA = a._count._all ?? 0;
-    const completedB = b._count._all ?? 0;
-    if (completedA !== completedB) {
-      return completedB - completedA;
-    }
-
-    return a.userId.localeCompare(b.userId);
-  });
-
-  const users = await prisma.user.findMany({
-    where: {
-      id: {
-        in: byPoints.map((entry) => entry.userId),
-      },
-    },
-    select: {
-      id: true,
-      nickname: true,
-      name: true,
-      email: true,
-      avatar: true,
-    },
-  });
-
-  const usersById = new Map(users.map((user) => [user.id, user] as const));
-  const leaderboard: LeaderboardEntry[] = [];
-  let currentRank = 0;
-  let previousPoints: number | null = null;
-  let previousCompleted: number | null = null;
-
-  for (let index = 0; index < byPoints.length; index += 1) {
-    const entry = byPoints[index];
-    const points = entry._sum.awardedPoints ?? 0;
-    const completed = entry._count._all ?? 0;
-
-    if (
-      previousPoints === null
-      || previousCompleted === null
-      || points < previousPoints
-      || completed < previousCompleted
-    ) {
-      currentRank = index + 1;
-    }
-
-    previousPoints = points;
-    previousCompleted = completed;
-    const user = usersById.get(entry.userId);
-
-    leaderboard.push({
-      userId: entry.userId,
-      nickname: user?.nickname ?? null,
-      name: user?.name ?? null,
-      email: user?.email ?? null,
-      avatar: user?.avatar ?? null,
-      points,
-      completed,
-      rank: currentRank,
-    });
-  }
-
-  return leaderboard;
+function normalizeLeaderboardSearchQuery(searchQuery?: string) {
+  return searchQuery?.trim().slice(0, LEADERBOARD_SEARCH_MAX_LENGTH) ?? "";
 }
 
-const getCachedLeaderboardSnapshot = unstable_cache(
-  async () => buildLeaderboardSnapshot(),
-  ["leaderboard-snapshot-v4"],
-  {
-    revalidate: LEADERBOARD_CACHE_SECONDS,
-    tags: [LEADERBOARD_CACHE_TAG],
-  },
+function buildLeaderboardSearchCondition(searchQuery: string) {
+  if (!searchQuery) {
+    return Prisma.empty;
+  }
+
+  const pattern = `%${searchQuery}%`;
+  return Prisma.sql`
+    WHERE (
+      COALESCE(u.nickname, '') ILIKE ${pattern}
+      OR COALESCE(u.name, '') ILIKE ${pattern}
+      OR COALESCE(u.email, '') ILIKE ${pattern}
+    )
+  `;
+}
+
+type LeaderboardTotalRow = {
+  totalPlayers: number;
+};
+
+async function fetchLeaderboardFilteredTotalPlayers(searchQuery: string) {
+  const whereClause = buildLeaderboardSearchCondition(searchQuery);
+  const rows = await prisma.$queryRaw<LeaderboardTotalRow[]>(Prisma.sql`
+    ${LEADERBOARD_RANKING_CTE}
+    SELECT COUNT(*)::int AS "totalPlayers"
+    FROM ranked r
+    INNER JOIN "User" u ON u.id = r."userId"
+    ${whereClause}
+  `);
+
+  return rows[0]?.totalPlayers ?? 0;
+}
+
+async function fetchLeaderboardEntriesPage(
+  page: number,
+  pageSize: number,
+  searchQuery: string,
+): Promise<LeaderboardEntry[]> {
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.max(1, pageSize);
+  const offset = (safePage - 1) * safePageSize;
+  const whereClause = buildLeaderboardSearchCondition(searchQuery);
+
+  return prisma.$queryRaw<LeaderboardEntry[]>(Prisma.sql`
+    ${LEADERBOARD_RANKING_CTE}
+    SELECT
+      r."userId" AS "userId",
+      u.nickname,
+      u.name,
+      u.email,
+      u.avatar,
+      r.points,
+      r.completed,
+      r.rank
+    FROM ranked r
+    INNER JOIN "User" u ON u.id = r."userId"
+    ${whereClause}
+    ORDER BY r.rank ASC, r."userId" ASC
+    LIMIT ${safePageSize}
+    OFFSET ${offset}
+  `);
+}
+
+async function fetchLeaderboardEntryByUserId(userId: string): Promise<LeaderboardEntry | null> {
+  const rows = await prisma.$queryRaw<LeaderboardEntry[]>(Prisma.sql`
+    ${LEADERBOARD_RANKING_CTE}
+    SELECT
+      r."userId" AS "userId",
+      u.nickname,
+      u.name,
+      u.email,
+      u.avatar,
+      r.points,
+      r.completed,
+      r.rank
+    FROM ranked r
+    INNER JOIN "User" u ON u.id = r."userId"
+    WHERE r."userId" = ${userId}
+    LIMIT 1
+  `);
+
+  return rows[0] ?? null;
+}
+
+const getCachedLeaderboardFilteredTotalPlayers = unstable_cache(
+  async (searchQuery: string) => fetchLeaderboardFilteredTotalPlayers(searchQuery),
+  ["leaderboard-filtered-total-v1"],
+  LEADERBOARD_CACHE_CONFIG,
+);
+
+const getCachedLeaderboardEntriesPage = unstable_cache(
+  async (page: number, pageSize: number, searchQuery: string) =>
+    fetchLeaderboardEntriesPage(page, pageSize, searchQuery),
+  ["leaderboard-page-v1"],
+  LEADERBOARD_CACHE_CONFIG,
+);
+
+const getCachedLeaderboardEntryByUserId = unstable_cache(
+  async (userId: string) => fetchLeaderboardEntryByUserId(userId),
+  ["leaderboard-entry-by-user-v1"],
+  LEADERBOARD_CACHE_CONFIG,
 );
 
 export async function getUserPointsRanking(userId: string) {
-  const leaderboard = await getCachedLeaderboardSnapshot();
-  const totalPlayers = leaderboard.length;
-  const entry = leaderboard.find((item) => item.userId === userId);
+  const [totalPlayers, entry] = await Promise.all([
+    getCachedLeaderboardFilteredTotalPlayers(""),
+    getCachedLeaderboardEntryByUserId(userId),
+  ]);
 
   return {
     rank: entry?.rank ?? null,
@@ -183,23 +225,25 @@ export async function getUserPointsRanking(userId: string) {
 }
 
 export async function getPointsLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
-  const leaderboard = await getCachedLeaderboardSnapshot();
-  return leaderboard.slice(0, Math.max(1, limit));
+  const safeLimit = Math.max(1, limit);
+  return getCachedLeaderboardEntriesPage(1, safeLimit, "");
 }
 
 export async function getPointsLeaderboardPreview(
   userId: string,
   limit = 15,
 ): Promise<LeaderboardPreview> {
-  const leaderboard = await getCachedLeaderboardSnapshot();
   const safeLimit = Math.max(1, limit);
-  const topEntries = leaderboard.slice(0, safeLimit);
-  const myEntry = leaderboard.find((entry) => entry.userId === userId) ?? null;
+  const [topEntries, myEntry, totalPlayers] = await Promise.all([
+    getCachedLeaderboardEntriesPage(1, safeLimit, ""),
+    getCachedLeaderboardEntryByUserId(userId),
+    getCachedLeaderboardFilteredTotalPlayers(""),
+  ]);
 
   return {
     topEntries,
     myEntry,
-    totalPlayers: leaderboard.length,
+    totalPlayers,
     showMyEntrySeparately: Boolean(myEntry && myEntry.rank > safeLimit),
   };
 }
@@ -207,16 +251,24 @@ export async function getPointsLeaderboardPreview(
 export async function getPointsLeaderboardPage(
   page = 1,
   pageSize = 50,
+  searchQuery?: string,
 ): Promise<LeaderboardPageResult> {
-  const leaderboard = await getCachedLeaderboardSnapshot();
+  const normalizedSearchQuery = normalizeLeaderboardSearchQuery(searchQuery);
   const safePageSize = Math.max(1, pageSize);
-  const totalPlayers = leaderboard.length;
+  const totalPlayers = await getCachedLeaderboardFilteredTotalPlayers(normalizedSearchQuery);
   const totalPages = Math.max(1, Math.ceil(totalPlayers / safePageSize));
   const safePage = Math.min(totalPages, Math.max(1, page));
-  const start = (safePage - 1) * safePageSize;
+  const entries =
+    totalPlayers > 0
+      ? await getCachedLeaderboardEntriesPage(
+          safePage,
+          safePageSize,
+          normalizedSearchQuery,
+        )
+      : [];
 
   return {
-    entries: leaderboard.slice(start, start + safePageSize),
+    entries,
     totalPlayers,
     totalPages,
     page: safePage,
