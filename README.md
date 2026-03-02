@@ -24,13 +24,21 @@ Aplikace běží na `http://localhost:3000`.
 
 - 7 kapitol x 16 městských částí = 112 cílů
 - Dokončení je konečné (`112/112`)
-- Body jsou nekonečné:
-  - základní body za část
-  - násobitel za více potvrzení ve stejný den
-  - bonus za sérii dní
-  - přesný výpočet: `awardedPoints = round(basePoints * sameDayMultiplier + streakBonus)`
+- Skóre je centrální přes event ledger (`ScoreEvent`)
+- Aktivní bodovací eventy (V1):
+  - `DISTRICT_CLAIM` (jednorázově za část)
+  - `CHAPTER_COMPLETE` (+750 za kompletní kapitolu)
+  - `PRAHA_PART_COMPLETE` (+300 za kompletní odznak Praha 1-22)
+- Výpočet pro `DISTRICT_CLAIM`:
+  - `awardedPoints = round(basePoints * sameDayMultiplier + streakBonus)`
   - `sameDayMultiplier = min(2, 1 + claimsTodayBefore * 0.15)`
   - `streakBonus = streakAfterClaim * 5`
+- Aktuální pravidlo V1:
+  - claim je 1× na uživatele + část, takže současná sada eventů je prakticky konečná
+- Roadmapa pro nekonečný model (navazuje na `ScoreEvent`):
+  - přidat opakovatelné eventy (např. denní/týdenní výzvy) s unikátními časovými klíči
+  - rozšířit `/skore` o timeline podle eventů místo čistě podle claimů
+  - držet žebříček nad součtem `ScoreEvent.points` (již implementováno)
 - Pravidla V1 jsou trust-based:
   - hráč potvrzuje fyzickou návštěvu
   - hráč potvrzuje viditelnost oficiální cedule
@@ -63,12 +71,14 @@ Aplikace běží na `http://localhost:3000`.
 - `npm run dev` - vývojový server
 - `npm run build` - produkční build
 - `npm run start` - spuštění produkčního buildu
+- `npm run test` - jednotný běh všech integračních testů
 - `npm run lint` - ESLint
 - `npm run prisma:generate` - generování Prisma Clientu
 - `npm run prisma:migrate` - aplikace existujících migrací
 - `npm run prisma:migrate:dev` - vytvoření + aplikace nové migrace (dev)
 - `npm run prisma:push` - push schématu bez migračních souborů
 - `npm run prisma:studio` - Prisma Studio
+- `npm run score:backfill` - jednorázová synchronizace `ScoreEvent` z existujících claimů
 - `npm run user:add -- --email ... --password ...` - přidání uživatele přes CLI
 - `npm run users:seed:random -- [parametry]` - seed náhodných uživatelů
 - `npm run r2:smoke` - ověření Cloudflare R2 (1 upload + 1 download + verifikace + delete)
@@ -83,10 +93,12 @@ Doporučený postup lokálně:
 
 ```bash
 npm run prisma:migrate
-npm run test:integration:all
+npm run score:backfill
+npm run test
 ```
 
 Poznámky:
+- Po nasazení migrace `ScoreEvent` spusťte `npm run score:backfill`, aby historická data dostala chapter/praha bonus eventy konzistentně.
 - `test:integration:core` spouští produkční server (`npm run start`) na dočasném portu a testuje API end-to-end.
 - Testy pracují s DB přes izolovaný namespace a po doběhu po sobě uklízí testovací data.
 - V CI (GitHub Actions) se automaticky spouští `lint`, `build` a `test:integration:all`.
@@ -146,6 +158,7 @@ API:
 Klíčové modely:
 - `User`
 - `DistrictClaim`
+- `ScoreEvent`
 - `Team`
 - `TeamJoinRequest`
 
