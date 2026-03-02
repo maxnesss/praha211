@@ -46,7 +46,21 @@ if [[ -f .env ]]; then
 fi
 
 if [[ -n "${HEALTHCHECK_SECRET:-}" ]]; then
-  curl -fsS -H "x-health-check-secret: ${HEALTHCHECK_SECRET}" "http://127.0.0.1/api/health/db" >/dev/null
+  HEALTH_URL="http://127.0.0.1/api/health/db"
+  HEALTH_OK=0
+  for _ in {1..30}; do
+    if curl -fsS -H "x-health-check-secret: ${HEALTHCHECK_SECRET}" "$HEALTH_URL" >/dev/null; then
+      HEALTH_OK=1
+      break
+    fi
+    sleep 1
+  done
+
+  if [[ "$HEALTH_OK" != "1" ]]; then
+    echo "Health check failed after reload"
+    exit 1
+  fi
+
   echo "Health check OK"
 else
   echo "HEALTHCHECK_SECRET missing, skipped health check"
