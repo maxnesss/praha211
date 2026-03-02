@@ -72,6 +72,24 @@ Aplikace běží na `http://localhost:3000`.
 - `npm run user:add -- --email ... --password ...` - přidání uživatele přes CLI
 - `npm run users:seed:random -- [parametry]` - seed náhodných uživatelů
 - `npm run r2:smoke` - ověření Cloudflare R2 (1 upload + 1 download + verifikace + delete)
+- `npm run test:integration:core` - integrační API test hlavních flow (auth + claim + selfie ownership + týmy)
+- `npm run test:leaderboard:tie` - regresní test řazení žebříčku při shodě bodů
+- `npm run test:teams:concurrency` - souběžné testy týmových operací (apply/approve)
+- `npm run test:integration:all` - agregovaný běh všech testů (`core + leaderboard tie + teams concurrency`)
+
+## Testy
+
+Doporučený postup lokálně:
+
+```bash
+npm run prisma:migrate
+npm run test:integration:all
+```
+
+Poznámky:
+- `test:integration:core` spouští produkční server (`npm run start`) na dočasném portu a testuje API end-to-end.
+- Testy pracují s DB přes izolovaný namespace a po doběhu po sobě uklízí testovací data.
+- V CI (GitHub Actions) se automaticky spouští `lint`, `build` a `test:integration:all`.
 
 Příklady seedování:
 
