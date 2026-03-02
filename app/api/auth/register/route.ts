@@ -11,9 +11,16 @@ import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
 
+const TEST_AUTOMATION_EMAIL_DOMAIN = "@tests.praha112.local";
+
+function shouldSkipVerificationEmailDelivery(email: string) {
+  return email.endsWith(TEST_AUTOMATION_EMAIL_DOMAIN);
+}
+
 async function rotateVerificationTokenAndSend(input: {
   userId: string;
   email: string;
+  skipEmailDelivery?: boolean;
 }) {
   const verificationToken = createEmailVerificationToken();
 
@@ -24,6 +31,10 @@ async function rotateVerificationTokenAndSend(input: {
       emailVerificationTokenExpiresAt: verificationToken.expiresAt,
     },
   });
+
+  if (input.skipEmailDelivery) {
+    return;
+  }
 
   await sendEmailVerificationEmail({
     email: input.email,
@@ -64,6 +75,7 @@ export async function POST(request: Request) {
     }
 
     const { email, password, name, privacyPolicyAccepted } = parsed.data;
+    const skipEmailDelivery = shouldSkipVerificationEmailDelivery(email);
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -76,6 +88,7 @@ export async function POST(request: Request) {
           await rotateVerificationTokenAndSend({
             userId: existingUser.id,
             email: existingUser.email,
+            skipEmailDelivery: shouldSkipVerificationEmailDelivery(existingUser.email),
           });
         } catch (error) {
           console.error("Odeslání ověřovacího e-mailu při opakované registraci selhalo:", error);
@@ -124,21 +137,23 @@ export async function POST(request: Request) {
       select: { id: true, email: true },
     });
 
-    try {
-      await sendEmailVerificationEmail({
-        email: user.email,
-        token: verificationToken.token,
-      });
-    } catch (error) {
-      console.error("Odeslání ověřovacího e-mailu po registraci selhalo:", error);
+    if (!skipEmailDelivery) {
+      try {
+        await sendEmailVerificationEmail({
+          email: user.email,
+          token: verificationToken.token,
+        });
+      } catch (error) {
+        console.error("Odeslání ověřovacího e-mailu po registraci selhalo:", error);
 
-      return NextResponse.json(
-        {
-          message:
-            "Účet byl vytvořen, ale nepodařilo se odeslat ověřovací e-mail. Zkuste registraci se stejným e-mailem za chvíli znovu.",
-        },
-        { status: 500 },
-      );
+        return NextResponse.json(
+          {
+            message:
+              "Účet byl vytvořen, ale nepodařilo se odeslat ověřovací e-mail. Zkuste registraci se stejným e-mailem za chvíli znovu.",
+          },
+          { status: 500 },
+        );
+      }
     }
 
     return NextResponse.json(
