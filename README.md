@@ -252,3 +252,29 @@ npm run r2:smoke -- --keep
 # explicitní bucket (přepíše R2_BUCKET_NAME z .env)
 npm run r2:smoke -- --bucket praha112
 ```
+
+## Deploy na VPS
+
+Jednorázový bootstrap (na serveru):
+- nainstalovat `postgresql`, `nginx`, `pm2`, `certbot`
+- naklonovat repo do `/home/maxim/apps/praha211`
+- vytvořit `.env` s produkčními hodnotami
+- spustit aplikaci přes PM2 a proxy přes nginx
+
+Další release:
+
+```bash
+git push origin main
+npm run deploy:vps
+```
+
+Použití s explicitním hostem/brančí:
+
+```bash
+bash scripts/deploy-vps.sh praha112 main
+```
+
+Poznámky:
+- Lokální deploy skript spouští vzdálený `scripts/deploy-remote.sh`.
+- Remote deploy dělá `git pull --ff-only`, `npm ci`, `prisma:migrate`, `score:backfill`, `build`, `pm2 reload` a health check.
+- Pokud je na serveru dirty worktree, deploy se bezpečně zastaví.
