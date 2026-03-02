@@ -32,6 +32,7 @@ export default function SignUpPage() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const confirmPassword = String(formData.get("confirmPassword") || "");
     const parsed = registerSchema.safeParse({
       name: String(formData.get("name") || ""),
       email: String(formData.get("email") || ""),
@@ -42,6 +43,12 @@ export default function SignUpPage() {
 
     if (!parsed.success) {
       setError(getFirstZodErrorMessage(parsed.error));
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (parsed.data.password !== confirmPassword) {
+      setError("Hesla se neshodují.");
       setIsSubmitting(false);
       return;
     }
@@ -165,6 +172,20 @@ export default function SignUpPage() {
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />
               <p className="text-xs text-cyan-100/65">Minimálně 8 znaků.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="confirmPassword" className="text-sm font-medium text-cyan-100">
+                Potvrzení hesla
+              </label>
+              <PasswordField
+                id="confirmPassword"
+                name="confirmPassword"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
+              />
             </div>
 
             <label className="flex items-start gap-2.5 rounded-md border border-cyan-300/20 bg-cyan-500/5 px-3 py-2 text-sm text-cyan-100/85">

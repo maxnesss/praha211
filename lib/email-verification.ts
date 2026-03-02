@@ -149,7 +149,12 @@ function buildWelcomeEmailText() {
     "Vítejte ve hře PRAHA 112.",
     "Váš e-mail je ověřený a účet je aktivní.",
     "",
-    "Můžete se přihlásit a začít plnit výzvu 112 městských částí.",
+    "Jak hra funguje:",
+    "1) Cílem je odemknout všech 112 pražských katastrálních území.",
+    "2) Za každé potvrzení získáváte body, denní bonusy a sérii.",
+    "3) Postup sledujete v přehledu /radnice a v kapitolách.",
+    "",
+    "Přihlaste se a začněte první částí.",
     "",
     "Těšíme se na vaši první kapitolu.",
   ].join("\n");
@@ -189,6 +194,16 @@ function buildWelcomeEmailHtml() {
               <td style="padding:16px 28px 0;text-align:center;">
                 <p style="margin:0;color:#c9eef6;font-size:16px;line-height:1.6;">
                   Váš e-mail je ověřený a účet je aktivní. Teď můžete vyrazit za prvními body.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 28px 0;text-align:left;">
+                <p style="margin:0;color:#c9eef6;font-size:15px;line-height:1.65;">
+                  <strong>Jak hra funguje:</strong><br />
+                  1) Cílem je odemknout všech 112 pražských katastrálních území.<br />
+                  2) Za každé potvrzení získáváte body, denní bonusy a sérii.<br />
+                  3) Postup sledujete v přehledu <strong>Radnice</strong> a v kapitolách.
                 </p>
               </td>
             </tr>
