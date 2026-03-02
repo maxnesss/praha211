@@ -66,7 +66,7 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
               {chapter?.name ?? district.chapterName}
             </Link>
             <span className="text-cyan-200/45">/</span>
-            <span className="text-orange-200">{district.code}</span>
+            <span className="text-orange-200">{district.name}</span>
           </div>
 
           <div className="mt-6">
