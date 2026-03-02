@@ -24,6 +24,10 @@ const nameSchema = z
   .optional()
   .transform((value) => (value && value.length > 0 ? value : undefined));
 
+const privacyPolicyAcceptedSchema = z
+  .boolean()
+  .refine((value) => value, "Pro registraci je nutné potvrdit ochranu osobních údajů.");
+
 export const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Heslo je povinné."),
@@ -34,11 +38,13 @@ export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   registrationCode: registrationCodeSchema,
+  privacyPolicyAccepted: privacyPolicyAcceptedSchema,
 });
 
 export const userRoleSchema = z.enum(["ADMIN", "USER"]);
 
 export const addUserSchema = registerSchema.extend({
+  privacyPolicyAccepted: privacyPolicyAcceptedSchema.default(true),
   role: userRoleSchema.default("USER"),
 });
 

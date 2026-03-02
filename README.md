@@ -121,6 +121,7 @@ npm run users:seed:random -- --count 30 --min-progress 5 --max-progress 70 --pas
 UI:
 - `/` - veřejný landing
 - `/radnice` - přehled hráče
+- `/ochrana-osobnich-udaju` - zásady ochrany osobních údajů (GDPR)
 - `/chapter/[slug]` - kapitola
 - `/district/[code]` - detail městské části
 - `/skore` - skóre
@@ -197,6 +198,7 @@ Poznámky:
 
 - Role: `USER`, `ADMIN`
 - Noví uživatelé defaultně dostávají `USER`
+- Registrace vyžaduje potvrzení zásad ochrany osobních údajů (GDPR)
 - Veřejná je pouze landing stránka `/`
 - Herní části a týmové části vyžadují přihlášení
 

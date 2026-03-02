@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/kontaktujte-nas"],
+        allow: ["/", "/kontaktujte-nas", "/ochrana-osobnich-udaju"],
         disallow: [
           "/api/",
           "/sign-in",

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, password, name } = parsed.data;
+    const { email, password, name, privacyPolicyAccepted } = parsed.data;
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
         avatar: DEFAULT_USER_AVATAR,
         passwordHash,
         role: "USER",
+        privacyPolicyAcceptedAt: privacyPolicyAccepted ? new Date() : null,
       },
       select: { id: true },
     });

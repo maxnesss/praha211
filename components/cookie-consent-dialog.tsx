@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 
 type ConsentChoice = "all" | "essential";
@@ -93,6 +94,18 @@ export function CookieConsentDialog() {
             Nezbytné cookies zajišťují přihlášení, bezpečnost a správné fungování
             aplikace. Volitelně můžete povolit analytické cookies pro zlepšování
             prostředí PRAHA 112.
+          </p>
+          <p className="text-xs text-cyan-100/75">
+            Podrobnosti najdete v{" "}
+            <Link
+              href="/ochrana-osobnich-udaju"
+              className="text-cyan-50 underline underline-offset-4 hover:text-cyan-100"
+              target="_blank"
+              rel="noreferrer"
+            >
+              zásadách ochrany osobních údajů
+            </Link>
+            .
           </p>
 
           <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.12em]">

@@ -341,6 +341,7 @@ async function registerAndLogin(baseUrl, namespace, label, name) {
       password: PASSWORD,
       name,
       registrationCode: REGISTRATION_CODE,
+      privacyPolicyAccepted: true,
     },
     expectedStatus: 201,
   });

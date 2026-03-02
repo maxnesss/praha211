@@ -25,6 +25,7 @@ export default function SignUpPage() {
       email: String(formData.get("email") || ""),
       password: String(formData.get("password") || ""),
       registrationCode: String(formData.get("registrationCode") || ""),
+      privacyPolicyAccepted: formData.get("privacyPolicyAccepted") === "on",
     });
 
     if (!parsed.success) {
@@ -33,12 +34,24 @@ export default function SignUpPage() {
       return;
     }
 
-    const { name, email, password, registrationCode } = parsed.data;
+    const {
+      name,
+      email,
+      password,
+      registrationCode,
+      privacyPolicyAccepted,
+    } = parsed.data;
 
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, registrationCode }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        registrationCode,
+        privacyPolicyAccepted,
+      }),
     });
 
     if (!response.ok) {
@@ -135,6 +148,28 @@ export default function SignUpPage() {
               />
               <p className="text-xs text-cyan-100/65">Minimálně 8 znaků.</p>
             </div>
+
+            <label className="flex items-start gap-2.5 rounded-md border border-cyan-300/20 bg-cyan-500/5 px-3 py-2 text-sm text-cyan-100/85">
+              <input
+                id="privacyPolicyAccepted"
+                name="privacyPolicyAccepted"
+                type="checkbox"
+                required
+                className="mt-0.5 h-4 w-4 rounded border-cyan-300/50 bg-[#08161f] text-cyan-300 focus:ring-cyan-300"
+              />
+              <span>
+                Souhlasím se zpracováním osobních údajů podle{" "}
+                <Link
+                  href="/ochrana-osobnich-udaju"
+                  className="font-medium text-cyan-50 underline underline-offset-4 hover:text-cyan-100"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  zásad ochrany osobních údajů (GDPR)
+                </Link>
+                .
+              </span>
+            </label>
 
             {error ? (
               <p className="rounded-md border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
