@@ -5,10 +5,11 @@ import {
   sendWelcomeEmail,
 } from "@/lib/email-verification";
 import { prisma } from "@/lib/prisma";
+import { getSiteUrl } from "@/lib/seo";
 import { verifyEmailQuerySchema } from "@/lib/validation/auth";
 
-function redirectToSignIn(request: Request, verification: string) {
-  const url = new URL("/sign-in", request.url);
+function redirectToSignIn(verification: string) {
+  const url = new URL("/sign-in", getSiteUrl());
   url.searchParams.set("verification", verification);
   return NextResponse.redirect(url);
 }
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
     });
 
     if (!parsed.success) {
-      return redirectToSignIn(request, "invalid");
+      return redirectToSignIn("invalid");
     }
 
     const { email, token } = parsed.data;
@@ -52,11 +53,11 @@ export async function GET(request: Request) {
     });
 
     if (!user) {
-      return redirectToSignIn(request, "invalid");
+      return redirectToSignIn("invalid");
     }
 
     if (user.emailVerifiedAt) {
-      return redirectToSignIn(request, "already");
+      return redirectToSignIn("already");
     }
 
     const tokenMatches =
@@ -69,7 +70,7 @@ export async function GET(request: Request) {
       && user.emailVerificationTokenExpiresAt >= now;
 
     if (!tokenMatches || !tokenNotExpired) {
-      return redirectToSignIn(request, "invalid");
+      return redirectToSignIn("invalid");
     }
 
     await prisma.user.update({
@@ -87,9 +88,9 @@ export async function GET(request: Request) {
       console.error("Odeslání uvítacího e-mailu selhalo:", error);
     }
 
-    return redirectToSignIn(request, "success");
+    return redirectToSignIn("success");
   } catch (error) {
     console.error("Ověření e-mailu selhalo:", error);
-    return redirectToSignIn(request, "error");
+    return redirectToSignIn("error");
   }
 }
