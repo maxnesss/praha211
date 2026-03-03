@@ -46,7 +46,8 @@ if [[ -f .env ]]; then
 fi
 
 if [[ -n "${HEALTHCHECK_SECRET:-}" ]]; then
-  HEALTH_URL="http://127.0.0.1/api/health/db"
+  # Check the app process directly to avoid nginx virtual-host routing issues.
+  HEALTH_URL="${HEALTHCHECK_URL:-http://127.0.0.1:3000/api/health/db}"
   HEALTH_OK=0
   for _ in {1..30}; do
     if curl -fsS -H "x-health-check-secret: ${HEALTHCHECK_SECRET}" "$HEALTH_URL" >/dev/null; then
