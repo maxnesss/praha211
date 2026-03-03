@@ -33,11 +33,23 @@ type ValidateDistrictSelfieInput = {
 
 type ExtractOcrTextOptions = {
   mirrorHorizontal?: boolean;
+  rotateDegrees?: number;
+  thresholdMode?: boolean;
+};
+
+type OcrWorker = {
+  recognize: (image: Buffer) => Promise<{ data: { text: string } }>;
+  terminate: () => Promise<unknown>;
+};
+
+type OcrAttempt = {
+  text: string;
+  aliasMatch: DistrictAliasMatch;
 };
 
 const OCR_LANGUAGE = "ces+eng";
 const FACE_RESIZE_WIDTH = 640;
-const OCR_RESIZE_WIDTH = 1500;
+const OCR_RESIZE_WIDTH = 1800;
 const OCR_MAX_TEXT_LENGTH = 10_000;
 const TESSERACT_OEM_LSTM_ONLY = 1;
 const TESSERACT_CACHE_DIR = path.join(process.cwd(), ".cache", "tesseract");
@@ -291,29 +303,47 @@ async function detectFaceCount(imageBuffer: Buffer) {
 }
 
 async function extractOcrText(
+  worker: OcrWorker,
   imageBuffer: Buffer,
   options: ExtractOcrTextOptions = {},
 ) {
-  let pipeline = sharp(imageBuffer)
-    .rotate()
-    .resize({
-      width: OCR_RESIZE_WIDTH,
-      height: OCR_RESIZE_WIDTH,
-      fit: "inside",
-      withoutEnlargement: true,
-    });
+  let pipeline = sharp(imageBuffer).rotate();
+
+  if (options.rotateDegrees) {
+    pipeline = pipeline.rotate(options.rotateDegrees);
+  }
+
+  pipeline = pipeline.resize({
+    width: OCR_RESIZE_WIDTH,
+    height: OCR_RESIZE_WIDTH,
+    fit: "inside",
+    withoutEnlargement: false,
+  });
 
   if (options.mirrorHorizontal) {
     pipeline = pipeline.flop();
   }
 
-  const processed = await pipeline
-    .grayscale()
-    .normalize()
-    .sharpen()
-    .png()
-    .toBuffer();
+  const processed = options.thresholdMode
+    ? await pipeline
+      .grayscale()
+      .normalize()
+      .linear(1.35, -15)
+      .threshold(160)
+      .png()
+      .toBuffer()
+    : await pipeline
+      .grayscale()
+      .normalize()
+      .sharpen()
+      .png()
+      .toBuffer();
 
+  const output = await worker.recognize(processed);
+  return output.data.text.slice(0, OCR_MAX_TEXT_LENGTH);
+}
+
+async function createOcrWorker(): Promise<OcrWorker> {
   const workerPath = resolveTesseractWorkerPath();
   if (!workerPath) {
     throw new Error(
@@ -332,12 +362,36 @@ async function extractOcrText(
     },
   });
 
-  try {
-    const output = await worker.recognize(processed);
-    return output.data.text.slice(0, OCR_MAX_TEXT_LENGTH);
-  } finally {
-    await worker.terminate();
+  return worker;
+}
+
+function pickBetterOcrAttempt(
+  current: OcrAttempt | null,
+  candidate: OcrAttempt,
+) {
+  if (!current) {
+    return candidate;
   }
+
+  if (candidate.aliasMatch.matched && !current.aliasMatch.matched) {
+    return candidate;
+  }
+
+  if (!candidate.aliasMatch.matched && current.aliasMatch.matched) {
+    return current;
+  }
+
+  if (candidate.aliasMatch.exact && !current.aliasMatch.exact) {
+    return candidate;
+  }
+
+  if (!candidate.aliasMatch.exact && current.aliasMatch.exact) {
+    return current;
+  }
+
+  return normalizeText(candidate.text).length > normalizeText(current.text).length
+    ? candidate
+    : current;
 }
 
 function buildConfidence(input: {
@@ -412,21 +466,53 @@ export async function validateDistrictSelfieLocally(
   };
 
   try {
-    ocrText = await extractOcrText(imageBuffer);
-    aliasMatch = matchDistrictAlias(ocrText, input.districtName);
+    const worker = await createOcrWorker();
+    let bestAttempt: OcrAttempt | null = null;
 
-    if (!aliasMatch.matched) {
-      try {
-        const mirroredOcrText = await extractOcrText(imageBuffer, { mirrorHorizontal: true });
-        const mirroredAliasMatch = matchDistrictAlias(mirroredOcrText, input.districtName);
+    const baseVariants: ExtractOcrTextOptions[] = [
+      {},
+      { mirrorHorizontal: true },
+      { rotateDegrees: 90 },
+      { rotateDegrees: 90, mirrorHorizontal: true },
+      { rotateDegrees: 270 },
+      { rotateDegrees: 270, mirrorHorizontal: true },
+      { rotateDegrees: 180 },
+      { rotateDegrees: 180, mirrorHorizontal: true },
+    ];
+    const thresholdVariants: ExtractOcrTextOptions[] = [
+      { thresholdMode: true },
+      { thresholdMode: true, mirrorHorizontal: true },
+      { thresholdMode: true, rotateDegrees: 90 },
+      { thresholdMode: true, rotateDegrees: 90, mirrorHorizontal: true },
+      { thresholdMode: true, rotateDegrees: 270 },
+      { thresholdMode: true, rotateDegrees: 270, mirrorHorizontal: true },
+    ];
 
-        if (mirroredAliasMatch.matched) {
-          ocrText = mirroredOcrText;
-          aliasMatch = mirroredAliasMatch;
+    try {
+      for (const variant of [...baseVariants, ...thresholdVariants]) {
+        try {
+          const variantText = await extractOcrText(worker, imageBuffer, variant);
+          const variantMatch = matchDistrictAlias(variantText, input.districtName);
+          const attempt: OcrAttempt = {
+            text: variantText,
+            aliasMatch: variantMatch,
+          };
+          bestAttempt = pickBetterOcrAttempt(bestAttempt, attempt);
+
+          if (variantMatch.matched && variantMatch.exact) {
+            break;
+          }
+        } catch (error) {
+          console.error("Lokální OCR varianta selhala:", error);
         }
-      } catch (error) {
-        console.error("Lokální OCR fallback pro zrcadlenou selfie selhal:", error);
       }
+    } finally {
+      await worker.terminate();
+    }
+
+    if (bestAttempt) {
+      ocrText = bestAttempt.text;
+      aliasMatch = bestAttempt.aliasMatch;
     }
   } catch (error) {
     console.error("Lokální OCR validace selhala:", error);
