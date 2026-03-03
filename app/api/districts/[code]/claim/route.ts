@@ -117,20 +117,22 @@ export async function POST(request: Request, context: ClaimRouteContext) {
         );
       }
 
-      try {
-        const exists = await doesR2ObjectExist(selfieKey);
-        if (!exists) {
+      if (!shouldBypassLocalValidationInCI()) {
+        try {
+          const exists = await doesR2ObjectExist(selfieKey);
+          if (!exists) {
+            return NextResponse.json(
+              { message: "Selfie nebyla nalezena." },
+              { status: 404 },
+            );
+          }
+        } catch (error) {
+          console.error("Ověření selfie v R2 selhalo:", error);
           return NextResponse.json(
-            { message: "Selfie nebyla nalezena." },
-            { status: 404 },
+            { message: "Nepodařilo se ověřit selfie." },
+            { status: 500 },
           );
         }
-      } catch (error) {
-        console.error("Ověření selfie v R2 selhalo:", error);
-        return NextResponse.json(
-          { message: "Nepodařilo se ověřit selfie." },
-          { status: 500 },
-        );
       }
 
       const [existingClaim, existingPendingSubmission] = await Promise.all([

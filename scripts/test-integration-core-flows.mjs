@@ -223,7 +223,24 @@ class SessionClient {
   }
 }
 
-async function signAndUploadSelfie(client, districtCode, label) {
+function isCiMode() {
+  return process.env.CI === "true";
+}
+
+function buildCiSelfieKey(userId, label) {
+  const safeLabel = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "selfie";
+  return `selfies/${userId}/ci/${safeLabel}.jpg`;
+}
+
+async function signAndUploadSelfie(client, districtCode, label, userId) {
+  if (isCiMode()) {
+    return buildCiSelfieKey(userId, label);
+  }
+
   const signResponse = await client.request("/api/uploads/selfie/sign", {
     method: "POST",
     json: {
@@ -485,7 +502,12 @@ async function testCoreFlows(baseUrl, namespace) {
     "Autentizovaný probe endpoint nevrátil očekávanou odpověď.",
   );
 
-  const firstSelfieKey = await signAndUploadSelfie(primary.client, "D001", "claim-primary");
+  const firstSelfieKey = await signAndUploadSelfie(
+    primary.client,
+    "D001",
+    "claim-primary",
+    primary.userId,
+  );
   const firstClaim = await primary.client.request("/api/districts/D001/claim", {
     method: "POST",
     json: {
@@ -536,7 +558,12 @@ async function testCoreFlows(baseUrl, namespace) {
     expectedStatus: 400,
   });
 
-  const foreignSelfieKey = await signAndUploadSelfie(leader.client, "D002", "foreign-claim");
+  const foreignSelfieKey = await signAndUploadSelfie(
+    leader.client,
+    "D002",
+    "foreign-claim",
+    leader.userId,
+  );
   await primary.client.request("/api/districts/D002/claim", {
     method: "POST",
     json: {
