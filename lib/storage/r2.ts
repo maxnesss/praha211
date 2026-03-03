@@ -1,4 +1,4 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 type R2Config = {
   accountId: string;
@@ -60,4 +60,26 @@ export function getR2Client() {
     },
   });
   return cachedClient;
+}
+
+export async function doesR2ObjectExist(key: string) {
+  const config = getR2Config();
+  const client = getR2Client();
+
+  try {
+    await client.send(
+      new HeadObjectCommand({
+        Bucket: config.bucketName,
+        Key: key,
+      }),
+    );
+    return true;
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode;
+    const name = (error as { name?: string })?.name ?? "";
+    if (status === 404 || name === "NotFound" || name === "NoSuchKey") {
+      return false;
+    }
+    throw error;
+  }
 }

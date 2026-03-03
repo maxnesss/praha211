@@ -105,6 +105,8 @@ model DistrictClaim {
   submission        DistrictClaimSubmission? @relation("SubmissionApprovedClaim")
 
   @@unique([userId, districtCode])
+  @@index([selfieUrl])
+  @@index([userId, selfieUrl])
   @@index([userId, claimedAt])
 }
 
@@ -140,6 +142,8 @@ model DistrictClaimSubmission {
   @@index([userId, status, createdAt])
   @@index([districtCode, status, createdAt])
   @@index([reviewedByUserId])
+  @@index([selfieUrl])
+  @@index([userId, selfieUrl])
 }
 
 model ScoreEvent {

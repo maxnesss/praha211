@@ -223,6 +223,44 @@ class SessionClient {
   }
 }
 
+async function signAndUploadSelfie(client, districtCode, label) {
+  const signResponse = await client.request("/api/uploads/selfie/sign", {
+    method: "POST",
+    json: {
+      filename: `${label}.jpg`,
+      type: "image/jpeg",
+      size: 1024,
+      districtCode,
+    },
+    expectedStatus: 200,
+  });
+
+  const uploadUrl = signResponse.payload?.uploadUrl;
+  const selfieKey = signResponse.payload?.selfieKey;
+  const contentType = signResponse.payload?.contentType ?? "image/jpeg";
+
+  assert(
+    typeof uploadUrl === "string" && uploadUrl.length > 0,
+    "PodepsanÃ½ upload URL nebyl vrÃ¡cen.",
+  );
+  assert(
+    typeof selfieKey === "string" && selfieKey.length > 0,
+    "Selfie klÃ­Ä nebyl vrÃ¡cen.",
+  );
+
+  const uploadResponse = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    body: Buffer.from("praha112-test-selfie"),
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error(`Upload selfie selhal (status ${uploadResponse.status}).`);
+  }
+
+  return selfieKey;
+}
+
 async function startServer(baseUrl, port) {
   const env = {
     ...process.env,
@@ -447,7 +485,7 @@ async function testCoreFlows(baseUrl, namespace) {
     "Autentizovaný probe endpoint nevrátil očekávanou odpověď.",
   );
 
-  const firstSelfieKey = `selfies/${namespace}/claim-primary.jpg`;
+  const firstSelfieKey = await signAndUploadSelfie(primary.client, "D001", "claim-primary");
   const firstClaim = await primary.client.request("/api/districts/D001/claim", {
     method: "POST",
     json: {
@@ -455,12 +493,19 @@ async function testCoreFlows(baseUrl, namespace) {
       attestVisited: true,
       attestSignVisible: true,
     },
-    expectedStatus: 201,
+    expectedStatuses: [201, 202],
   });
-  assert(
-    firstClaim.payload?.claim?.districtCode === "D001",
-    "První claim nevrátil očekávaný kód městské části.",
-  );
+  if (firstClaim.status === 201) {
+    assert(
+      firstClaim.payload?.claim?.districtCode === "D001",
+      "První claim nevrátil očekávaný kód městské části.",
+    );
+  } else {
+    assert(
+      typeof firstClaim.payload?.submission?.id === "string",
+      "První claim ve stavu REVIEW musí vrátit submission id.",
+    );
+  }
 
   await primary.client.request("/api/districts/D001/claim", {
     method: "POST",
@@ -479,6 +524,27 @@ async function testCoreFlows(baseUrl, namespace) {
 
   await leader.client.request(`/api/uploads/selfie/view?key=${encodeURIComponent(firstSelfieKey)}`, {
     expectedStatus: 404,
+  });
+
+  await primary.client.request("/api/districts/D002/claim", {
+    method: "POST",
+    json: {
+      selfieUrl: "https://example.com/foreign.jpg",
+      attestVisited: true,
+      attestSignVisible: true,
+    },
+    expectedStatus: 400,
+  });
+
+  const foreignSelfieKey = await signAndUploadSelfie(leader.client, "D002", "foreign-claim");
+  await primary.client.request("/api/districts/D002/claim", {
+    method: "POST",
+    json: {
+      selfieUrl: foreignSelfieKey,
+      attestVisited: true,
+      attestSignVisible: true,
+    },
+    expectedStatus: 403,
   });
 
   const teamCreate = await leader.client.request("/api/teams", {
@@ -704,3 +770,6 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
+
+
+
