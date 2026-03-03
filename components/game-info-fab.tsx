@@ -86,7 +86,10 @@ export function GameInfoFab() {
                       <li>Dokončení je konečné: 112/112.</li>
                       <li>Body jsou nekonečné: základ + denní násobitel + bonus za sérii.</li>
                       <li>Každou městskou část můžete potvrdit jen jednou.</li>
-                      <li>Pro odemčení je potřeba selfie s oficiální cedulí městské části.</li>
+                      <li>
+                        Pro odemčení nahrajte selfie pořízené přímo na místě, kde je jasně vidět
+                        oficiální cedule městské části.
+                      </li>
                       <li>Hrajte fair-play: potvrzujte jen místa, která jste opravdu navštívili.</li>
                     </ul>
                   </section>
