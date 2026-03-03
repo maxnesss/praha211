@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import {
   hashEmailVerificationToken,
   sendWelcomeEmail,
@@ -15,6 +16,9 @@ function redirectToSignIn(verification: string) {
 }
 
 export async function GET(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "auth.verify_email" },
+    async () => {
   const rateLimited = applyRateLimit({
     request,
     prefix: "auth-verify-email",
@@ -93,4 +97,6 @@ export async function GET(request: Request) {
     console.error("Ověření e-mailu selhalo:", error);
     return redirectToSignIn("error");
   }
+    },
+  );
 }

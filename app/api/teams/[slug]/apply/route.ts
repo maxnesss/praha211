@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import {
   isSerializableConflictError,
@@ -12,6 +13,9 @@ type ApplyTeamRouteContext = {
 };
 
 export async function POST(request: Request, context: ApplyTeamRouteContext) {
+  return withApiWriteObservability(
+    { request, operation: "teams.apply" },
+    async () => {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
@@ -144,4 +148,6 @@ export async function POST(request: Request, context: ApplyTeamRouteContext) {
       { status: 500 },
     );
   }
+    },
+  );
 }

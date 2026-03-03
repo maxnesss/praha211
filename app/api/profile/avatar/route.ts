@@ -3,6 +3,7 @@ import {
   parseJsonWithSchema,
   requireAuthedUser,
 } from "@/lib/api/route-hardening";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { prisma } from "@/lib/prisma";
 import {
   getProfileValidationMessage,
@@ -10,6 +11,9 @@ import {
 } from "@/lib/validation/profile";
 
 export async function POST(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "profile.avatar.update" },
+    async () => {
   const authResult = await requireAuthedUser({
     request,
     rateLimit: {
@@ -49,4 +53,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    },
+  );
 }

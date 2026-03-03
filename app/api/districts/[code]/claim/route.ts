@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday } from "@/lib/game/progress";
@@ -16,6 +17,9 @@ type ClaimRouteContext = {
 };
 
 export async function POST(request: Request, context: ClaimRouteContext) {
+  return withApiWriteObservability(
+    { request, operation: "district.claim" },
+    async () => {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
@@ -169,4 +173,6 @@ export async function POST(request: Request, context: ClaimRouteContext) {
       { status: 500 },
     );
   }
+    },
+  );
 }

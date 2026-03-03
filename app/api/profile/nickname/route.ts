@@ -4,6 +4,7 @@ import {
   parseJsonWithSchema,
   requireAuthedUser,
 } from "@/lib/api/route-hardening";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { isNicknameTaken } from "@/lib/nickname-utils";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,6 +13,9 @@ import {
 } from "@/lib/validation/profile";
 
 export async function POST(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "profile.nickname.update" },
+    async () => {
   const authResult = await requireAuthedUser({
     request,
     rateLimit: {
@@ -71,4 +75,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    },
+  );
 }

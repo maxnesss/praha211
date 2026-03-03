@@ -2,6 +2,7 @@ import { compare, hash } from "bcryptjs";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -10,6 +11,9 @@ import {
 } from "@/lib/validation/profile";
 
 export async function POST(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "profile.password.update" },
+    async () => {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
@@ -106,4 +110,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    },
+  );
 }

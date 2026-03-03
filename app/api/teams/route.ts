@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import {
   isSerializableConflictError,
@@ -11,6 +12,9 @@ import { toTeamSlug } from "@/lib/team-utils";
 import { createTeamSchema, getTeamValidationMessage } from "@/lib/validation/team";
 
 export async function POST(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "teams.create" },
+    async () => {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
@@ -135,4 +139,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    },
+  );
 }

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import {
   isAllowedSelfieMimeType,
@@ -61,6 +62,9 @@ function resolveFileExtension(type: string, filename: string) {
 }
 
 export async function POST(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "uploads.selfie.sign" },
+    async () => {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
 
@@ -138,4 +142,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    },
+  );
 }

@@ -176,6 +176,7 @@ Poznámky:
 
 - Veřejně volatelné write/mutate endpointy mají explicitní rate limiting (viz přehled níže).
 - Claim endpoint ošetřuje závodní stav (duplicate claim) a vrací konzistentní `409`.
+- Write/mutate endpointy logují observability event (`api_write_observation`) se stavem odpovědi, třídou stavu (`4xx/5xx/429`) a latencí.
 - Health endpoint (`/api/health/db`) je v produkci chráněn hlavičkou `x-health-check-secret` (`HEALTHCHECK_SECRET` v env).
   - Příklad: `curl -H "x-health-check-secret: <HEALTHCHECK_SECRET>" https://.../api/health/db`
 - Selfie se ukládají privátně do Cloudflare R2:
@@ -211,6 +212,10 @@ Poznámky:
 - Kontaktní formulář (`/kontaktujte-nas`) posílá zprávy přes Resend na `RESEND_CONTACT_TO` (pokud není nastaveno, použije adresu z `RESEND_FROM`)
 - Veřejná je pouze landing stránka `/`
 - Herní části a týmové části vyžadují přihlášení
+
+## ADR
+
+- Architektonická rozhodnutí jsou vedená v `docs/adr/` (index: `docs/adr/README.md`).
 
 Povýšení na admina:
 

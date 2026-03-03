@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { calculateAwardedPoints, calculateCurrentStreak, countClaimsToday } from "@/lib/game/progress";
@@ -46,6 +47,9 @@ async function resolveAdminRequest(context: TestClaimRouteContext) {
 }
 
 export async function POST(_request: Request, context: TestClaimRouteContext) {
+  return withApiWriteObservability(
+    { request: _request, operation: "district.test_claim.create" },
+    async () => {
   const resolved = await resolveAdminRequest(context);
   if ("error" in resolved) {
     return resolved.error;
@@ -118,9 +122,14 @@ export async function POST(_request: Request, context: TestClaimRouteContext) {
     },
     { status: 201 },
   );
+    },
+  );
 }
 
 export async function DELETE(_request: Request, context: TestClaimRouteContext) {
+  return withApiWriteObservability(
+    { request: _request, operation: "district.test_claim.delete" },
+    async () => {
   const resolved = await resolveAdminRequest(context);
   if ("error" in resolved) {
     return resolved.error;
@@ -166,4 +175,6 @@ export async function DELETE(_request: Request, context: TestClaimRouteContext) 
   return NextResponse.json({
     message: `Test: ${district.name} zamčena a body odečteny.`,
   });
+    },
+  );
 }

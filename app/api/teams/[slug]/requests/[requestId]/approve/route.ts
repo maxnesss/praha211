@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthedUser } from "@/lib/api/route-hardening";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
@@ -14,6 +15,9 @@ export async function POST(
   request: Request,
   context: ApproveJoinRequestRouteContext,
 ) {
+  return withApiWriteObservability(
+    { request, operation: "teams.request.approve" },
+    async () => {
   const authResult = await requireAuthedUser({
     request,
     rateLimit: {
@@ -181,4 +185,6 @@ export async function POST(
       { status: 500 },
     );
   }
+    },
+  );
 }

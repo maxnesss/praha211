@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import {
   createEmailVerificationToken,
   sendEmailVerificationEmail,
@@ -43,6 +44,9 @@ async function rotateVerificationTokenAndSend(input: {
 }
 
 export async function POST(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "auth.register" },
+    async () => {
   const rateLimited = applyRateLimit({
     request,
     prefix: "auth-register",
@@ -181,4 +185,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    },
+  );
 }

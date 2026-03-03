@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { sendContactEmail } from "@/lib/email-verification";
 import {
   contactFormSchema,
@@ -8,6 +9,9 @@ import {
 } from "@/lib/validation/contact";
 
 export async function POST(request: Request) {
+  return withApiWriteObservability(
+    { request, operation: "contact.submit" },
+    async () => {
   const rateLimited = applyRateLimit({
     request,
     prefix: "contact",
@@ -61,4 +65,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+    },
+  );
 }

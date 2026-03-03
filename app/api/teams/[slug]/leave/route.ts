@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthedUser } from "@/lib/api/route-hardening";
+import { withApiWriteObservability } from "@/lib/api/write-observability";
 import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
@@ -10,6 +11,9 @@ type LeaveTeamRouteContext = {
 };
 
 export async function POST(request: Request, context: LeaveTeamRouteContext) {
+  return withApiWriteObservability(
+    { request, operation: "teams.leave" },
+    async () => {
   const authResult = await requireAuthedUser({
     request,
     rateLimit: {
@@ -107,4 +111,6 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
       { status: 500 },
     );
   }
+    },
+  );
 }
