@@ -31,18 +31,33 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
     redirect(`/sign-in?callbackUrl=${encodeURIComponent(`/district/${district.code}`)}`);
   }
 
-  const existingClaim = await prisma.districtClaim.findUnique({
-    where: {
-      userId_districtCode: {
+  const [existingClaim, pendingSubmission] = await Promise.all([
+    prisma.districtClaim.findUnique({
+      where: {
+        userId_districtCode: {
+          userId,
+          districtCode: district.code,
+        },
+      },
+      select: {
+        claimedAt: true,
+        selfieUrl: true,
+      },
+    }),
+    prisma.districtClaimSubmission.findFirst({
+      where: {
         userId,
         districtCode: district.code,
+        status: "PENDING",
       },
-    },
-    select: {
-      claimedAt: true,
-      selfieUrl: true,
-    },
-  });
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        createdAt: true,
+        selfieUrl: true,
+      },
+    }),
+  ]);
   const story = getDistrictStory(district.code);
 
   return (
@@ -93,6 +108,15 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
                 districtName={district.name}
                 isAuthenticated={Boolean(userId)}
                 isClaimed={Boolean(existingClaim)}
+                pendingSubmission={
+                  pendingSubmission
+                    ? {
+                        id: pendingSubmission.id,
+                        createdAt: pendingSubmission.createdAt.toISOString(),
+                        selfieUrl: pendingSubmission.selfieUrl,
+                      }
+                    : undefined
+                }
                 existingClaim={
                   existingClaim
                     ? {

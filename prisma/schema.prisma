@@ -24,6 +24,12 @@ enum ScoreEventType {
   PRAHA_PART_COMPLETE
 }
 
+enum ClaimSubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id                             String            @id @default(cuid())
   email                          String            @unique
@@ -42,6 +48,8 @@ model User {
   ledTeam                        Team?             @relation("TeamLeader")
   teamJoinRequests               TeamJoinRequest[]
   claims                         DistrictClaim[]
+  claimSubmissions               DistrictClaimSubmission[]
+  reviewedClaimSubmissions       DistrictClaimSubmission[] @relation("ClaimSubmissionReviewedBy")
   scoreEvents                    ScoreEvent[]
   createdAt                      DateTime          @default(now())
   updatedAt                      DateTime          @updatedAt
@@ -94,9 +102,44 @@ model DistrictClaim {
   streakBonus       Int
   awardedPoints     Int
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submission        DistrictClaimSubmission? @relation("SubmissionApprovedClaim")
 
   @@unique([userId, districtCode])
   @@index([userId, claimedAt])
+}
+
+model DistrictClaimSubmission {
+  id                   String                @id @default(cuid())
+  userId               String
+  districtCode         String
+  chapterSlug          String
+  districtName         String
+  selfieUrl            String
+  attestVisited        Boolean               @default(true)
+  attestSignVisible    Boolean               @default(true)
+  status               ClaimSubmissionStatus @default(PENDING)
+  localFaceCount       Int                   @default(0)
+  localFaceDetected    Boolean               @default(false)
+  localDistrictMatched Boolean               @default(false)
+  localConfidence      Float                 @default(0)
+  localMatchedAlias    String?
+  localOcrText         String?
+  localReasons         Json?
+  localValidatedAt     DateTime?
+  reviewedAt           DateTime?
+  reviewedByUserId     String?
+  reviewNote           String?
+  approvedClaimId      String?               @unique
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy           User?                 @relation("ClaimSubmissionReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  approvedClaim        DistrictClaim?        @relation("SubmissionApprovedClaim", fields: [approvedClaimId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([userId, status, createdAt])
+  @@index([districtCode, status, createdAt])
+  @@index([reviewedByUserId])
 }
 
 model ScoreEvent {

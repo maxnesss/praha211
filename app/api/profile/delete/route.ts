@@ -46,6 +46,9 @@ export async function POST(request: Request) {
         claims: {
           select: { selfieUrl: true },
         },
+        claimSubmissions: {
+          select: { selfieUrl: true },
+        },
       },
     });
 
@@ -56,7 +59,10 @@ export async function POST(request: Request) {
     try {
       await deleteUserSelfieObjects({
         userId,
-        claimSelfieKeys: user.claims.map((claim) => claim.selfieUrl),
+        selfieKeys: [
+          ...user.claims.map((claim) => claim.selfieUrl),
+          ...user.claimSubmissions.map((submission) => submission.selfieUrl),
+        ],
       });
     } catch (error) {
       console.error("Mazání selfie při odstranění účtu selhalo:", error);

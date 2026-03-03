@@ -46,7 +46,7 @@ async function listR2ObjectKeysByPrefix(prefix: string) {
 
 export async function deleteUserSelfieObjects(input: {
   userId: string;
-  claimSelfieKeys: string[];
+  selfieKeys: string[];
 }) {
   const r2Config = getR2Config();
   const client = getR2Client();
@@ -60,7 +60,7 @@ export async function deleteUserSelfieObjects(input: {
     }
   }
 
-  for (const key of input.claimSelfieKeys) {
+  for (const key of input.selfieKeys) {
     if (isSelfieObjectKey(key)) {
       keys.add(key);
     }

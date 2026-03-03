@@ -15,11 +15,18 @@ type ExistingClaim = {
   selfieUrl: string;
 };
 
+type PendingSubmission = {
+  id: string;
+  createdAt: string;
+  selfieUrl: string;
+};
+
 type ClaimDistrictFormProps = {
   districtCode: string;
   districtName: string;
   isAuthenticated: boolean;
   isClaimed: boolean;
+  pendingSubmission?: PendingSubmission;
   existingClaim?: ExistingClaim;
 };
 
@@ -75,6 +82,7 @@ export function ClaimDistrictForm({
   districtName,
   isAuthenticated,
   isClaimed,
+  pendingSubmission,
   existingClaim,
 }: ClaimDistrictFormProps) {
   const router = useRouter();
@@ -262,6 +270,29 @@ export function ClaimDistrictForm({
         ) : (
           <p className="relative mt-3 text-sm text-orange-100/85">Selfie soubor byl nahrán.</p>
         )}
+      </div>
+    );
+  }
+
+  if (pendingSubmission) {
+    return (
+      <div className={`relative mt-1 overflow-hidden rounded-xl border border-cyan-300/35 bg-cyan-500/10 p-4 sm:p-5 ${metro.mobileCard}`}>
+        <h2 className="text-lg font-semibold text-cyan-50">Žádost čeká na schválení</h2>
+        <p className="mt-1.5 text-sm text-cyan-100/85">
+          Lokální kontrola selfie nestačila na automatické odemčení. Žádost byla
+          odeslána dne {new Date(pendingSubmission.createdAt).toLocaleString("cs-CZ")} a
+          čeká na ruční schválení administrátorem.
+        </p>
+        {pendingSubmission.selfieUrl.startsWith("selfies/") ? (
+          <a
+            href={`/api/uploads/selfie/view?key=${encodeURIComponent(pendingSubmission.selfieUrl)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex text-sm font-medium text-cyan-100 underline underline-offset-4 hover:text-cyan-50"
+          >
+            Otevřít nahranou selfie
+          </a>
+        ) : null}
       </div>
     );
   }

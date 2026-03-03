@@ -48,7 +48,17 @@ export async function GET(request: Request) {
   });
 
   if (!claim) {
-    return NextResponse.json({ message: "Selfie nebyla nalezena." }, { status: 404 });
+    const submission = await prisma.districtClaimSubmission.findFirst({
+      where: {
+        selfieUrl: key,
+        ...(isAdmin ? {} : { userId }),
+      },
+      select: { id: true },
+    });
+
+    if (!submission) {
+      return NextResponse.json({ message: "Selfie nebyla nalezena." }, { status: 404 });
+    }
   }
 
   try {

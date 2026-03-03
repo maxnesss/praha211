@@ -40,10 +40,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const { page } = await searchParams;
   const requestedPage = parsePage(page);
 
-  const [totalUsers, adminCount, frozenCount] = await Promise.all([
+  const [totalUsers, adminCount, frozenCount, pendingValidationCount] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADMIN" } }),
     prisma.user.count({ where: { isFrozen: true } }),
+    prisma.districtClaimSubmission.count({ where: { status: "PENDING" } }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
@@ -106,9 +107,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 účet při porušení pravidel.
               </p>
             </div>
+            <Link
+              href="/admin/validace"
+              className="rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-orange-50 transition-colors hover:bg-orange-400/30"
+            >
+              Čekající validace ({pendingValidationCount})
+            </Link>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-4">
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Uživatelé</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
@@ -125,6 +132,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Zmrazení</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
                 {frozenCount}
+              </p>
+            </article>
+            <article className="rounded-lg border border-orange-300/35 bg-orange-400/10 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-orange-100/80">Čekající validace</p>
+              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-orange-50`}>
+                {pendingValidationCount}
               </p>
             </article>
           </div>
