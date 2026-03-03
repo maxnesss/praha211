@@ -47,6 +47,8 @@ model User {
   team                           Team?             @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
   ledTeam                        Team?             @relation("TeamLeader")
   teamJoinRequests               TeamJoinRequest[]
+  teamLeaderVotesCast            TeamLeaderVote[]  @relation("TeamLeaderVotesCast")
+  teamLeaderVotesReceived        TeamLeaderVote[]  @relation("TeamLeaderVotesReceived")
   claims                         DistrictClaim[]
   claimSubmissions               DistrictClaimSubmission[]
   reviewedClaimSubmissions       DistrictClaimSubmission[] @relation("ClaimSubmissionReviewedBy")
@@ -65,6 +67,7 @@ model Team {
   leader           User              @relation("TeamLeader", fields: [leaderUserId], references: [id], onDelete: Cascade)
   users            User[]            @relation("TeamMembers")
   joinRequests     TeamJoinRequest[]
+  leaderVotes      TeamLeaderVote[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -86,6 +89,23 @@ model TeamJoinRequest {
   @@unique([teamId, userId])
   @@index([teamId, status])
   @@index([userId, status])
+}
+
+model TeamLeaderVote {
+  id              String   @id @default(cuid())
+  teamId          String
+  userId          String
+  candidateUserId String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  team            Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user            User     @relation("TeamLeaderVotesCast", fields: [userId], references: [id], onDelete: Cascade)
+  candidate       User     @relation("TeamLeaderVotesReceived", fields: [candidateUserId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId, candidateUserId])
+  @@index([userId])
+  @@index([candidateUserId])
 }
 
 model DistrictClaim {

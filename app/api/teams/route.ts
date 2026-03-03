@@ -75,7 +75,7 @@ export async function POST(request: Request) {
         throw new Error("ALREADY_IN_TEAM");
       }
 
-      return tx.team.create({
+      const team = await tx.team.create({
         data: {
           name: parsed.data.name,
           slug,
@@ -92,6 +92,17 @@ export async function POST(request: Request) {
           slug: true,
         },
       });
+
+      await tx.teamLeaderVote.create({
+        data: {
+          teamId: team.id,
+          userId: user.id,
+          candidateUserId: user.id,
+        },
+        select: { id: true },
+      });
+
+      return team;
     });
 
     return NextResponse.json(

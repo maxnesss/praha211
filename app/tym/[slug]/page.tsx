@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 import { TeamLeaderPanel } from "@/components/team-leader-panel";
+import { TeamLeaderVotePanel } from "@/components/team-leader-vote-panel";
 import { SiteHeader } from "@/components/site-header";
 import { TeamMembershipActions } from "@/components/team-membership-actions";
 import metro from "@/app/metro-theme.module.css";
@@ -132,6 +133,13 @@ export default async function TeamPage({ params }: TeamPageContext) {
             isFull={team.isFull}
             hasPendingRequest={team.hasPendingRequestForCurrentUser}
           />
+
+          {isMember ? (
+            <TeamLeaderVotePanel
+              teamSlug={team.slug}
+              members={team.members}
+            />
+          ) : null}
 
           {team.isCurrentUserLeader ? (
             <TeamLeaderPanel

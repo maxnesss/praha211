@@ -15,6 +15,8 @@ export type TeamMemberOverview = {
   avatar: string | null;
   points: number;
   completed: number;
+  leaderVotes: number;
+  isCurrentUserVote: boolean;
   isCurrentUser: boolean;
   isLeader: boolean;
 };

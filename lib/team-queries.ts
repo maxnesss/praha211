@@ -158,7 +158,36 @@ export async function getTeamDetailBySlug(
     return null;
   }
 
-  const claimByUserId = await getClaimAggregateByUserIds(team.users.map((user) => user.id));
+  const memberIds = team.users.map((user) => user.id);
+  const [claimByUserId, voteGrouped, currentUserVote] = await Promise.all([
+    getClaimAggregateByUserIds(memberIds),
+    prisma.teamLeaderVote.groupBy({
+      by: ["candidateUserId"],
+      where: {
+        teamId: team.id,
+        candidateUserId: { in: memberIds },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+    currentUserId
+      ? prisma.teamLeaderVote.findUnique({
+        where: {
+          teamId_userId: {
+            teamId: team.id,
+            userId: currentUserId,
+          },
+        },
+        select: { candidateUserId: true },
+      })
+      : Promise.resolve(null),
+  ]);
+
+  const voteCountByCandidateUserId = new Map(
+    voteGrouped.map((row) => [row.candidateUserId, row._count._all ?? 0] as const),
+  );
+
   const members = team.users.map((user) => {
     const aggregate = claimByUserId.get(user.id);
     return {
@@ -167,6 +196,8 @@ export async function getTeamDetailBySlug(
       avatar: user.avatar ?? null,
       points: aggregate?.points ?? 0,
       completed: aggregate?.completed ?? 0,
+      leaderVotes: voteCountByCandidateUserId.get(user.id) ?? 0,
+      isCurrentUserVote: currentUserVote?.candidateUserId === user.id,
       isCurrentUser: currentUserId === user.id,
       isLeader: user.id === team.leaderUserId,
     };
