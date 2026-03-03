@@ -25,7 +25,7 @@ export default function PrivacyPolicyPage() {
       <div className={`${metro.gridOverlay} pointer-events-none absolute inset-0 opacity-50`} />
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-5xl px-5 py-10 sm:px-10">
-        <article className={`${metro.pageReveal} w-full rounded-3xl border border-cyan-300/35 bg-[#0c202e]/85 p-6 text-cyan-50 shadow-[0_24px_56px_rgba(0,0,0,0.48)] sm:p-8`}>
+        <article className={`${metro.pageReveal} w-full rounded-3xl border border-cyan-300/35 bg-[#0c202e]/85 p-6 text-cyan-50 shadow-[0_24px_56px_rgba(0,0,0,0.48)] sm:p-8 ${metro.mobilePanel}`}>
           <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/75">
             PRAHA 112
           </p>

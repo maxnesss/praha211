@@ -52,11 +52,11 @@ export function TeamLeaderPanel({
   }
 
   return (
-    <article className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-500/5 p-4">
+    <article className="mt-6 border-t border-cyan-300/20 pt-5">
       <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Velitelský panel</p>
 
       <div className="mt-4 space-y-4">
-        <div className="rounded-xl border border-cyan-300/25 bg-[#091925]/75 p-3">
+        <section>
           <p className="text-sm font-semibold text-cyan-100">Žádosti o vstup</p>
           {pendingRequests.length > 0 ? (
             <ul className="mt-3 space-y-2">
@@ -110,9 +110,9 @@ export function TeamLeaderPanel({
           ) : (
             <p className="mt-2 text-sm text-cyan-100/70">Žádné čekající žádosti.</p>
           )}
-        </div>
+        </section>
 
-        <div className="rounded-xl border border-cyan-300/25 bg-[#091925]/75 p-3">
+        <section className="border-t border-cyan-300/20 pt-4">
           <p className="text-sm font-semibold text-cyan-100">Odebrat hráče</p>
           {removableMembers.length > 0 ? (
             <ul className="mt-3 space-y-2">
@@ -161,7 +161,7 @@ export function TeamLeaderPanel({
           ) : (
             <p className="mt-2 text-sm text-cyan-100/70">Nemáte koho odebrat.</p>
           )}
-        </div>
+        </section>
       </div>
 
       {errorMessage ? (

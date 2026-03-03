@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import metro from "@/app/metro-theme.module.css";
 import { DISTRICTS } from "@/lib/game/district-catalog";
 
 const MIN_QUERY_LENGTH = 4;
@@ -33,7 +34,7 @@ export function OverviewDistrictSearch() {
   }, [normalizedQuery]);
 
   return (
-    <div className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-500/5 p-4">
+    <div className={`mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-500/5 p-4 ${metro.mobileCard}`}>
       <div className="relative">
         <input
           id="district-search"

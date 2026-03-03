@@ -40,7 +40,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
       <SiteHeader session={session} />
 
       <section className={metro.shellContent}>
-        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8 ${metro.mobilePanel}`}>
           <Link
             href="/radnice"
             className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/70 hover:text-cyan-100"

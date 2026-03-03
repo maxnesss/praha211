@@ -72,7 +72,7 @@ export default function ContactPage() {
       <div className={`${metro.gridOverlay} pointer-events-none absolute inset-0 opacity-50`} />
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-5 py-10 sm:px-10">
-        <div className={`${metro.pageReveal} grid w-full gap-8 rounded-3xl border border-cyan-300/35 bg-[#0c202e]/85 p-6 shadow-[0_24px_56px_rgba(0,0,0,0.48)] sm:p-8 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-10 lg:p-10`}>
+        <div className={`${metro.pageReveal} grid w-full gap-8 rounded-3xl border border-cyan-300/35 bg-[#0c202e]/85 p-6 shadow-[0_24px_56px_rgba(0,0,0,0.48)] sm:p-8 lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-10 lg:p-10 ${metro.mobilePanel}`}>
           <div className="flex items-center justify-center">
             <Link
               href="/"

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import metro from "@/app/metro-theme.module.css";
 import {
   isAllowedSelfieMimeType,
   SELFIE_ALLOWED_MIME_TYPES,
@@ -196,7 +197,7 @@ export function ClaimDistrictForm({
 
   if (!isAuthenticated) {
     return (
-      <div className="rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-5">
+      <div className={`rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-5 ${metro.mobileCard}`}>
         <h2 className="text-lg font-semibold text-cyan-50">Potvrdit městskou část</h2>
         <p className="mt-2 text-sm text-cyan-100/70">
           Přihlaste se a odešlete potvrzení návštěvy pro <strong>{districtName}</strong>.
@@ -213,7 +214,7 @@ export function ClaimDistrictForm({
 
   if (isClaimed && existingClaim) {
     return (
-      <div className="relative mt-1 overflow-hidden rounded-xl border border-orange-300/40 bg-orange-400/12 p-4 sm:p-5">
+      <div className={`relative mt-1 overflow-hidden rounded-xl border border-orange-300/40 bg-orange-400/12 p-4 sm:p-5 ${metro.mobileCard}`}>
         {showUnlockEffect ? (
           <div className="pointer-events-none absolute inset-0">
             <div

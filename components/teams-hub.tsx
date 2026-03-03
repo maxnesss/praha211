@@ -80,7 +80,7 @@ export function TeamsHub({
 
   return (
     <div className="mt-6 space-y-6">
-      <article className="rounded-2xl border border-cyan-300/30 bg-cyan-500/5 p-5">
+      <article className="border-t border-cyan-300/20 pt-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">
@@ -113,7 +113,7 @@ export function TeamsHub({
         </div>
       </article>
 
-      <article className="rounded-2xl border border-cyan-300/30 bg-[#091925]/70 p-5">
+      <article className="border-t border-cyan-300/20 pt-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200/75">
             Seznam týmů
@@ -129,9 +129,9 @@ export function TeamsHub({
         />
 
         {filteredTeams.length > 0 ? (
-          <ul className="mt-4 divide-y divide-cyan-300/20 overflow-hidden rounded-xl border border-cyan-300/25 bg-cyan-500/5">
+          <ul className="mt-4 divide-y divide-cyan-300/20">
             {filteredTeams.map((team) => (
-              <li key={team.id} className="px-3 py-3 sm:px-4">
+              <li key={team.id} className="py-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -172,20 +172,12 @@ export function TeamsHub({
                     </p>
                   </div>
 
-                  <div className="sm:w-[88px] sm:text-right">
-                    <Link
-                      href={`/tym/${team.slug}`}
-                      className="inline-flex rounded-md border border-cyan-300/40 bg-cyan-400/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
-                    >
-                      Otevřít
-                    </Link>
-                  </div>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-4 rounded-xl border border-cyan-300/25 bg-cyan-500/5 px-3 py-4 text-sm text-cyan-100/75">
+          <p className="mt-4 text-sm text-cyan-100/75">
             Žádný tým neodpovídá hledání.
           </p>
         )}

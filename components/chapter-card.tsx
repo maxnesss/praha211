@@ -1,4 +1,5 @@
 import Link from "next/link";
+import metro from "@/app/metro-theme.module.css";
 
 type ChapterPreviewCell = {
   code: string;
@@ -27,7 +28,7 @@ export function ChapterCard({
   return (
     <Link
       href={`/chapter/${slug}`}
-      className="group rounded-xl border border-cyan-300/30 bg-[#091925]/75 p-5 transition-colors hover:border-cyan-200/70 hover:bg-[#0b1f2f]/85"
+      className={`group rounded-xl border border-cyan-300/30 bg-[#091925]/75 p-5 transition-colors hover:border-cyan-200/70 hover:bg-[#0b1f2f]/85 ${metro.mobileCard}`}
     >
       <div className="flex items-start justify-between gap-4">
         <div>

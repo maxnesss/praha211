@@ -64,7 +64,7 @@ export default async function LeaderboardListPage({
       <SiteHeader session={session} />
 
       <section className={metro.shellContent}>
-        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8 ${metro.mobilePanel}`}>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
@@ -88,7 +88,30 @@ export default async function LeaderboardListPage({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:hidden">
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">
+                {searchQuery ? "Nalezených hráčů" : "Hráčů v pořadí"}
+              </p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {leaderboard.totalPlayers}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Strana</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {leaderboard.page}/{leaderboard.totalPages}
+              </p>
+            </article>
+            <article className="col-span-2 rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Na stránce</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {leaderboard.entries.length}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-3">
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">
                 {searchQuery ? "Nalezených hráčů" : "Hráčů v pořadí"}
@@ -111,7 +134,7 @@ export default async function LeaderboardListPage({
             </article>
           </div>
 
-          <form action="/kniha-hrdinu/list" method="get" className="mt-6 rounded-xl border border-cyan-300/25 bg-cyan-500/5 p-4">
+          <form action="/kniha-hrdinu/list" method="get" className="mt-6 border-t border-cyan-300/20 pt-5">
             <label htmlFor="leaderboard-search" className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">
               Vyhledat hráče
             </label>
@@ -146,75 +169,73 @@ export default async function LeaderboardListPage({
             </div>
           </form>
 
-          <div className="mt-8 overflow-hidden rounded-xl border border-cyan-300/25 bg-[#091925]/75">
-            <div className="space-y-3 px-4 py-4 sm:hidden">
+          <section className="mt-8">
+            <div className="sm:hidden">
               {leaderboard.entries.length > 0 ? (
-                leaderboard.entries.map((entry) => {
-                  const isCurrentUser = entry.userId === session.user.id;
-                  const podiumMedal = getPodiumMedal(entry.rank);
+                <ul className="divide-y divide-cyan-300/20">
+                  {leaderboard.entries.map((entry) => {
+                    const isCurrentUser = entry.userId === session.user.id;
+                    const podiumMedal = getPodiumMedal(entry.rank);
 
-                  return (
-                    <article
-                      key={entry.userId}
-                      className={`rounded-lg border px-3 py-3 ${
-                        isCurrentUser
-                          ? "border-orange-300/35 bg-orange-400/10 text-orange-100"
-                          : "border-cyan-300/20 bg-cyan-500/[0.04] text-cyan-50/90"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p
-                          className={`${metro.monoDigit} text-sm font-semibold ${
-                            podiumMedal?.rankClassName ?? ""
-                          }`}
-                        >
-                          #{entry.rank}
-                        </p>
-                        <p className={`${metro.monoDigit} text-sm`}>{entry.completed} / 112</p>
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span
-                          aria-hidden={!podiumMedal}
-                          aria-label={podiumMedal?.medalLabel}
-                          title={podiumMedal?.medalLabel}
-                          className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm leading-none"
-                        >
-                          {podiumMedal?.medal ?? ""}
-                        </span>
-                        <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
-                          <Image
-                            src={`/user_icons/${entry.avatar ?? DEFAULT_USER_AVATAR}.webp`}
-                            alt={`Avatar hráče ${toLeaderboardPlayerLabel(entry)}`}
-                            fill
-                            sizes="28px"
-                            className="object-cover"
-                          />
-                        </span>
-                        <Link
-                          href={`/player/${entry.userId}`}
-                          className="text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
-                        >
-                          {toLeaderboardPlayerLabel(entry)}
-                        </Link>
-                        {isCurrentUser ? (
-                          <span className="rounded bg-orange-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
-                            Vy
+                    return (
+                      <li
+                        key={entry.userId}
+                        className={`py-2.5 ${
+                          isCurrentUser
+                            ? "bg-orange-400/[0.04] text-orange-100"
+                            : "text-cyan-50/90"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            aria-hidden={!podiumMedal}
+                            aria-label={podiumMedal?.medalLabel}
+                            title={podiumMedal?.medalLabel}
+                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm leading-none"
+                          >
+                            {podiumMedal?.medal ?? ""}
                           </span>
-                        ) : null}
-                      </div>
-                      <p className={`${metro.monoDigit} mt-2 text-lg font-semibold`}>{entry.points}</p>
-                    </article>
-                  );
-                })
+                          <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-cyan-300/30">
+                            <Image
+                              src={`/user_icons/${entry.avatar ?? DEFAULT_USER_AVATAR}.webp`}
+                              alt={`Avatar hráče ${toLeaderboardPlayerLabel(entry)}`}
+                              fill
+                              sizes="28px"
+                              className="object-cover"
+                            />
+                          </span>
+                          <Link
+                            href={`/player/${entry.userId}`}
+                            className="min-w-0 truncate text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
+                          >
+                            {toLeaderboardPlayerLabel(entry)}
+                          </Link>
+                          {isCurrentUser ? (
+                            <span className="rounded bg-orange-400/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
+                              Vy
+                            </span>
+                          ) : null}
+                          <p className={`${metro.monoDigit} ml-auto shrink-0 text-sm font-semibold`}>
+                            {entry.points}
+                          </p>
+                        </div>
+                        <p className={`${metro.monoDigit} mt-0.5 text-[11px] text-cyan-100/70`}>
+                          Pořadí #{entry.rank} · Odemčeno {entry.completed} / 112
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
               ) : (
-                <p className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-4 text-sm text-cyan-100/65">
+                <p className="text-sm text-cyan-100/65">
                   {searchQuery
                     ? "Pro tento dotaz nebyl nalezen žádný hráč."
                     : "Zatím nejsou v žebříčku žádní hráči."}
                 </p>
               )}
             </div>
-            <div className="hidden overflow-x-auto sm:block">
+
+            <div className="mt-3 hidden overflow-x-auto sm:block">
               <table className="w-full text-sm">
                 <thead className="bg-[#06141d]/70 text-xs uppercase tracking-[0.12em] text-cyan-200/60">
                   <tr>
@@ -291,7 +312,7 @@ export default async function LeaderboardListPage({
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
           <div className="mt-4 flex items-center justify-between gap-3">
             {leaderboard.page > 1 ? (
