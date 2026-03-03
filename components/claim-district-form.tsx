@@ -37,6 +37,11 @@ type SignedUploadPayload = {
   method: "PUT";
 };
 
+type ClaimStatusPayload = {
+  status?: "NONE" | "PENDING" | "CLAIMED";
+  message?: string;
+};
+
 const UNLOCK_EFFECT_SESSION_KEY_PREFIX = "praha112_unlock_effect_";
 const UNLOCK_EFFECT_MAX_AGE_MS = 20_000;
 
@@ -100,6 +105,56 @@ export function ClaimDistrictForm({
     setSuccess(null);
     setIsSubmitting(true);
 
+    const storeUnlockEffect = () => {
+      setShowUnlockEffect(true);
+
+      if (typeof window !== "undefined") {
+        const storageKey = getUnlockEffectStorageKey(districtCode);
+        window.sessionStorage.setItem(storageKey, String(Date.now()));
+      }
+    };
+
+    const applyRecoveredClaimState = async () => {
+      try {
+        const statusResponse = await fetch(`/api/districts/${districtCode}/claim`, {
+          method: "GET",
+          cache: "no-store",
+        });
+        const statusPayload = (await statusResponse.json().catch(() => null)) as
+          | ClaimStatusPayload
+          | null;
+
+        if (!statusResponse.ok || !statusPayload?.status) {
+          return false;
+        }
+
+        if (statusPayload.status === "CLAIMED") {
+          setSuccess(
+            "Městská část byla potvrzena. Dokončení proběhlo i přes opožděnou odpověď.",
+          );
+          setIsModalOpen(false);
+          setIsSubmitting(false);
+          storeUnlockEffect();
+          router.refresh();
+          return true;
+        }
+
+        if (statusPayload.status === "PENDING") {
+          setSuccess(
+            "Žádost byla přijata a čeká na ruční schválení administrátorem.",
+          );
+          setIsModalOpen(false);
+          setIsSubmitting(false);
+          router.refresh();
+          return true;
+        }
+      } catch (recoveryError) {
+        console.error("Nepodařilo se načíst stav potvrzení po chybě:", recoveryError);
+      }
+
+      return false;
+    };
+
     const formData = new FormData(event.currentTarget);
     const selfieFile = formData.get("selfieFile");
     const attestVisited = formData.get("attestVisited") === "on";
@@ -123,84 +178,93 @@ export function ClaimDistrictForm({
       return;
     }
 
-    const signResponse = await fetch("/api/uploads/selfie/sign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filename: selfieFile.name,
-        type: selfieFile.type,
-        size: selfieFile.size,
-        districtCode,
-      }),
-    });
+    try {
+      const signResponse = await fetch("/api/uploads/selfie/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: selfieFile.name,
+          type: selfieFile.type,
+          size: selfieFile.size,
+          districtCode,
+        }),
+      });
 
-    const signPayload = (await signResponse.json().catch(() => null)) as
-      | ({ message?: string } & Partial<SignedUploadPayload>)
-      | null;
+      const signPayload = (await signResponse.json().catch(() => null)) as
+        | ({ message?: string } & Partial<SignedUploadPayload>)
+        | null;
 
-    if (
-      !signResponse.ok
-      || !signPayload?.uploadUrl
-      || !signPayload.selfieKey
-      || !signPayload.contentType
-    ) {
-      setError(signPayload?.message || "Nepodařilo se připravit upload selfie.");
-      setIsSubmitting(false);
-      return;
-    }
+      if (
+        !signResponse.ok
+        || !signPayload?.uploadUrl
+        || !signPayload.selfieKey
+        || !signPayload.contentType
+      ) {
+        setError(signPayload?.message || "Nepodařilo se připravit upload selfie.");
+        setIsSubmitting(false);
+        return;
+      }
 
-    const uploadResponse = await fetch(signPayload.uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": signPayload.contentType,
-      },
-      body: selfieFile,
-    });
+      const uploadResponse = await fetch(signPayload.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": signPayload.contentType,
+        },
+        body: selfieFile,
+      });
 
-    if (!uploadResponse.ok) {
-      setError("Nahrání selfie selhalo. Zkuste to prosím znovu.");
-      setIsSubmitting(false);
-      return;
-    }
+      if (!uploadResponse.ok) {
+        setError("Nahrání selfie selhalo. Zkuste to prosím znovu.");
+        setIsSubmitting(false);
+        return;
+      }
 
-    const response = await fetch(`/api/districts/${districtCode}/claim`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        selfieUrl: signPayload.selfieKey,
-        attestVisited,
-        attestSignVisible,
-      }),
-    });
+      const response = await fetch(`/api/districts/${districtCode}/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selfieUrl: signPayload.selfieKey,
+          attestVisited,
+          attestSignVisible,
+        }),
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+
+        if (!payload?.message && await applyRecoveredClaimState()) {
+          return;
+        }
+
+        setError(
+          payload?.message
+            || "Nepodařilo se odeslat potvrzení městské části po nahrání selfie.",
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload = (await response.json().catch(() => null)) as
         | { message?: string }
         | null;
 
-      setError(
-        payload?.message
-          || "Nepodařilo se odeslat potvrzení městské části po nahrání selfie.",
-      );
+      setSuccess(payload?.message || "Potvrzení přijato.");
+      setIsModalOpen(false);
       setIsSubmitting(false);
-      return;
+      storeUnlockEffect();
+      router.refresh();
+    } catch (error) {
+      console.error("Odeslání potvrzení městské části selhalo:", error);
+
+      if (await applyRecoveredClaimState()) {
+        return;
+      }
+
+      setError("Nepodařilo se odeslat potvrzení městské části po nahrání selfie.");
+      setIsSubmitting(false);
     }
-
-    const payload = (await response.json().catch(() => null)) as
-      | { message?: string }
-      | null;
-
-    setSuccess(payload?.message || "Potvrzení přijato.");
-    setIsModalOpen(false);
-    setIsSubmitting(false);
-    setShowUnlockEffect(true);
-
-    if (typeof window !== "undefined") {
-      const storageKey = getUnlockEffectStorageKey(districtCode);
-      window.sessionStorage.setItem(storageKey, String(Date.now()));
-    }
-
-    router.refresh();
   }
 
   if (!isAuthenticated) {

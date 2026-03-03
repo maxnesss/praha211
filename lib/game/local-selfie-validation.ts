@@ -47,10 +47,25 @@ type OcrAttempt = {
   aliasMatch: DistrictAliasMatch;
 };
 
+type RedComponent = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  width: number;
+  height: number;
+  pixelCount: number;
+  fillRatio: number;
+  aspectRatio: number;
+};
+
 const OCR_LANGUAGE = "ces+eng";
 const FACE_RESIZE_WIDTH = 640;
 const OCR_RESIZE_WIDTH = 1800;
 const OCR_MAX_TEXT_LENGTH = 10_000;
+const RED_SIGN_DETECTION_SIZE = 900;
+const RED_SIGN_MAX_CANDIDATES = 4;
+const RED_SIGN_CROP_PADDING = 24;
 const TESSERACT_OEM_LSTM_ONLY = 1;
 const TESSERACT_CACHE_DIR = path.join(process.cwd(), ".cache", "tesseract");
 const TESSERACT_NODE_WORKER_RELATIVE_PATH = path.join(
@@ -63,6 +78,26 @@ const TESSERACT_NODE_WORKER_RELATIVE_PATH = path.join(
 );
 
 let faceModelPromise: Promise<unknown> | null = null;
+
+const BASE_OCR_VARIANTS: ExtractOcrTextOptions[] = [
+  {},
+  { mirrorHorizontal: true },
+  { rotateDegrees: 90 },
+  { rotateDegrees: 90, mirrorHorizontal: true },
+  { rotateDegrees: 270 },
+  { rotateDegrees: 270, mirrorHorizontal: true },
+  { rotateDegrees: 180 },
+  { rotateDegrees: 180, mirrorHorizontal: true },
+];
+
+const THRESHOLD_OCR_VARIANTS: ExtractOcrTextOptions[] = [
+  { thresholdMode: true },
+  { thresholdMode: true, mirrorHorizontal: true },
+  { thresholdMode: true, rotateDegrees: 90 },
+  { thresholdMode: true, rotateDegrees: 90, mirrorHorizontal: true },
+  { thresholdMode: true, rotateDegrees: 270 },
+  { thresholdMode: true, rotateDegrees: 270, mirrorHorizontal: true },
+];
 
 function resolveTesseractWorkerPath() {
   const workerPath = path.join(process.cwd(), TESSERACT_NODE_WORKER_RELATIVE_PATH);
@@ -394,6 +429,239 @@ function pickBetterOcrAttempt(
     : current;
 }
 
+function isLikelyRedSignPixel(r: number, g: number, b: number) {
+  return r > 120
+    && (r - g) > 35
+    && (r - b) > 35
+    && g < 175
+    && b < 175;
+}
+
+function collectRedSignComponents(
+  data: Buffer,
+  width: number,
+  height: number,
+  channels: number,
+) {
+  const mask = new Uint8Array(width * height);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * channels;
+      const r = data[index] ?? 0;
+      const g = data[index + 1] ?? 0;
+      const b = data[index + 2] ?? 0;
+      if (isLikelyRedSignPixel(r, g, b)) {
+        mask[y * width + x] = 1;
+      }
+    }
+  }
+
+  const visited = new Uint8Array(width * height);
+  const directions = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ] as const;
+  const components: RedComponent[] = [];
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const startIndex = y * width + x;
+      if (!mask[startIndex] || visited[startIndex]) {
+        continue;
+      }
+
+      const queue: number[] = [startIndex];
+      visited[startIndex] = 1;
+      let queueIndex = 0;
+
+      let minX = x;
+      let maxX = x;
+      let minY = y;
+      let maxY = y;
+      let pixelCount = 0;
+
+      while (queueIndex < queue.length) {
+        const currentIndex = queue[queueIndex] ?? 0;
+        queueIndex += 1;
+        const currentX = currentIndex % width;
+        const currentY = Math.floor(currentIndex / width);
+
+        pixelCount += 1;
+        if (currentX < minX) minX = currentX;
+        if (currentX > maxX) maxX = currentX;
+        if (currentY < minY) minY = currentY;
+        if (currentY > maxY) maxY = currentY;
+
+        for (const [dx, dy] of directions) {
+          const nextX = currentX + dx;
+          const nextY = currentY + dy;
+          if (nextX < 0 || nextY < 0 || nextX >= width || nextY >= height) {
+            continue;
+          }
+
+          const nextIndex = nextY * width + nextX;
+          if (!mask[nextIndex] || visited[nextIndex]) {
+            continue;
+          }
+
+          visited[nextIndex] = 1;
+          queue.push(nextIndex);
+        }
+      }
+
+      const componentWidth = maxX - minX + 1;
+      const componentHeight = maxY - minY + 1;
+      const area = componentWidth * componentHeight;
+      const fillRatio = area > 0 ? pixelCount / area : 0;
+      const aspectRatio = componentHeight > 0 ? componentWidth / componentHeight : 0;
+
+      if (
+        pixelCount >= 120
+        && area >= 200
+        && aspectRatio > 1.2
+        && aspectRatio < 5.5
+        && fillRatio > 0.2
+      ) {
+        components.push({
+          minX,
+          maxX,
+          minY,
+          maxY,
+          width: componentWidth,
+          height: componentHeight,
+          pixelCount,
+          fillRatio,
+          aspectRatio,
+        });
+      }
+    }
+  }
+
+  return components.sort((a, b) => b.pixelCount - a.pixelCount);
+}
+
+function toCropArea(input: {
+  component: RedComponent;
+  scaleX: number;
+  scaleY: number;
+  sourceWidth: number;
+  sourceHeight: number;
+}) {
+  const left = Math.max(
+    0,
+    Math.floor(input.component.minX * input.scaleX - RED_SIGN_CROP_PADDING),
+  );
+  const top = Math.max(
+    0,
+    Math.floor(input.component.minY * input.scaleY - RED_SIGN_CROP_PADDING),
+  );
+  const width = Math.min(
+    input.sourceWidth - left,
+    Math.ceil(input.component.width * input.scaleX + RED_SIGN_CROP_PADDING * 2),
+  );
+  const height = Math.min(
+    input.sourceHeight - top,
+    Math.ceil(input.component.height * input.scaleY + RED_SIGN_CROP_PADDING * 2),
+  );
+
+  if (width <= 1 || height <= 1) {
+    return null;
+  }
+
+  return { left, top, width, height };
+}
+
+async function extractRedSignCandidateBuffers(imageBuffer: Buffer) {
+  const orientedBuffer = await sharp(imageBuffer)
+    .rotate()
+    .png()
+    .toBuffer();
+  const sourceMeta = await sharp(orientedBuffer).metadata();
+  const sourceWidth = sourceMeta.width ?? 0;
+  const sourceHeight = sourceMeta.height ?? 0;
+  if (sourceWidth <= 1 || sourceHeight <= 1) {
+    return [];
+  }
+
+  const downscaled = await sharp(orientedBuffer)
+    .resize({
+      width: RED_SIGN_DETECTION_SIZE,
+      height: RED_SIGN_DETECTION_SIZE,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const components = collectRedSignComponents(
+    downscaled.data,
+    downscaled.info.width,
+    downscaled.info.height,
+    downscaled.info.channels,
+  ).slice(0, RED_SIGN_MAX_CANDIDATES);
+
+  if (components.length === 0) {
+    return [];
+  }
+
+  const scaleX = sourceWidth / downscaled.info.width;
+  const scaleY = sourceHeight / downscaled.info.height;
+  const candidateBuffers: Buffer[] = [];
+
+  for (const component of components) {
+    const cropArea = toCropArea({
+      component,
+      scaleX,
+      scaleY,
+      sourceWidth,
+      sourceHeight,
+    });
+    if (!cropArea) {
+      continue;
+    }
+
+    const cropped = await sharp(orientedBuffer)
+      .extract(cropArea)
+      .png()
+      .toBuffer();
+    candidateBuffers.push(cropped);
+  }
+
+  return candidateBuffers;
+}
+
+async function runOcrVariants(
+  worker: OcrWorker,
+  imageBuffer: Buffer,
+  districtName: string,
+) {
+  let bestAttempt: OcrAttempt | null = null;
+
+  for (const variant of [...BASE_OCR_VARIANTS, ...THRESHOLD_OCR_VARIANTS]) {
+    try {
+      const variantText = await extractOcrText(worker, imageBuffer, variant);
+      const variantMatch = matchDistrictAlias(variantText, districtName);
+      const attempt: OcrAttempt = {
+        text: variantText,
+        aliasMatch: variantMatch,
+      };
+      bestAttempt = pickBetterOcrAttempt(bestAttempt, attempt);
+
+      if (variantMatch.matched && variantMatch.exact) {
+        break;
+      }
+    } catch (error) {
+      console.error("Lokální OCR varianta selhala:", error);
+    }
+  }
+
+  return bestAttempt;
+}
+
 function buildConfidence(input: {
   districtNameMatched: boolean;
   exactDistrictMatch: boolean;
@@ -469,43 +737,25 @@ export async function validateDistrictSelfieLocally(
     const worker = await createOcrWorker();
     let bestAttempt: OcrAttempt | null = null;
 
-    const baseVariants: ExtractOcrTextOptions[] = [
-      {},
-      { mirrorHorizontal: true },
-      { rotateDegrees: 90 },
-      { rotateDegrees: 90, mirrorHorizontal: true },
-      { rotateDegrees: 270 },
-      { rotateDegrees: 270, mirrorHorizontal: true },
-      { rotateDegrees: 180 },
-      { rotateDegrees: 180, mirrorHorizontal: true },
-    ];
-    const thresholdVariants: ExtractOcrTextOptions[] = [
-      { thresholdMode: true },
-      { thresholdMode: true, mirrorHorizontal: true },
-      { thresholdMode: true, rotateDegrees: 90 },
-      { thresholdMode: true, rotateDegrees: 90, mirrorHorizontal: true },
-      { thresholdMode: true, rotateDegrees: 270 },
-      { thresholdMode: true, rotateDegrees: 270, mirrorHorizontal: true },
-    ];
-
     try {
-      for (const variant of [...baseVariants, ...thresholdVariants]) {
-        try {
-          const variantText = await extractOcrText(worker, imageBuffer, variant);
-          const variantMatch = matchDistrictAlias(variantText, input.districtName);
-          const attempt: OcrAttempt = {
-            text: variantText,
-            aliasMatch: variantMatch,
-          };
-          bestAttempt = pickBetterOcrAttempt(bestAttempt, attempt);
+      bestAttempt = await runOcrVariants(worker, imageBuffer, input.districtName);
 
-          if (variantMatch.matched && variantMatch.exact) {
+      if (!bestAttempt?.aliasMatch.matched) {
+        const signCandidates = await extractRedSignCandidateBuffers(imageBuffer);
+        for (const candidateBuffer of signCandidates) {
+          const candidateAttempt = await runOcrVariants(worker, candidateBuffer, input.districtName);
+          if (!candidateAttempt) {
+            continue;
+          }
+          bestAttempt = pickBetterOcrAttempt(bestAttempt, candidateAttempt);
+
+          if (bestAttempt?.aliasMatch.matched && bestAttempt.aliasMatch.exact) {
             break;
           }
-        } catch (error) {
-          console.error("Lokální OCR varianta selhala:", error);
         }
       }
+    } catch (error) {
+      console.error("Lokální OCR fallback se selháním kandidátů cedule:", error);
     } finally {
       await worker.terminate();
     }

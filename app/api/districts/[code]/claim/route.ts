@@ -305,3 +305,77 @@ export async function POST(request: Request, context: ClaimRouteContext) {
     },
   );
 }
+
+export async function GET(_request: Request, context: ClaimRouteContext) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
+  }
+
+  const { code } = await context.params;
+  const district = getDistrictByCode(code);
+
+  if (!district) {
+    return NextResponse.json(
+      { message: "Městská část nebyla nalezena." },
+      { status: 404 },
+    );
+  }
+
+  const [claim, pendingSubmission] = await Promise.all([
+    prisma.districtClaim.findUnique({
+      where: {
+        userId_districtCode: {
+          userId,
+          districtCode: district.code,
+        },
+      },
+      select: {
+        id: true,
+        claimedAt: true,
+      },
+    }),
+    prisma.districtClaimSubmission.findFirst({
+      where: {
+        userId,
+        districtCode: district.code,
+        status: ClaimSubmissionStatus.PENDING,
+      },
+      select: {
+        id: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
+
+  if (claim) {
+    return NextResponse.json(
+      {
+        status: "CLAIMED" as const,
+        claim: {
+          id: claim.id,
+          claimedAt: claim.claimedAt,
+        },
+      },
+      { status: 200 },
+    );
+  }
+
+  if (pendingSubmission) {
+    return NextResponse.json(
+      {
+        status: "PENDING" as const,
+        submission: {
+          id: pendingSubmission.id,
+          createdAt: pendingSubmission.createdAt,
+        },
+      },
+      { status: 200 },
+    );
+  }
+
+  return NextResponse.json({ status: "NONE" as const }, { status: 200 });
+}
