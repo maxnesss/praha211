@@ -10,6 +10,8 @@ import { getDistrictByCode } from "@/lib/game/district-catalog";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { validateDistrictSelfieLocally } from "@/lib/game/local-selfie-validation";
 import { prisma } from "@/lib/prisma";
+import { isSelfieObjectKey } from "@/lib/selfie-upload-rules";
+import { doesR2ObjectExist } from "@/lib/storage/r2";
 import { districtClaimSchema, getValidationMessage } from "@/lib/validation/game";
 
 type ClaimRouteContext = {
@@ -31,6 +33,10 @@ function buildBypassedLocalValidation() {
     ocrText: "",
     reasons: ["Lokální validace byla přeskočena v CI režimu."],
   };
+}
+
+function isSelfieOwnedByUser(selfieKey: string, userId: string) {
+  return selfieKey.startsWith(`selfies/${userId}/`);
 }
 
 export async function POST(request: Request, context: ClaimRouteContext) {
@@ -96,6 +102,37 @@ export async function POST(request: Request, context: ClaimRouteContext) {
         );
       }
 
+      const selfieKey = parsed.data.selfieUrl.trim();
+      if (!isSelfieObjectKey(selfieKey)) {
+        return NextResponse.json(
+          { message: "Selfie musí být interní klíč úložiště." },
+          { status: 400 },
+        );
+      }
+
+      if (!isSelfieOwnedByUser(selfieKey, userId)) {
+        return NextResponse.json(
+          { message: "Selfie nepatří aktuálnímu uživateli." },
+          { status: 403 },
+        );
+      }
+
+      try {
+        const exists = await doesR2ObjectExist(selfieKey);
+        if (!exists) {
+          return NextResponse.json(
+            { message: "Selfie nebyla nalezena." },
+            { status: 404 },
+          );
+        }
+      } catch (error) {
+        console.error("Ověření selfie v R2 selhalo:", error);
+        return NextResponse.json(
+          { message: "Nepodařilo se ověřit selfie." },
+          { status: 500 },
+        );
+      }
+
       const [existingClaim, existingPendingSubmission] = await Promise.all([
         prisma.districtClaim.findUnique({
           where: {
@@ -134,7 +171,7 @@ export async function POST(request: Request, context: ClaimRouteContext) {
       const localValidation = shouldBypassLocalValidationInCI()
         ? buildBypassedLocalValidation()
         : await validateDistrictSelfieLocally({
-          selfieUrl: parsed.data.selfieUrl,
+          selfieUrl: selfieKey,
           districtName: district.name,
         });
       const now = new Date();
@@ -148,7 +185,7 @@ export async function POST(request: Request, context: ClaimRouteContext) {
                 districtCode: district.code,
                 chapterSlug: district.chapterSlug,
                 districtName: district.name,
-                selfieUrl: parsed.data.selfieUrl,
+                selfieUrl: selfieKey,
                 attestVisited: parsed.data.attestVisited,
                 attestSignVisible: parsed.data.attestSignVisible,
                 status: ClaimSubmissionStatus.APPROVED,
@@ -172,7 +209,7 @@ export async function POST(request: Request, context: ClaimRouteContext) {
               districtCode: district.code,
               chapterSlug: district.chapterSlug,
               districtName: district.name,
-              selfieUrl: parsed.data.selfieUrl,
+              selfieUrl: selfieKey,
               signVisible: parsed.data.attestSignVisible,
               claimedAt: now,
               basePoints: district.basePoints,
@@ -225,7 +262,7 @@ export async function POST(request: Request, context: ClaimRouteContext) {
             districtCode: district.code,
             chapterSlug: district.chapterSlug,
             districtName: district.name,
-            selfieUrl: parsed.data.selfieUrl,
+            selfieUrl: selfieKey,
             attestVisited: parsed.data.attestVisited,
             attestSignVisible: parsed.data.attestSignVisible,
             status: ClaimSubmissionStatus.PENDING,
