@@ -505,6 +505,10 @@ async function testCoreFlows(baseUrl, namespace) {
       typeof firstClaim.payload?.submission?.id === "string",
       "První claim ve stavu REVIEW musí vrátit submission id.",
     );
+    assert(
+      firstClaim.payload?.validationMode === "manual_review",
+      "Při statusu 202 musí být claim ve stavu manual_review.",
+    );
   }
 
   await primary.client.request("/api/districts/D001/claim", {
@@ -770,6 +774,9 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
+
+
+
 
 
 
