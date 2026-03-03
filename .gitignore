@@ -43,3 +43,7 @@ next-env.d.ts
 
 # local private automation (never commit)
 private-scripts/
+
+# local OCR cache / trained data
+/.cache/
+/*.traineddata

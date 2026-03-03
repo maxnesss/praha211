@@ -1,6 +1,6 @@
 import "server-only";
 
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
@@ -36,6 +36,7 @@ const FACE_RESIZE_WIDTH = 640;
 const OCR_RESIZE_WIDTH = 1500;
 const OCR_MAX_TEXT_LENGTH = 10_000;
 const TESSERACT_OEM_LSTM_ONLY = 1;
+const TESSERACT_CACHE_DIR = path.join(process.cwd(), ".cache", "tesseract");
 const TESSERACT_NODE_WORKER_RELATIVE_PATH = path.join(
   "node_modules",
   "tesseract.js",
@@ -50,6 +51,12 @@ let faceModelPromise: Promise<unknown> | null = null;
 function resolveTesseractWorkerPath() {
   const workerPath = path.join(process.cwd(), TESSERACT_NODE_WORKER_RELATIVE_PATH);
   return existsSync(workerPath) ? workerPath : null;
+}
+
+function resolveTesseractCachePath() {
+  const cachePath = process.env.OCR_CACHE_DIR?.trim() || TESSERACT_CACHE_DIR;
+  mkdirSync(cachePath, { recursive: true });
+  return cachePath;
 }
 
 function stripDiacritics(value: string) {
@@ -301,9 +308,12 @@ async function extractOcrText(imageBuffer: Buffer) {
     );
   }
 
+  const cachePath = resolveTesseractCachePath();
   const { createWorker } = await import("tesseract.js");
   const worker = await createWorker(OCR_LANGUAGE, TESSERACT_OEM_LSTM_ONLY, {
     workerPath,
+    cachePath,
+    cacheMethod: "write",
     errorHandler: (error) => {
       console.error("Tesseract worker runtime chyba:", error);
     },

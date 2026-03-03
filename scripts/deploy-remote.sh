@@ -21,6 +21,9 @@ git pull --ff-only origin "$BRANCH"
 
 echo "== Deploy: install/build/migrate =="
 npm ci
+if ! npm run ocr:warmup; then
+  echo "WARN: OCR warmup failed, lokální OCR validace může využít fallback na ruční schválení."
+fi
 npm run prisma:migrate
 
 if [[ "$RUN_BACKFILL" == "1" ]]; then
