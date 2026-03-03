@@ -72,6 +72,13 @@ Produkční doména: `https://www.praha112.cz`.
 - `npm run dev` - vývojový server
 - `npm run build` - produkční build
 - `npm run start` - spuštění produkčního buildu
+- `npm run deploy:vps` - deploy na VPS (`praha112`)
+- `npm run logs:vps` - poslední app logy z PM2 (bez streamu)
+- `npm run logs:vps:live` - živý tail app logů z PM2
+- `npm run logs:vps:error` - poslední error logy aplikace
+- `npm run logs:vps:out` - poslední stdout logy aplikace
+- `npm run logs:vps:nginx` - poslední nginx error logy
+- `npm run logs:vps:obs` - poslední observability logy API write endpointů
 - `npm run test` - jednotný běh všech integračních testů
 - `npm run lint` - ESLint
 - `npm run prisma:generate` - generování Prisma Clientu
@@ -88,6 +95,21 @@ Produkční doména: `https://www.praha112.cz`.
 - `npm run test:leaderboard:tie` - regresní test řazení žebříčku při shodě bodů
 - `npm run test:teams:concurrency` - souběžné testy týmových operací (apply/approve)
 - `npm run test:integration:all` - agregovaný běh všech testů (`core + leaderboard tie + teams concurrency`)
+
+## Umami analytics
+
+Umami je volitelná analytika a načítá se pouze:
+
+- v produkčním buildu,
+- pokud jsou vyplněné env proměnné,
+- po volbě „Povolit analytiku“ v cookie dialogu.
+
+Potřebné env:
+
+```bash
+NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://analytics.example.com/script.js
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=your-website-id
+```
 
 ## Testy
 
@@ -296,3 +318,27 @@ Poznámky:
 - V produkčním `.env` musí být:
   - `NEXTAUTH_URL=https://www.praha112.cz`
   - `NEXT_PUBLIC_SITE_URL=https://www.praha112.cz`
+  - (volitelně) `NEXT_PUBLIC_UMAMI_SCRIPT_URL` a `NEXT_PUBLIC_UMAMI_WEBSITE_ID`
+
+## Logy na VPS
+
+Rychlé čtení logů přes npm skripty:
+
+```bash
+npm run logs:vps
+npm run logs:vps:live
+npm run logs:vps:error
+npm run logs:vps:out
+npm run logs:vps:nginx
+npm run logs:vps:obs
+```
+
+Volitelné přepínače:
+
+```bash
+# jiný SSH host (default je praha112)
+REMOTE_SSH_HOST=my-host npm run logs:vps
+
+# jiné PM2 jméno aplikace (default je praha112)
+REMOTE_APP_NAME=my-app npm run logs:vps:error
+```

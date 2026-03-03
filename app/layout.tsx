@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel_Decorative } from "next/font/google";
 import { CookieConsentDialog } from "@/components/cookie-consent-dialog";
 import { SiteFooter } from "@/components/site-footer";
+import { UmamiAnalytics } from "@/components/umami-analytics";
 import { SITE_DESCRIPTION, SITE_NAME, getSiteUrl } from "@/lib/seo";
 import "./globals.css";
 
@@ -59,6 +60,7 @@ export default function RootLayout({
           <div className="flex-1">{children}</div>
           <SiteFooter />
           <CookieConsentDialog />
+          <UmamiAnalytics />
         </div>
       </body>
     </html>

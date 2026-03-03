@@ -2,58 +2,8 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
-
-type ConsentChoice = "all" | "essential";
-type ConsentSnapshot = ConsentChoice | null | "unknown";
-
-const CONSENT_COOKIE_NAME = "praha112_cookie_consent";
-const CONSENT_STORAGE_KEY = "praha112_cookie_consent";
-const CONSENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
-
-function parseConsentChoice(value: string | null): ConsentChoice | null {
-  if (value === "all" || value === "essential") {
-    return value;
-  }
-  return null;
-}
-
-function readConsentFromCookie(): ConsentChoice | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  const raw = document.cookie
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${CONSENT_COOKIE_NAME}=`));
-
-  if (!raw) {
-    return null;
-  }
-
-  const value = raw.slice(CONSENT_COOKIE_NAME.length + 1);
-  return parseConsentChoice(decodeURIComponent(value));
-}
-
-function readConsentChoice(): ConsentChoice | null {
-  const cookieValue = readConsentFromCookie();
-  if (cookieValue) {
-    return cookieValue;
-  }
-
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return parseConsentChoice(window.localStorage.getItem(CONSENT_STORAGE_KEY));
-}
-
-function saveConsentChoice(choice: ConsentChoice) {
-  const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${CONSENT_COOKIE_NAME}=${encodeURIComponent(choice)}; Max-Age=${CONSENT_COOKIE_MAX_AGE}; Path=/; SameSite=Lax${secureFlag}`;
-
-  window.localStorage.setItem(CONSENT_STORAGE_KEY, choice);
-}
+import type { ConsentChoice, ConsentSnapshot } from "@/lib/cookie-consent";
+import { readConsentChoice, saveConsentChoice } from "@/lib/cookie-consent";
 
 export function CookieConsentDialog() {
   const [dismissed, setDismissed] = useState(false);

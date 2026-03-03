@@ -92,7 +92,9 @@ export default function PrivacyPolicyPage() {
               <h2 className="text-lg font-semibold text-cyan-50 sm:text-xl">5. Komu mohou být údaje zpřístupněny</h2>
               <p className="mt-2">
                 Údaje zpracovávají pouze služby nutné k provozu aplikace (hosting, databáze,
-                privátní objektové úložiště, autentizace). Údaje neprodáváme.
+                privátní objektové úložiště, autentizace). Pro volitelnou anonymizovanou
+                návštěvnickou analytiku používáme Umami pouze po udělení souhlasu.
+                Údaje neprodáváme.
               </p>
             </section>
 
@@ -119,7 +121,8 @@ export default function PrivacyPolicyPage() {
               <p className="mt-2">
                 Při první návštěvě si můžete vybrat mezi režimem „Pouze nezbytné“ a
                 „Povolit analytiku“. Volbu lze kdykoliv změnit vymazáním cookies v prohlížeči
-                a opětovným nastavením při další návštěvě.
+                a opětovným nastavením při další návštěvě. Po volbě „Povolit analytiku“
+                se aktivuje měření návštěvnosti přes Umami.
               </p>
             </section>
           </div>
