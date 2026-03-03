@@ -2,21 +2,43 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { AdminUsersTable, type AdminUserRow } from "@/components/admin-users-table";
 import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export default async function AdminPage() {
+const PAGE_SIZE = 50;
+
+type AdminAccountsPageProps = {
+  searchParams: Promise<{ page?: string }>;
+};
+
+function parsePage(input: string | undefined) {
+  const value = Number.parseInt(input ?? "1", 10);
+  if (Number.isNaN(value) || value < 1) {
+    return 1;
+  }
+  return value;
+}
+
+function toPageHref(page: number) {
+  return page <= 1 ? "/admin/ucty" : `/admin/ucty?page=${page}`;
+}
+
+export default async function AdminAccountsPage({ searchParams }: AdminAccountsPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    redirect("/sign-in?callbackUrl=%2Fadmin");
+    redirect("/sign-in?callbackUrl=%2Fadmin%2Fucty");
   }
 
   if (session.user.role !== "ADMIN") {
     redirect("/radnice");
   }
+
+  const { page } = await searchParams;
+  const requestedPage = parsePage(page);
 
   const pendingValidationCountPromise =
     prisma.districtClaimSubmission?.count?.({ where: { status: "PENDING" } }) ??
@@ -28,6 +50,37 @@ export default async function AdminPage() {
     prisma.user.count({ where: { isFrozen: true } }),
     pendingValidationCountPromise,
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
+  const pageSafe = Math.min(requestedPage, totalPages);
+  const skip = (pageSafe - 1) * PAGE_SIZE;
+
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: PAGE_SIZE,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      nickname: true,
+      role: true,
+      isFrozen: true,
+      createdAt: true,
+      _count: { select: { claims: true } },
+    },
+  });
+
+  const rows: AdminUserRow[] = users.map((user) => ({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    nickname: user.nickname,
+    role: user.role,
+    isFrozen: user.isFrozen,
+    createdAt: user.createdAt.toISOString(),
+    claimsCount: user._count.claims,
+  }));
 
   const metroVars = {
     "--metro-bg": "#06141d",
@@ -51,7 +104,7 @@ export default async function AdminPage() {
                 Administrace
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-cyan-50 sm:text-4xl">
-                Správa uživatelů
+                Seznam účtů
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/75 sm:text-base">
                 Přehled všech účtů, rychlé povýšení na ADMIN a možnost zmrazit
@@ -60,10 +113,10 @@ export default async function AdminPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Link
-                href="/admin/ucty"
+                href="/admin"
                 className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-50 transition-colors hover:bg-cyan-400/20"
               >
-                Seznam účtů
+                Administrace
               </Link>
               <Link
                 href="/admin/validace"
@@ -101,6 +154,43 @@ export default async function AdminPage() {
             </article>
           </div>
 
+          <div className="mt-8">
+            <AdminUsersTable
+              users={rows}
+              currentUserId={session.user.id}
+              page={pageSafe}
+              totalPages={totalPages}
+              totalUsers={totalUsers}
+            />
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3">
+            {pageSafe > 1 ? (
+              <Link
+                href={toPageHref(pageSafe - 1)}
+                className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
+              >
+                Předchozí
+              </Link>
+            ) : (
+              <span className="rounded-md border border-cyan-300/20 bg-cyan-400/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/45">
+                Předchozí
+              </span>
+            )}
+
+            {pageSafe < totalPages ? (
+              <Link
+                href={toPageHref(pageSafe + 1)}
+                className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"
+              >
+                Další
+              </Link>
+            ) : (
+              <span className="rounded-md border border-cyan-300/20 bg-cyan-400/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100/45">
+                Další
+              </span>
+            )}
+          </div>
         </div>
       </section>
     </main>
