@@ -10,6 +10,15 @@ export const createTeamSchema = z.object({
     .refine((value) => toTeamSlug(value).length >= 2, "Název týmu je neplatný."),
 });
 
+export const leaveTeamSchema = z.object({
+  successorUserId: z
+    .string()
+    .trim()
+    .min(1, "Nástupce velitele je neplatný.")
+    .max(191, "Nástupce velitele je neplatný.")
+    .optional(),
+});
+
 export function getTeamValidationMessage(error: z.ZodError) {
   return error.issues[0]?.message ?? "Neplatný vstup.";
 }

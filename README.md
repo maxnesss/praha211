@@ -172,6 +172,7 @@ API:
 - `/api/teams`
 - `/api/teams/[slug]/apply`
 - `/api/teams/[slug]/leave`
+- `/api/teams/[slug]/leader/[memberId]/assign`
 - `/api/teams/[slug]/requests/[requestId]/approve`
 - `/api/teams/[slug]/requests/[requestId]/reject`
 - `/api/teams/[slug]/members/[memberId]/remove`
@@ -179,6 +180,7 @@ API:
 - `/api/uploads/selfie/view` (podepsaný download URL)
 - `/api/contact`
 - `/api/health/db`
+- `/api/cron`
 
 ## Databáze a modely
 
@@ -201,6 +203,9 @@ Poznámky:
 - Write/mutate endpointy logují observability event (`api_write_observation`) se stavem odpovědi, třídou stavu (`4xx/5xx/429`) a latencí.
 - Health endpoint (`/api/health/db`) je v produkci chráněn hlavičkou `x-health-check-secret` (`HEALTHCHECK_SECRET` v env).
   - Příklad: `curl -H "x-health-check-secret: <HEALTHCHECK_SECRET>" https://.../api/health/db`
+- Centrální cron endpoint (`/api/cron`) je v produkci chráněn hlavičkou `x-cron-secret` (`CRON_SECRET` v env).
+  - Výchozí task: cleanup týmů bez členů
+  - Příklad: `curl -X POST -H "x-cron-secret: <CRON_SECRET>" https://.../api/cron`
 - Selfie se ukládají privátně do Cloudflare R2:
   - klient si vyžádá podepsaný upload URL (`/api/uploads/selfie/sign`)
   - do DB se ukládá klíč objektu (`selfies/...`), ne veřejná URL
@@ -220,6 +225,7 @@ Poznámky:
 - `POST /api/teams`: `5 / 60 min` (uživatel)
 - `POST /api/teams/[slug]/apply`: `20 / 10 min` (uživatel)
 - `POST /api/teams/[slug]/leave`: `8 / 5 min` (uživatel)
+- `POST /api/teams/[slug]/leader/[memberId]/assign`: `20 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/members/[memberId]/remove`: `15 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/requests/[requestId]/approve`: `20 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/requests/[requestId]/reject`: `20 / 5 min` (uživatel)
