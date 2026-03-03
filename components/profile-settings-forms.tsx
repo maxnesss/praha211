@@ -2,14 +2,16 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { DEFAULT_USER_AVATAR, USER_AVATAR_OPTIONS } from "@/lib/profile-avatars";
 import { PasswordField } from "@/components/password-field";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
+  DELETE_ACCOUNT_CONFIRMATION_TEXT,
   changePasswordSchema,
+  deleteAccountSchema,
   getProfileValidationMessage,
   updateAvatarSchema,
   updateNicknameSchema,
@@ -53,6 +55,11 @@ export function ProfileSettingsForms({
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
+  const [deleteConfirmationDraft, setDeleteConfirmationDraft] = useState("");
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
+  const [isDeleteAccountSubmitting, setIsDeleteAccountSubmitting] = useState(false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
 
   async function handleNicknameSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -164,6 +171,39 @@ export function ProfileSettingsForms({
     router.refresh();
   }
 
+  async function handleDeleteAccountSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDeleteAccountError(null);
+    setIsDeleteAccountSubmitting(true);
+
+    const parsed = deleteAccountSchema.safeParse({
+      confirmationText: deleteConfirmationDraft,
+    });
+    if (!parsed.success) {
+      setDeleteAccountError(getProfileValidationMessage(parsed.error));
+      setIsDeleteAccountSubmitting(false);
+      return;
+    }
+
+    const response = await fetch("/api/profile/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parsed.data),
+    });
+
+    const payload = (await response.json().catch(() => null)) as
+      | { message?: string }
+      | null;
+
+    if (!response.ok) {
+      setDeleteAccountError(payload?.message ?? "Účet se nepodařilo odstranit.");
+      setIsDeleteAccountSubmitting(false);
+      return;
+    }
+
+    await signOut({ callbackUrl: "/" });
+  }
+
   return (
     <>
       <article className="mt-8 max-w-2xl rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-6">
@@ -270,9 +310,96 @@ export function ProfileSettingsForms({
           >
             {hasPassword ? "Změnit heslo" : "Nastavit heslo"}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteAccountError(null);
+              setDeleteConfirmationDraft("");
+              setIsDeleteAccountModalOpen(true);
+            }}
+            className="rounded-md border border-rose-300/60 bg-rose-500/10 px-3 py-1.5 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-500/20"
+          >
+            Odstranit účet
+          </button>
           <SignOutButton />
         </div>
       </article>
+
+      {isDeleteAccountModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030b11]/80 p-4">
+          <div className="w-full max-w-md rounded-xl border border-rose-300/40 bg-[#0b1f2f] p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-cyan-50">Odstranit účet</h2>
+                <p className="mt-1 text-sm text-cyan-100/70">
+                  Tato akce je nevratná. Smažou se vaše body, odemčení i historie.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteAccountModalOpen(false)}
+                className="rounded-md border border-cyan-300/35 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-400/10"
+              >
+                Zavřít
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-rose-300/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+              Pro potvrzení napište přesně:{" "}
+              <span className="font-semibold tracking-wide text-rose-50">
+                {DELETE_ACCOUNT_CONFIRMATION_TEXT}
+              </span>
+            </div>
+
+            <form
+              className="mt-4 space-y-4"
+              onSubmit={handleDeleteAccountSubmit}
+              autoComplete="off"
+            >
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="deleteAccountConfirmation"
+                  className="text-sm font-medium text-cyan-100"
+                >
+                  Potvrzovací text
+                </label>
+                <input
+                  id="deleteAccountConfirmation"
+                  name="deleteAccountConfirmation"
+                  type="text"
+                  autoComplete="off"
+                  value={deleteConfirmationDraft}
+                  onChange={(event) => setDeleteConfirmationDraft(event.target.value)}
+                  className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
+                />
+              </div>
+
+              {deleteAccountError ? (
+                <p className="rounded-md border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+                  {deleteAccountError}
+                </p>
+              ) : null}
+
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAccountModalOpen(false)}
+                  className="rounded-md border border-cyan-300/35 px-4 py-2 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-400/10"
+                >
+                  Zrušit
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDeleteAccountSubmitting}
+                  className="rounded-md border border-rose-300/60 bg-rose-500/20 px-4 py-2 text-sm font-semibold text-rose-50 transition-colors hover:bg-rose-500/30 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isDeleteAccountSubmitting ? "Odstraňuji..." : "Trvale odstranit účet"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {isAvatarModalOpen ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-[#030b11]/80 p-4">

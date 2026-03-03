@@ -144,6 +144,7 @@ API:
 - `/api/districts/[code]/claim`
 - `/api/districts/[code]/test-claim` (admin test endpoint)
 - `/api/profile/avatar`
+- `/api/profile/delete`
 - `/api/profile/nickname`
 - `/api/profile/password`
 - `/api/teams`
@@ -181,6 +182,7 @@ Poznámky:
   - klient si vyžádá podepsaný upload URL (`/api/uploads/selfie/sign`)
   - do DB se ukládá klíč objektu (`selfies/...`), ne veřejná URL
   - zobrazení probíhá přes podepsaný download URL (`/api/uploads/selfie/view`)
+  - při odstranění účtu (`POST /api/profile/delete`) se před smazáním uživatele mažou i selfie objekty v R2 pod `selfies/<userId>/`
 
 ### API limity (write/mutate)
 
@@ -189,6 +191,7 @@ Poznámky:
 - `POST /api/contact`: `8 / 10 min` (IP)
 - `POST /api/districts/[code]/claim`: `30 / 5 min` (uživatel)
 - `POST /api/profile/password`: `8 / 60 min` (uživatel)
+- `POST /api/profile/delete`: `4 / 10 min` (uživatel)
 - `POST /api/profile/nickname`: `8 / 10 min` (uživatel)
 - `POST /api/profile/avatar`: `12 / 10 min` (uživatel)
 - `POST /api/teams`: `5 / 60 min` (uživatel)

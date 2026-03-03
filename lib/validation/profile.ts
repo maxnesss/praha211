@@ -29,6 +29,18 @@ export const changePasswordSchema = z
     message: "Nová hesla se neshodují.",
   });
 
+export const DELETE_ACCOUNT_CONFIRMATION_TEXT = "SMAZAT UCET";
+
+export const deleteAccountSchema = z.object({
+  confirmationText: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === DELETE_ACCOUNT_CONFIRMATION_TEXT,
+      `Pro potvrzení napište přesně "${DELETE_ACCOUNT_CONFIRMATION_TEXT}".`,
+    ),
+});
+
 export function getProfileValidationMessage(error: z.ZodError) {
   return error.issues[0]?.message ?? "Neplatný vstup.";
 }
