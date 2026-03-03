@@ -22,10 +22,6 @@ export default async function AdminPage() {
     prisma.districtClaimSubmission?.count?.({ where: { status: "PENDING" } }) ??
     Promise.resolve(0);
 
-  const pendingValidationCountPromise =
-    prisma.districtClaimSubmission?.count?.({ where: { status: "PENDING" } }) ??
-    Promise.resolve(0);
-
   const [totalUsers, adminCount, frozenCount, pendingValidationCount] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADMIN" } }),
@@ -82,7 +78,7 @@ export default async function AdminPage() {
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Uživatelé</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
-                {rows.length}
+                {totalUsers}
               </p>
             </article>
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
