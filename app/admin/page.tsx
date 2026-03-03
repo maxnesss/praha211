@@ -40,11 +40,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const { page } = await searchParams;
   const requestedPage = parsePage(page);
 
+  const pendingValidationCountPromise =
+    prisma.districtClaimSubmission?.count?.({ where: { status: "PENDING" } }) ??
+    Promise.resolve(0);
+
   const [totalUsers, adminCount, frozenCount, pendingValidationCount] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADMIN" } }),
     prisma.user.count({ where: { isFrozen: true } }),
-    prisma.districtClaimSubmission.count({ where: { status: "PENDING" } }),
+    pendingValidationCountPromise,
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));
