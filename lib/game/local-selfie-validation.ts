@@ -1,5 +1,7 @@
 import "server-only";
 
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 import { isSelfieObjectKey } from "@/lib/selfie-upload-rules";
@@ -33,8 +35,22 @@ const OCR_LANGUAGE = "ces+eng";
 const FACE_RESIZE_WIDTH = 640;
 const OCR_RESIZE_WIDTH = 1500;
 const OCR_MAX_TEXT_LENGTH = 10_000;
+const TESSERACT_OEM_LSTM_ONLY = 1;
+const TESSERACT_NODE_WORKER_RELATIVE_PATH = path.join(
+  "node_modules",
+  "tesseract.js",
+  "src",
+  "worker-script",
+  "node",
+  "index.js",
+);
 
 let faceModelPromise: Promise<unknown> | null = null;
+
+function resolveTesseractWorkerPath() {
+  const workerPath = path.join(process.cwd(), TESSERACT_NODE_WORKER_RELATIVE_PATH);
+  return existsSync(workerPath) ? workerPath : null;
+}
 
 function stripDiacritics(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -278,8 +294,20 @@ async function extractOcrText(imageBuffer: Buffer) {
     .png()
     .toBuffer();
 
+  const workerPath = resolveTesseractWorkerPath();
+  if (!workerPath) {
+    throw new Error(
+      `Tesseract worker script nebyl nalezen: ${TESSERACT_NODE_WORKER_RELATIVE_PATH}.`,
+    );
+  }
+
   const { createWorker } = await import("tesseract.js");
-  const worker = await createWorker(OCR_LANGUAGE);
+  const worker = await createWorker(OCR_LANGUAGE, TESSERACT_OEM_LSTM_ONLY, {
+    workerPath,
+    errorHandler: (error) => {
+      console.error("Tesseract worker runtime chyba:", error);
+    },
+  });
 
   try {
     const output = await worker.recognize(processed);
