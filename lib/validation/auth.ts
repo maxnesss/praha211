@@ -6,11 +6,11 @@ const emailSchema = z
   .email("Zadejte platnou e-mailovou adresu.")
   .transform((value) => value.toLowerCase());
 
-const passwordSchema = z
+export const passwordSchema = z
   .string()
   .min(8, "Heslo musí mít alespoň 8 znaků.");
 
-const verificationTokenSchema = z
+export const verificationTokenSchema = z
   .string()
   .trim()
   .min(1, "Ověřovací token je povinný.")
@@ -52,6 +52,16 @@ export const verifyEmailQuerySchema = z.object({
   token: verificationTokenSchema,
 });
 
+export const passwordResetRequestSchema = z.object({
+  email: emailSchema,
+});
+
+export const passwordResetConfirmSchema = z.object({
+  email: emailSchema,
+  token: verificationTokenSchema,
+  password: passwordSchema,
+});
+
 export const userRoleSchema = z.enum(["ADMIN", "USER"]);
 
 export const addUserSchema = registerSchema.extend({
@@ -62,3 +72,4 @@ export const addUserSchema = registerSchema.extend({
 export function getFirstZodErrorMessage(error: z.ZodError) {
   return error.issues[0]?.message ?? "Neplatný vstup.";
 }
+

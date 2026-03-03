@@ -122,6 +122,14 @@ export default function SignInPage() {
                 required
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />
+              <div className="flex justify-end">
+                <Link
+                  href="/zapomenute-heslo"
+                  className="text-xs font-medium text-cyan-50/80 hover:text-cyan-50"
+                >
+                  ZapomnÄ›l jsem heslo
+                </Link>
+              </div>
             </div>
 
             {error ? (

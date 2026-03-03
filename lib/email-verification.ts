@@ -4,6 +4,8 @@ import { getSiteUrl } from "@/lib/seo";
 const RESEND_API_URL = "https://api.resend.com/emails";
 const EMAIL_VERIFICATION_TOKEN_BYTES = 32;
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_TOKEN_BYTES = 32;
+const PASSWORD_RESET_TTL_MS = 2 * 60 * 60 * 1000;
 
 type SendVerificationEmailInput = {
   email: string;
@@ -12,6 +14,11 @@ type SendVerificationEmailInput = {
 
 type SendWelcomeEmailInput = {
   email: string;
+};
+
+type SendPasswordResetEmailInput = {
+  email: string;
+  token: string;
 };
 
 type SendContactEmailInput = {
@@ -24,6 +31,10 @@ type SendContactEmailInput = {
 
 type VerificationEmailTemplateInput = {
   verificationUrl: string;
+};
+
+type PasswordResetEmailTemplateInput = {
+  resetUrl: string;
 };
 
 export function hashEmailVerificationToken(token: string) {
@@ -40,11 +51,35 @@ export function createEmailVerificationToken() {
   };
 }
 
+export function hashPasswordResetToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+export function createPasswordResetToken() {
+  const token = randomBytes(PASSWORD_RESET_TOKEN_BYTES).toString("hex");
+
+  return {
+    token,
+    tokenHash: hashPasswordResetToken(token),
+    expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+  };
+}
+
 export function buildEmailVerificationUrl({
   email,
   token,
 }: SendVerificationEmailInput) {
   const url = new URL("/api/auth/verify-email", getSiteUrl());
+  url.searchParams.set("email", email);
+  url.searchParams.set("token", token);
+  return url.toString();
+}
+
+export function buildPasswordResetUrl({
+  email,
+  token,
+}: SendPasswordResetEmailInput) {
+  const url = new URL("/reset-hesla", getSiteUrl());
   url.searchParams.set("email", email);
   url.searchParams.set("token", token);
   return url.toString();
@@ -137,6 +172,95 @@ function buildVerificationEmailHtml(input: VerificationEmailTemplateInput) {
               <td style="padding:18px 28px 28px;text-align:center;">
                 <p style="margin:0;color:#86aebb;font-size:12px;line-height:1.6;">
                   Pokud jste si účet nevytvořili, e-mail můžete ignorovat.<br />
+                  <a href="${signInUrl}" style="color:#86aebb;text-decoration:underline;">www.praha112.cz</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`.trim();
+}
+
+function buildPasswordResetEmailText(input: PasswordResetEmailTemplateInput) {
+  return [
+    "PRAHA 112",
+    "",
+    "PoÅ¾Ã¡dali jste o reset hesla.",
+    "Pro nastavenÃ­ novÃ©ho hesla otevÅ™ete tento odkaz:",
+    input.resetUrl,
+    "",
+    "Platnost odkazu je 2 hodiny.",
+    "",
+    "Pokud jste o reset neÅ¾Ã¡dali, tento e-mail mÅ¯Å¾ete ignorovat.",
+  ].join("\n");
+}
+
+function buildPasswordResetEmailHtml(input: PasswordResetEmailTemplateInput) {
+  const siteUrl = getSiteUrl();
+  const logoUrl = new URL("/logo/praha-tr.png", siteUrl).toString();
+  const signInUrl = new URL("/sign-in", siteUrl).toString();
+
+  return `
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PRAHA 112: Reset hesla</title>
+  </head>
+  <body style="margin:0;padding:0;background:#06141d;color:#e6fbff;font-family:Georgia, 'Times New Roman', serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#06141d;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#0c202e;border:1px solid rgba(34,211,238,0.35);border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 28px 10px;text-align:center;">
+                <img src="${logoUrl}" alt="PRAHA 112" width="170" height="170" style="display:block;margin:0 auto;width:170px;height:170px;max-width:100%;object-fit:contain;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 28px 0;text-align:center;">
+                <p style="margin:0;color:#a5f3fc;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:700;">PRAHA 112</p>
+                <h1 style="margin:12px 0 0;color:#ecfeff;font-size:32px;line-height:1.15;font-weight:700;">Reset hesla</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 28px 0;text-align:center;">
+                <p style="margin:0;color:#c9eef6;font-size:16px;line-height:1.6;">
+                  PoÅ¾Ã¡dali jste o obnovu hesla. KliknÄ›te na tlaÄÃ­tko nÃ­Å¾e a nastavte si novÃ© heslo.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 28px 0;text-align:center;">
+                <a href="${input.resetUrl}" style="display:inline-block;padding:12px 22px;border-radius:12px;background:#22d3ee;color:#06202b;text-decoration:none;font-size:16px;font-weight:700;">
+                  Nastavit novÃ© heslo
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 28px 0;text-align:center;">
+                <p style="margin:0;color:#9cc3ce;font-size:14px;line-height:1.6;">
+                  Odkaz je platnÃ½ 2 hodiny.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:14px 28px 0;text-align:center;">
+                <p style="margin:0;color:#9cc3ce;font-size:13px;line-height:1.6;word-break:break-word;">
+                  Pokud tlaÄÃ­tko nefunguje, pouÅ¾ijte tento odkaz:<br />
+                  <a href="${input.resetUrl}" style="color:#67e8f9;text-decoration:underline;">${input.resetUrl}</a>
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 28px 28px;text-align:center;">
+                <p style="margin:0;color:#86aebb;font-size:12px;line-height:1.6;">
+                  Pokud jste o reset neÅ¾Ã¡dali, e-mail mÅ¯Å¾ete ignorovat.<br />
                   <a href="${signInUrl}" style="color:#86aebb;text-decoration:underline;">www.praha112.cz</a>
                 </p>
               </td>
@@ -409,6 +533,20 @@ export async function sendEmailVerificationEmail(
     subject: "PRAHA 112: Ověření e-mailu",
     text: buildVerificationEmailText(templateInput),
     html: buildVerificationEmailHtml(templateInput),
+  });
+}
+
+export async function sendPasswordResetEmail(
+  input: SendPasswordResetEmailInput,
+) {
+  const resetUrl = buildPasswordResetUrl(input);
+  const templateInput = { resetUrl };
+
+  await sendResendEmail({
+    to: input.email,
+    subject: "PRAHA 112: Reset hesla",
+    text: buildPasswordResetEmailText(templateInput),
+    html: buildPasswordResetEmailHtml(templateInput),
   });
 }
 
