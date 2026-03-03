@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import metro from "@/app/metro-theme.module.css";
 import { DISTRICTS } from "@/lib/game/district-catalog";
 
-const MIN_QUERY_LENGTH = 4;
+const MIN_QUERY_LENGTH = 3;
 const MAX_VISIBLE_RESULTS = 8;
 
 function normalizeSearchValue(value: string) {
@@ -29,7 +29,7 @@ export function OverviewDistrictSearch() {
     }
 
     return DISTRICTS.filter((district) =>
-      normalizeSearchValue(district.name).includes(normalizedQuery),
+      normalizeSearchValue(district.name).startsWith(normalizedQuery),
     ).slice(0, MAX_VISIBLE_RESULTS);
   }, [normalizedQuery]);
 
