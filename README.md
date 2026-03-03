@@ -54,7 +54,11 @@ Produkční doména: `https://www.praha112.cz`.
 - Týmy:
   - hráč může být jen v jednom týmu
   - tým má max 5 členů
-  - tým má velitele (zakladatel)
+  - tým má velitele voleného členy
+  - při vytvoření týmu zakladatel automaticky hlasuje pro sebe
+  - při schváleném vstupu do týmu nový člen automaticky hlasuje pro aktuálního velitele
+  - každý člen má 1 hlas a svůj hlas může kdykoliv změnit
+  - velitel se určuje podle počtu hlasů (při shodě zůstává stávající velitel)
   - vstup probíhá přes žádost, kterou velitel schvaluje
 - Žebříček:
   - rychlý náhled (top + tvoje pozice)
@@ -171,6 +175,7 @@ API:
 - `/api/profile/password`
 - `/api/teams`
 - `/api/teams/[slug]/apply`
+- `/api/teams/[slug]/join` (legacy endpoint, vrací `410`, používejte `/apply`)
 - `/api/teams/[slug]/leave`
 - `/api/teams/[slug]/leader/vote`
 - `/api/teams/[slug]/requests/[requestId]/approve`
@@ -189,6 +194,7 @@ Klíčové modely:
 - `DistrictClaim`
 - `ScoreEvent`
 - `Team`
+- `TeamLeaderVote`
 - `TeamJoinRequest`
 
 Poznámky:
@@ -200,6 +206,7 @@ Poznámky:
 
 - Veřejně volatelné write/mutate endpointy mají explicitní rate limiting (viz přehled níže).
 - Claim endpoint ošetřuje závodní stav (duplicate claim) a vrací konzistentní `409`.
+- Claim endpoint přijímá pouze interní selfie klíč (`selfies/...`), ověřuje že patří aktuálnímu uživateli a že objekt skutečně existuje v R2.
 - Write/mutate endpointy logují observability event (`api_write_observation`) se stavem odpovědi, třídou stavu (`4xx/5xx/429`) a latencí.
 - Health endpoint (`/api/health/db`) je v produkci chráněn hlavičkou `x-health-check-secret` (`HEALTHCHECK_SECRET` v env).
   - Příklad: `curl -H "x-health-check-secret: <HEALTHCHECK_SECRET>" https://.../api/health/db`
@@ -229,6 +236,7 @@ Poznámky:
 - `POST /api/teams/[slug]/members/[memberId]/remove`: `15 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/requests/[requestId]/approve`: `20 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/requests/[requestId]/reject`: `20 / 5 min` (uživatel)
+- `POST /api/uploads/selfie/sign`: `30 / 5 min` (uživatel)
 
 ## Auth a role
 
