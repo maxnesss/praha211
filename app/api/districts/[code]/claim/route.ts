@@ -7,8 +7,11 @@ import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import { createApprovedDistrictClaim } from "@/lib/game/claim-submission-service";
 import { getDistrictByCode } from "@/lib/game/district-catalog";
+import {
+  type LocalClaimValidationResult,
+  validateDistrictSelfieLocally,
+} from "@/lib/game/local-selfie-validation";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
-import { validateDistrictSelfieLocally } from "@/lib/game/local-selfie-validation";
 import { prisma } from "@/lib/prisma";
 import { isSelfieObjectKey } from "@/lib/selfie-upload-rules";
 import { doesR2ObjectExist } from "@/lib/storage/r2";
@@ -33,6 +36,66 @@ function buildBypassedLocalValidation() {
     ocrText: "",
     reasons: ["Lokální validace byla přeskočena v CI režimu."],
   };
+}
+
+function getLocalValidationTimeoutMs() {
+  const raw = process.env.LOCAL_SELFIE_VALIDATION_TIMEOUT_MS;
+  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+  if (Number.isNaN(parsed) || parsed < 10_000) {
+    return 30_000;
+  }
+  return parsed;
+}
+
+function buildTimedOutLocalValidation(timeoutMs: number): LocalClaimValidationResult {
+  return {
+    verdict: "REVIEW",
+    confidence: 0.3,
+    faceDetected: false,
+    faceCount: 0,
+    districtNameMatched: false,
+    matchedAlias: null,
+    ocrText: "",
+    reasons: [
+      `Lokální validace selfie překročila časový limit (${Math.round(timeoutMs / 1000)} s).`,
+      "Žádost byla přijata k ruční kontrole administrátorem.",
+    ],
+  };
+}
+
+async function runLocalValidationWithTimeout(
+  input: { selfieUrl: string; districtName: string },
+  timeoutMs: number,
+) {
+  const validationPromise = validateDistrictSelfieLocally(input).catch((error) => {
+    console.error("Lokální validace selfie spadla do fallbacku:", error);
+    return {
+      verdict: "REVIEW",
+      confidence: 0,
+      faceDetected: false,
+      faceCount: 0,
+      districtNameMatched: false,
+      matchedAlias: null,
+      ocrText: "",
+      reasons: [
+        "Lokální validace selfie selhala interní chybou. Žádost čeká na ruční kontrolu.",
+      ],
+    } satisfies LocalClaimValidationResult;
+  });
+
+  let timeoutHandle: NodeJS.Timeout | null = null;
+  const timeoutPromise = new Promise<LocalClaimValidationResult>((resolve) => {
+    timeoutHandle = setTimeout(() => {
+      resolve(buildTimedOutLocalValidation(timeoutMs));
+    }, timeoutMs);
+  });
+
+  const result = await Promise.race([validationPromise, timeoutPromise]);
+  if (timeoutHandle) {
+    clearTimeout(timeoutHandle);
+  }
+
+  return result;
 }
 
 function isSelfieOwnedByUser(selfieKey: string, userId: string) {
@@ -172,10 +235,13 @@ export async function POST(request: Request, context: ClaimRouteContext) {
 
       const localValidation = shouldBypassLocalValidationInCI()
         ? buildBypassedLocalValidation()
-        : await validateDistrictSelfieLocally({
-          selfieUrl: selfieKey,
-          districtName: district.name,
-        });
+        : await runLocalValidationWithTimeout(
+          {
+            selfieUrl: selfieKey,
+            districtName: district.name,
+          },
+          getLocalValidationTimeoutMs(),
+        );
       const now = new Date();
 
       if (localValidation.verdict === "PASS") {

@@ -47,6 +47,11 @@ type OcrAttempt = {
   aliasMatch: DistrictAliasMatch;
 };
 
+type OcrRunResult = {
+  bestAttempt: OcrAttempt | null;
+  attemptsUsed: number;
+};
+
 type RedComponent = {
   minX: number;
   maxX: number;
@@ -61,10 +66,10 @@ type RedComponent = {
 
 const OCR_LANGUAGE = "ces+eng";
 const FACE_RESIZE_WIDTH = 640;
-const OCR_RESIZE_WIDTH = 1800;
+const OCR_RESIZE_WIDTH = 1400;
 const OCR_MAX_TEXT_LENGTH = 10_000;
 const RED_SIGN_DETECTION_SIZE = 900;
-const RED_SIGN_MAX_CANDIDATES = 4;
+const RED_SIGN_MAX_CANDIDATES = 3;
 const RED_SIGN_CROP_PADDING = 24;
 const TESSERACT_OEM_LSTM_ONLY = 1;
 const TESSERACT_CACHE_DIR = path.join(process.cwd(), ".cache", "tesseract");
@@ -79,23 +84,24 @@ const TESSERACT_NODE_WORKER_RELATIVE_PATH = path.join(
 
 let faceModelPromise: Promise<unknown> | null = null;
 
-const BASE_OCR_VARIANTS: ExtractOcrTextOptions[] = [
+const QUICK_OCR_VARIANTS: ExtractOcrTextOptions[] = [
   {},
   { mirrorHorizontal: true },
-  { rotateDegrees: 90 },
   { rotateDegrees: 90, mirrorHorizontal: true },
-  { rotateDegrees: 270 },
   { rotateDegrees: 270, mirrorHorizontal: true },
-  { rotateDegrees: 180 },
-  { rotateDegrees: 180, mirrorHorizontal: true },
 ];
 
-const THRESHOLD_OCR_VARIANTS: ExtractOcrTextOptions[] = [
+const QUICK_THRESHOLD_OCR_VARIANTS: ExtractOcrTextOptions[] = [
   { thresholdMode: true },
   { thresholdMode: true, mirrorHorizontal: true },
-  { thresholdMode: true, rotateDegrees: 90 },
+];
+
+const DEEP_OCR_FALLBACK_VARIANTS: ExtractOcrTextOptions[] = [
+  { rotateDegrees: 90 },
+  { rotateDegrees: 270 },
+  { rotateDegrees: 180 },
+  { rotateDegrees: 180, mirrorHorizontal: true },
   { thresholdMode: true, rotateDegrees: 90, mirrorHorizontal: true },
-  { thresholdMode: true, rotateDegrees: 270 },
   { thresholdMode: true, rotateDegrees: 270, mirrorHorizontal: true },
 ];
 
@@ -635,23 +641,30 @@ async function extractRedSignCandidateBuffers(imageBuffer: Buffer) {
 }
 
 async function runOcrVariants(
-  worker: OcrWorker,
-  imageBuffer: Buffer,
-  districtName: string,
-) {
+  input: {
+    worker: OcrWorker;
+    imageBuffer: Buffer;
+    districtName: string;
+    variants: ExtractOcrTextOptions[];
+    stopOnMatched?: boolean;
+  },
+): Promise<OcrRunResult> {
   let bestAttempt: OcrAttempt | null = null;
+  let attemptsUsed = 0;
+  const stopOnMatched = input.stopOnMatched ?? true;
 
-  for (const variant of [...BASE_OCR_VARIANTS, ...THRESHOLD_OCR_VARIANTS]) {
+  for (const variant of input.variants) {
     try {
-      const variantText = await extractOcrText(worker, imageBuffer, variant);
-      const variantMatch = matchDistrictAlias(variantText, districtName);
+      attemptsUsed += 1;
+      const variantText = await extractOcrText(input.worker, input.imageBuffer, variant);
+      const variantMatch = matchDistrictAlias(variantText, input.districtName);
       const attempt: OcrAttempt = {
         text: variantText,
         aliasMatch: variantMatch,
       };
       bestAttempt = pickBetterOcrAttempt(bestAttempt, attempt);
 
-      if (variantMatch.matched && variantMatch.exact) {
+      if (stopOnMatched && variantMatch.matched) {
         break;
       }
     } catch (error) {
@@ -659,7 +672,7 @@ async function runOcrVariants(
     }
   }
 
-  return bestAttempt;
+  return { bestAttempt, attemptsUsed };
 }
 
 function buildConfidence(input: {
@@ -683,6 +696,7 @@ function buildConfidence(input: {
 export async function validateDistrictSelfieLocally(
   input: ValidateDistrictSelfieInput,
 ): Promise<LocalClaimValidationResult> {
+  const validationStartedAt = Date.now();
   if (!isSelfieObjectKey(input.selfieUrl)) {
     return {
       verdict: "REVIEW",
@@ -727,6 +741,7 @@ export async function validateDistrictSelfieLocally(
   }
 
   let ocrText = "";
+  let ocrAttemptsUsed = 0;
   let aliasMatch: DistrictAliasMatch = {
     matched: false,
     alias: null,
@@ -736,20 +751,57 @@ export async function validateDistrictSelfieLocally(
   try {
     const worker = await createOcrWorker();
     let bestAttempt: OcrAttempt | null = null;
+    let signCandidates: Buffer[] = [];
 
     try {
-      bestAttempt = await runOcrVariants(worker, imageBuffer, input.districtName);
+      const fullImageRun = await runOcrVariants({
+        worker,
+        imageBuffer,
+        districtName: input.districtName,
+        variants: QUICK_OCR_VARIANTS,
+      });
+      ocrAttemptsUsed += fullImageRun.attemptsUsed;
+      bestAttempt = fullImageRun.bestAttempt;
 
       if (!bestAttempt?.aliasMatch.matched) {
-        const signCandidates = await extractRedSignCandidateBuffers(imageBuffer);
+        signCandidates = await extractRedSignCandidateBuffers(imageBuffer);
         for (const candidateBuffer of signCandidates) {
-          const candidateAttempt = await runOcrVariants(worker, candidateBuffer, input.districtName);
-          if (!candidateAttempt) {
+          const candidateRun = await runOcrVariants({
+            worker,
+            imageBuffer: candidateBuffer,
+            districtName: input.districtName,
+            variants: [...QUICK_OCR_VARIANTS, ...QUICK_THRESHOLD_OCR_VARIANTS],
+          });
+          ocrAttemptsUsed += candidateRun.attemptsUsed;
+          if (!candidateRun.bestAttempt) {
             continue;
           }
-          bestAttempt = pickBetterOcrAttempt(bestAttempt, candidateAttempt);
+          bestAttempt = pickBetterOcrAttempt(bestAttempt, candidateRun.bestAttempt);
 
-          if (bestAttempt?.aliasMatch.matched && bestAttempt.aliasMatch.exact) {
+          if (bestAttempt?.aliasMatch.matched) {
+            break;
+          }
+        }
+      }
+
+      if (!bestAttempt?.aliasMatch.matched) {
+        const deepFallbackTargets = signCandidates.length > 0
+          ? [signCandidates[0], imageBuffer]
+          : [imageBuffer];
+
+        for (const targetBuffer of deepFallbackTargets) {
+          const deepRun = await runOcrVariants({
+            worker,
+            imageBuffer: targetBuffer,
+            districtName: input.districtName,
+            variants: DEEP_OCR_FALLBACK_VARIANTS,
+          });
+          ocrAttemptsUsed += deepRun.attemptsUsed;
+          if (!deepRun.bestAttempt) {
+            continue;
+          }
+          bestAttempt = pickBetterOcrAttempt(bestAttempt, deepRun.bestAttempt);
+          if (bestAttempt?.aliasMatch.matched) {
             break;
           }
         }
@@ -789,6 +841,16 @@ export async function validateDistrictSelfieLocally(
   const verdict: LocalClaimValidationVerdict = districtNameMatched && faceDetected
     ? "PASS"
     : "REVIEW";
+
+  console.info("Lokální validace selfie dokončena", {
+    selfieUrl: input.selfieUrl,
+    districtName: input.districtName,
+    verdict,
+    districtNameMatched,
+    faceCount,
+    ocrAttemptsUsed,
+    durationMs: Date.now() - validationStartedAt,
+  });
 
   return {
     verdict,
