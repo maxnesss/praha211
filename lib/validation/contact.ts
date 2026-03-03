@@ -16,6 +16,14 @@ export const contactTopicOptions = [
 
 export type ContactTopic = (typeof contactTopicOptions)[number];
 
+export const contactTopicLabelMap: Record<ContactTopic, string> = {
+  nahlasit_bug: "Nahlásit bug",
+  napad_na_vylepseni: "Nápad na vylepšení",
+  zmena_znaku: "Změna znaku",
+  zajem_o_spolupraci: "Zájem o spolupráci",
+  ostatni: "Ostatní",
+};
+
 export const contactFormSchema = z.object({
   name: z
     .string()

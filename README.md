@@ -205,6 +205,7 @@ Poznámky:
 - Registrace vyžaduje potvrzení zásad ochrany osobních údajů (GDPR)
 - Po registraci je nutné potvrdit e-mail přes odkaz zaslaný přes Resend (`RESEND_API_KEY`, `RESEND_FROM`)
 - Po úspěšném ověření e-mailu se odesílá uvítací e-mail
+- Kontaktní formulář (`/kontaktujte-nas`) posílá zprávy přes Resend na `RESEND_CONTACT_TO` (pokud není nastaveno, použije adresu z `RESEND_FROM`)
 - Veřejná je pouze landing stránka `/`
 - Herní části a týmové části vyžadují přihlášení
 

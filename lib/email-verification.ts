@@ -14,6 +14,14 @@ type SendWelcomeEmailInput = {
   email: string;
 };
 
+type SendContactEmailInput = {
+  name: string;
+  email: string;
+  topicLabel: string;
+  message: string;
+  submittedAt?: Date;
+};
+
 type VerificationEmailTemplateInput = {
   verificationUrl: string;
 };
@@ -230,11 +238,136 @@ function buildWelcomeEmailHtml() {
 `.trim();
 }
 
+function extractEmailAddress(value: string) {
+  const trimmed = value.trim();
+  const angleMatch = trimmed.match(/<([^<>@\s]+@[^<>@\s]+)>/);
+
+  if (angleMatch?.[1]) {
+    return angleMatch[1];
+  }
+
+  const plainMatch = trimmed.match(/^[^<>\s@]+@[^<>\s@]+$/);
+  return plainMatch ? trimmed : null;
+}
+
+function getContactRecipientEmail() {
+  const explicitRecipient = process.env.RESEND_CONTACT_TO?.trim();
+  if (explicitRecipient) {
+    return explicitRecipient;
+  }
+
+  const from = process.env.RESEND_FROM?.trim();
+  if (!from) {
+    return null;
+  }
+
+  return extractEmailAddress(from);
+}
+
+function formatContactSubmittedAt(date: Date) {
+  return new Intl.DateTimeFormat("cs-CZ", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    timeZone: "Europe/Prague",
+  }).format(date);
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function buildContactEmailText(input: {
+  name: string;
+  email: string;
+  topicLabel: string;
+  message: string;
+  submittedAt: Date;
+}) {
+  return [
+    "PRAHA 112",
+    "",
+    "Nová zpráva z formuláře Kontaktujte nás.",
+    "",
+    `Jméno: ${input.name}`,
+    `E-mail: ${input.email}`,
+    `Předmět: ${input.topicLabel}`,
+    `Odesláno: ${formatContactSubmittedAt(input.submittedAt)}`,
+    "",
+    "Zpráva:",
+    input.message,
+  ].join("\n");
+}
+
+function buildContactEmailHtml(input: {
+  name: string;
+  email: string;
+  topicLabel: string;
+  message: string;
+  submittedAt: Date;
+}) {
+  const submittedAt = escapeHtml(formatContactSubmittedAt(input.submittedAt));
+  const name = escapeHtml(input.name);
+  const email = escapeHtml(input.email);
+  const topicLabel = escapeHtml(input.topicLabel);
+  const message = escapeHtml(input.message).replaceAll("\n", "<br />");
+
+  return `
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PRAHA 112: Nová kontaktní zpráva</title>
+  </head>
+  <body style="margin:0;padding:0;background:#06141d;color:#e6fbff;font-family:Georgia, 'Times New Roman', serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#06141d;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#0c202e;border:1px solid rgba(34,211,238,0.35);border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="padding:24px 28px 14px;text-align:left;">
+                <p style="margin:0 0 14px;color:#a5f3fc;font-size:12px;letter-spacing:0.22em;text-transform:uppercase;font-weight:700;">PRAHA 112</p>
+                <h1 style="margin:0;color:#ecfeff;font-size:30px;line-height:1.15;font-weight:700;">Nová kontaktní zpráva</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 14px;text-align:left;">
+                <p style="margin:0;color:#c9eef6;font-size:14px;line-height:1.7;">
+                  <strong>Jméno:</strong> ${name}<br />
+                  <strong>E-mail:</strong> ${email}<br />
+                  <strong>Předmět:</strong> ${topicLabel}<br />
+                  <strong>Odesláno:</strong> ${submittedAt}
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 28px 28px;text-align:left;">
+                <p style="margin:0 0 8px;color:#a5f3fc;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Zpráva</p>
+                <div style="background:#08161f;border:1px solid rgba(34,211,238,0.25);border-radius:12px;padding:14px;color:#d2f3f9;font-size:15px;line-height:1.7;white-space:normal;">
+                  ${message}
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`.trim();
+}
+
 async function sendResendEmail(input: {
   to: string;
   subject: string;
   text: string;
   html: string;
+  replyTo?: string;
 }) {
   const config = getResendConfig();
   if (!config) {
@@ -250,6 +383,7 @@ async function sendResendEmail(input: {
     body: JSON.stringify({
       from: config.from,
       to: [input.to],
+      ...(input.replyTo ? { reply_to: input.replyTo } : {}),
       subject: input.subject,
       text: input.text,
       html: input.html,
@@ -284,5 +418,29 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput) {
     subject: "PRAHA 112: Vítejte",
     text: buildWelcomeEmailText(),
     html: buildWelcomeEmailHtml(),
+  });
+}
+
+export async function sendContactEmail(input: SendContactEmailInput) {
+  const recipient = getContactRecipientEmail();
+  if (!recipient) {
+    throw new Error("Chybí RESEND_CONTACT_TO nebo platná adresa v RESEND_FROM.");
+  }
+
+  const submittedAt = input.submittedAt ?? new Date();
+  const templateInput = {
+    name: input.name,
+    email: input.email,
+    topicLabel: input.topicLabel,
+    message: input.message,
+    submittedAt,
+  };
+
+  await sendResendEmail({
+    to: recipient,
+    replyTo: input.email,
+    subject: `PRAHA 112: Kontakt - ${input.topicLabel}`,
+    text: buildContactEmailText(templateInput),
+    html: buildContactEmailHtml(templateInput),
   });
 }

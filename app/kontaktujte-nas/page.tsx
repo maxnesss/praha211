@@ -7,16 +7,10 @@ import { useState } from "react";
 import metro from "@/app/metro-theme.module.css";
 import {
   contactFormSchema,
+  contactTopicLabelMap,
+  contactTopicOptions,
   getContactValidationMessage,
 } from "@/lib/validation/contact";
-
-const topicLabelMap = {
-  nahlasit_bug: "Nahlásit bug",
-  napad_na_vylepseni: "Nápad na vylepšení",
-  zmena_znaku: "Změna znaku",
-  zajem_o_spolupraci: "Zájem o spolupráci",
-  ostatni: "Ostatní",
-} as const;
 
 export default function ContactPage() {
   const [error, setError] = useState<string | null>(null);
@@ -141,9 +135,9 @@ export default function ContactPage() {
                 <option value="" disabled>
                   Vyberte předmět
                 </option>
-                {Object.entries(topicLabelMap).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
+                {contactTopicOptions.map((topic) => (
+                  <option key={topic} value={topic}>
+                    {contactTopicLabelMap[topic]}
                   </option>
                 ))}
               </select>

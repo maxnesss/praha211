@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
+import { sendContactEmail } from "@/lib/email-verification";
 import {
   contactFormSchema,
+  contactTopicLabelMap,
   getContactValidationMessage,
 } from "@/lib/validation/contact";
 
@@ -37,9 +39,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, topic } = parsed.data;
+    const { name, email, topic, message } = parsed.data;
+    const topicLabel = contactTopicLabelMap[topic];
 
-    console.info("Nová kontaktní zpráva:", { name, email, topic });
+    await sendContactEmail({
+      name,
+      email,
+      topicLabel,
+      message,
+    });
 
     return NextResponse.json(
       { message: "Děkujeme, zpráva byla přijata." },
