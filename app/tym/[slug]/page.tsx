@@ -44,7 +44,7 @@ export default async function TeamPage({ params }: TeamPageContext) {
       <SiteHeader session={session} />
 
       <section className={metro.shellContent}>
-        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8 ${metro.mobilePanel}`}>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
@@ -69,7 +69,34 @@ export default async function TeamPage({ params }: TeamPageContext) {
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:hidden">
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Týmové body</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {team.points}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Odemčeno</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {team.completed}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Členové</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {team.membersCount}/{TEAM_MAX_MEMBERS}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Stav</p>
+              <p className="mt-1 text-sm font-semibold text-cyan-50">
+                {team.isFull ? "Plný tým" : "Volná místa"}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-3 xl:grid-cols-4">
             <article className="rounded-xl border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Týmové body</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
@@ -114,61 +141,60 @@ export default async function TeamPage({ params }: TeamPageContext) {
             />
           ) : null}
 
-          <div className="mt-8 overflow-hidden rounded-xl border border-cyan-300/25 bg-[#091925]/75">
-            <div className="border-b border-cyan-300/20 px-4 py-3">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-100/75">
-                Členové týmu
-              </h2>
-            </div>
-            <div className="space-y-3 px-4 py-4 sm:hidden">
+          <section className="mt-8">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-100/75">
+              Členové týmu
+            </h2>
+
+            <div className="sm:hidden">
               {team.members.length > 0 ? (
-                team.members.map((member) => (
-                  <article
-                    key={member.id}
-                    className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-3 text-cyan-50/90"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`${metro.monoDigit} text-sm font-semibold`}>
-                        {member.completed} / 112
+                <ul className="mt-3 divide-y divide-cyan-300/20">
+                  {team.members.map((member) => (
+                    <li key={member.id} className="py-2.5 text-cyan-50/90">
+                      <div className="flex items-center gap-2">
+                        <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-cyan-300/30">
+                          <Image
+                            src={`/user_icons/${member.avatar ?? DEFAULT_USER_AVATAR}.webp`}
+                            alt={`Avatar hráče ${member.displayName}`}
+                            fill
+                            sizes="28px"
+                            className="object-cover"
+                          />
+                        </span>
+                        <Link
+                          href={`/player/${member.id}`}
+                          className="min-w-0 truncate text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
+                        >
+                          {member.displayName}
+                        </Link>
+                        {member.isLeader ? (
+                          <span className="rounded bg-cyan-400/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
+                            Velitel
+                          </span>
+                        ) : null}
+                        {member.isCurrentUser ? (
+                          <span className="rounded bg-orange-400/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
+                            Vy
+                          </span>
+                        ) : null}
+                        <p className={`${metro.monoDigit} ml-auto shrink-0 text-sm font-semibold`}>
+                          {member.points}
+                        </p>
+                      </div>
+                      <p className={`${metro.monoDigit} mt-0.5 text-[11px] text-cyan-100/70`}>
+                        Odemčeno {member.completed} / 112
                       </p>
-                      <p className={`${metro.monoDigit} text-sm`}>{member.points}</p>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="relative h-7 w-7 overflow-hidden rounded-full border border-cyan-300/30">
-                        <Image
-                          src={`/user_icons/${member.avatar ?? DEFAULT_USER_AVATAR}.webp`}
-                          alt={`Avatar hráče ${member.displayName}`}
-                          fill
-                          sizes="28px"
-                          className="object-cover"
-                        />
-                      </span>
-                      <Link
-                        href={`/player/${member.id}`}
-                        className="text-sm font-semibold underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
-                      >
-                        {member.displayName}
-                      </Link>
-                      {member.isLeader ? (
-                        <span className="rounded bg-cyan-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
-                          Velitel
-                        </span>
-                      ) : null}
-                      {member.isCurrentUser ? (
-                        <span className="rounded bg-orange-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-orange-100">
-                          Vy
-                        </span>
-                      ) : null}
-                    </div>
-                  </article>
-                ))
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <p className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-4 text-sm text-cyan-100/65">
+                <p className="mt-4 text-sm text-cyan-100/65">
                   Tým zatím nemá žádné členy.
                 </p>
               )}
             </div>
-            <div className="hidden overflow-x-auto sm:block">
+
+            <div className="mt-3 hidden overflow-x-auto sm:block">
               <table className="w-full text-sm">
                 <thead className="bg-[#06141d]/70 text-xs uppercase tracking-[0.12em] text-cyan-200/60">
                   <tr>
@@ -228,7 +254,7 @@ export default async function TeamPage({ params }: TeamPageContext) {
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         </div>
       </section>
     </main>

@@ -53,7 +53,7 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
       <SiteHeader session={session} />
 
       <section className={metro.shellContent}>
-        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8 ${metro.mobilePanel}`}>
           <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.18em]">
             <Link href="/radnice" className="text-cyan-200/70 hover:text-cyan-100">
               Přehled
@@ -70,7 +70,7 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
           </div>
 
           <div className="mt-6">
-            <article className="rounded-2xl border border-cyan-300/30 bg-[#091925]/70 p-6">
+            <article className={`rounded-2xl border border-cyan-300/30 bg-[#091925]/70 p-6 ${metro.mobileCard}`}>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">
                 Městská část
               </p>

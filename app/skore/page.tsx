@@ -52,7 +52,7 @@ export default async function BodyPage() {
       <SiteHeader session={session} />
 
       <section className={metro.shellContent}>
-        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8 ${metro.mobilePanel}`}>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
             Skóre
           </p>
@@ -63,7 +63,34 @@ export default async function BodyPage() {
             Tady vidíte souhrn bodového výkonu a poslední potvrzené městské části.
           </p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="mt-8 grid grid-cols-6 gap-2 sm:hidden">
+            <article className="col-span-2 rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Celkem bodů</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>{totalPoints}</p>
+            </article>
+            <article className="col-span-2 rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Pořadí</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {ranking.rank && ranking.totalPlayers > 0
+                  ? `#${ranking.rank}/${ranking.totalPlayers}`
+                  : "Bez pořadí"}
+              </p>
+            </article>
+            <article className="col-span-2 rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Odemčeno</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>{totalUnlocks}</p>
+            </article>
+            <article className="col-span-3 rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Průměr</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>{averagePoints}</p>
+            </article>
+            <article className="col-span-3 rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Denní série</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>{currentStreak} dní</p>
+            </article>
+          </div>
+
+          <div className="mt-8 hidden gap-4 sm:grid sm:grid-cols-2 xl:grid-cols-5">
             <article className="rounded-xl border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Celkem bodů</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>{totalPoints}</p>
@@ -103,93 +130,58 @@ export default async function BodyPage() {
             </article>
           ) : null}
 
-          <div className="mt-8 rounded-xl border border-cyan-300/25 bg-[#091925]/75">
-            <div className="border-b border-cyan-300/20 px-4 py-3">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-100/75">
-                Poslední bodované odemčení
-              </h2>
-            </div>
-            <div className="space-y-3 px-4 py-4 sm:hidden">
-              {claims.length > 0 ? (
-                claims.slice(0, 30).map((claim) => (
-                  <article
-                    key={claim.id}
-                    className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] p-3 text-cyan-50/90"
-                  >
-                    <p className={`${metro.monoDigit} text-xs text-cyan-100/70`}>
-                      {claim.claimedAt.toLocaleString("cs-CZ")}
-                    </p>
-                    <p className="mt-1 text-base font-semibold text-cyan-50">
-                      {claim.districtName}
-                    </p>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                      <div>
-                        <p className="uppercase tracking-[0.1em] text-cyan-200/65">Základ</p>
-                        <p className={`${metro.monoDigit} mt-1 text-sm`}>{claim.basePoints}</p>
-                      </div>
-                      <div>
-                        <p className="uppercase tracking-[0.1em] text-cyan-200/65">Násobitel</p>
-                        <p className={`${metro.monoDigit} mt-1 text-sm`}>
-                          {claim.sameDayMultiplier.toFixed(2)}x
+          <section className="mt-8">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-100/75">
+              Poslední bodované odemčení
+            </h2>
+
+            {claims.length > 0 ? (
+              <ul className="mt-3 divide-y divide-cyan-300/20">
+                {claims.slice(0, 30).map((claim) => (
+                  <li key={claim.id} className="py-2.5 text-cyan-50/90">
+                    <div className="sm:hidden">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="min-w-0 truncate text-sm font-medium text-cyan-50">
+                          {claim.districtName}
+                        </p>
+                        <p className={`${metro.monoDigit} shrink-0 text-sm font-semibold text-orange-100`}>
+                          +{claim.awardedPoints}
                         </p>
                       </div>
-                      <div>
-                        <p className="uppercase tracking-[0.1em] text-cyan-200/65">Série</p>
-                        <p className={`${metro.monoDigit} mt-1 text-sm`}>+{claim.streakBonus}</p>
-                      </div>
+                      <p className={`${metro.monoDigit} mt-0.5 text-[11px] leading-4 text-cyan-100/70`}>
+                        {claim.claimedAt.toLocaleString("cs-CZ")} · Základ {claim.basePoints} · Násobitel {claim.sameDayMultiplier.toFixed(2)}x · Série bonus +{claim.streakBonus}
+                      </p>
                     </div>
-                    <p className={`${metro.monoDigit} mt-3 text-sm font-semibold text-orange-100`}>
-                      +{claim.awardedPoints}
-                    </p>
-                  </article>
-                ))
-              ) : (
-                <p className="rounded-lg border border-cyan-300/20 bg-cyan-500/[0.04] px-3 py-4 text-sm text-cyan-100/65">
-                  Zatím nemáte žádné bodované odemčení.
-                </p>
-              )}
-            </div>
-            <div className="hidden overflow-x-auto sm:block">
-              <table className="w-full text-sm">
-                <thead className="bg-[#06141d]/70 text-xs uppercase tracking-[0.12em] text-cyan-200/60">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Datum</th>
-                    <th className="px-4 py-2 text-left">Městská část</th>
-                    <th className="px-4 py-2 text-left">Základ</th>
-                    <th className="px-4 py-2 text-left">Násobitel</th>
-                    <th className="px-4 py-2 text-left">Série bonus</th>
-                    <th className="px-4 py-2 text-left">Získáno</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {claims.length > 0 ? (
-                    claims.slice(0, 30).map((claim) => (
-                      <tr key={claim.id} className="border-t border-cyan-300/20 text-cyan-50/90">
-                        <td className={`${metro.monoDigit} whitespace-nowrap px-4 py-2`}>
-                          {claim.claimedAt.toLocaleString("cs-CZ")}
-                        </td>
-                        <td className="px-4 py-2">
-                          {claim.districtName}
-                        </td>
-                        <td className={`${metro.monoDigit} px-4 py-2`}>{claim.basePoints}</td>
-                        <td className={`${metro.monoDigit} px-4 py-2`}>{claim.sameDayMultiplier.toFixed(2)}x</td>
-                        <td className={`${metro.monoDigit} px-4 py-2`}>+{claim.streakBonus}</td>
-                        <td className={`${metro.monoDigit} px-4 py-2 font-semibold text-orange-100`}>
-                          +{claim.awardedPoints}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td className="px-4 py-6 text-cyan-100/65" colSpan={6}>
-                        Zatím nemáte žádné bodované odemčení.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+
+                    <div className="hidden sm:grid sm:grid-cols-[11rem_minmax(0,1fr)_auto_auto_auto_auto] sm:items-center sm:gap-3">
+                      <p className={`${metro.monoDigit} text-xs text-cyan-100/70`}>
+                        {claim.claimedAt.toLocaleString("cs-CZ")}
+                      </p>
+                      <p className="text-sm font-medium text-cyan-50">
+                        {claim.districtName}
+                      </p>
+                      <p className={`${metro.monoDigit} text-xs text-cyan-100/75`}>
+                        Základ {claim.basePoints}
+                      </p>
+                      <p className={`${metro.monoDigit} text-xs text-cyan-100/75`}>
+                        Násobitel {claim.sameDayMultiplier.toFixed(2)}x
+                      </p>
+                      <p className={`${metro.monoDigit} text-xs text-cyan-100/75`}>
+                        Série bonus +{claim.streakBonus}
+                      </p>
+                      <p className={`${metro.monoDigit} text-sm font-semibold text-orange-100`}>
+                        +{claim.awardedPoints}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-cyan-100/65">
+                Zatím nemáte žádné bodované odemčení.
+              </p>
+            )}
+          </section>
         </div>
       </section>
     </main>

@@ -73,7 +73,7 @@ export function TeamMembershipActions({
   }
 
   return (
-    <article className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-500/5 p-4">
+    <article className="mt-6 border-t border-cyan-300/20 pt-5">
       <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Členství</p>
 
       {isMember ? (

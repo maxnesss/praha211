@@ -47,7 +47,7 @@ type OverviewStatCardProps = {
 
 function OverviewStatCard({ label, value, mono = true }: OverviewStatCardProps) {
   return (
-    <article className="rounded-2xl border border-cyan-200/25 bg-cyan-500/5 p-4">
+    <article className={`rounded-2xl border border-cyan-200/25 bg-cyan-500/5 p-4 ${metro.mobileCard}`}>
       <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/75">{label}</p>
       <p className={`${mono ? `${metro.monoDigit} ` : ""}mt-2 text-3xl font-semibold`}>
         {value}
@@ -66,7 +66,7 @@ function OverviewChapterCard({
   return (
     <Link
       href={`/chapter/${chapter.slug}`}
-      className={`${metro.staggerItem} group rounded-2xl border border-cyan-300/30 bg-[#091925]/70 p-5 transition-all hover:border-cyan-200/80 hover:bg-[#0b1f2f]/85`}
+      className={`${metro.staggerItem} group rounded-2xl border border-cyan-300/30 bg-[#091925]/70 p-5 transition-all hover:border-cyan-200/80 hover:bg-[#0b1f2f]/85 ${metro.mobileCard}`}
       style={{ "--stagger": index } as CSSProperties}
     >
       <div className="flex items-start justify-between gap-4">
@@ -150,8 +150,35 @@ export default async function OverviewPage() {
       <SiteHeader session={session} />
 
       <section className={metro.shellContent}>
-        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[var(--metro-panel)]/80 p-6 shadow-[0_24px_50px_rgba(0,0,0,0.45)] sm:p-8`}>
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[var(--metro-panel)]/80 p-6 shadow-[0_24px_50px_rgba(0,0,0,0.45)] sm:p-8 ${metro.mobilePanel}`}>
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:hidden">
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Dokončeno</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {overview.totalCompleted}/{overview.totalDistricts}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Body</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {formatInt(totalPoints)}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Denní série</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {overview.currentStreak}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Kapitoly</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {completedChapters}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-6 hidden gap-3 sm:grid md:grid-cols-2 xl:grid-cols-4">
             <OverviewStatCard
               label="Dokončeno"
               value={(

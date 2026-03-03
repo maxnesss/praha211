@@ -52,13 +52,32 @@
   margin-inline: auto;
   width: 100%;
   max-width: 80rem;
-  padding-inline: 1.5rem;
-  padding-block: 2.5rem;
+  padding-inline: clamp(0.75rem, 4vw, 1rem);
+  padding-block: 1.5rem;
 }
 
 @media (min-width: 640px) {
   .shellContent {
     padding-inline: 2.5rem;
+    padding-block: 2.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .mobilePanel {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+
+  .mobileCard {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding-inline: 0 !important;
   }
 }
 

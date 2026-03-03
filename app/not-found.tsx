@@ -8,7 +8,7 @@ export default function NotFound() {
       <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
 
       <section className="relative flex min-h-screen items-center justify-center px-6">
-        <div className={`${metro.pageReveal} w-full max-w-lg rounded-2xl border border-cyan-300/35 bg-[#0c202e]/85 p-8 text-center shadow-[0_20px_48px_rgba(0,0,0,0.5)]`}>
+        <div className={`${metro.pageReveal} w-full max-w-lg rounded-2xl border border-cyan-300/35 bg-[#0c202e]/85 p-8 text-center shadow-[0_20px_48px_rgba(0,0,0,0.5)] ${metro.mobilePanel}`}>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-200">
             Chyba 404
           </p>

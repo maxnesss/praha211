@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import metro from "@/app/metro-theme.module.css";
 import { CoatOfArms } from "@/components/coat-of-arms";
 
 type DistrictCoatPreviewProps = {
@@ -122,7 +123,7 @@ export function DistrictCoatPreview({
           className={`aspect-square w-full max-w-[22rem] ${isUnlocked ? "" : "grayscale"}`}
         />
 
-        <aside className="flex flex-col rounded-lg border border-cyan-300/25 bg-[#08161f]/80 p-4 md:h-[22rem]">
+        <aside className={`flex flex-col rounded-lg border border-cyan-300/25 bg-[#08161f]/80 p-4 md:h-[22rem] ${metro.mobileCard}`}>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200/70">
             Historie části
           </p>

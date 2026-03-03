@@ -1,4 +1,5 @@
 import Link from "next/link";
+import metro from "@/app/metro-theme.module.css";
 import { CoatOfArms } from "@/components/coat-of-arms";
 import type { DistrictDefinition } from "@/lib/game/district-catalog";
 
@@ -11,7 +12,7 @@ export function DistrictTile({ district, completed }: DistrictTileProps) {
   return (
     <Link
       href={`/district/${district.code}`}
-      className="group block rounded-xl border border-cyan-300/20 bg-[#08161f]/35 p-2 transition-colors hover:border-cyan-200/35"
+      className={`group block rounded-xl border border-cyan-300/20 bg-[#08161f]/35 p-2 transition-colors hover:border-cyan-200/35 ${metro.mobileCard}`}
     >
       <CoatOfArms
         assetKey={district.coatAssetKey}

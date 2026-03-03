@@ -94,7 +94,7 @@ export default async function BadgesPage() {
       <SiteHeader session={session} />
 
       <section className={metro.shellContent}>
-        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8`}>
+        <div className={`${metro.pageReveal} rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-6 shadow-[0_20px_44px_rgba(0,0,0,0.44)] sm:p-8 ${metro.mobilePanel}`}>
           <div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
@@ -109,7 +109,34 @@ export default async function BadgesPage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:hidden">
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Odemčeno celkem</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-orange-100`}>
+                {badges.totals.unlocked}
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Městské části</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {badges.totals.districtsUnlocked} / 112
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Kapitoly</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {badges.totals.chaptersUnlocked} / 7
+              </p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Praha 1-22</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {badges.totals.prahaUnlocked} / 22
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4">
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Odemčeno celkem</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-orange-100`}>{badges.totals.unlocked}</p>
@@ -128,14 +155,14 @@ export default async function BadgesPage() {
             </article>
           </div>
 
-          <div className="mt-8 rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-4 sm:p-5">
+          <section className="mt-8">
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/70">
               Městské části (112)
             </h2>
             <DistrictBadgeWall badges={badges.districtBadges} />
-          </div>
+          </section>
 
-          <div className="mt-5 rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-4 sm:p-5">
+          <section className="mt-6 border-t border-cyan-300/20 pt-6">
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/70">
               Kapitoly (7)
             </h2>
@@ -151,9 +178,9 @@ export default async function BadgesPage() {
                 />
               ))}
             </div>
-          </div>
+          </section>
 
-          <div className="mt-5 rounded-xl border border-cyan-300/25 bg-[#091925]/70 p-4 sm:p-5">
+          <section className="mt-6 border-t border-cyan-300/20 pt-6">
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/70">
               Dokončení Praha 1–22
             </h2>
@@ -172,7 +199,7 @@ export default async function BadgesPage() {
                 );
               })}
             </div>
-          </div>
+          </section>
         </div>
       </section>
     </main>
