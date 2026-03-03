@@ -173,18 +173,18 @@ export function AdminUsersTable({
                   <td className={`${metro.monoDigit} px-4 py-3`}>{user.claimsCount}</td>
                   <td className="px-4 py-3 text-cyan-100/75">{user.createdLabel}</td>
                   <td className="px-4 py-3">
-                    <div className="inline-grid grid-flow-col auto-cols-fr gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
                       {user.role === "USER" ? (
                         <button
                           type="button"
                           onClick={() => elevateUser(user.id)}
                           disabled={isPending || activeUserId === user.id || user.isSelf}
-                          className="w-full rounded-md border border-orange-300/60 bg-orange-400/20 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="w-full rounded-md border border-orange-300/60 bg-orange-400/20 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                         >
                           Povýšit na ADMIN
                         </button>
                       ) : (
-                        <span className="w-full rounded-md border border-cyan-300/20 bg-cyan-400/5 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100/55">
+                        <span className="w-full rounded-md border border-cyan-300/20 bg-cyan-400/5 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100/55 sm:w-auto">
                           ADMIN
                         </span>
                       )}
@@ -193,7 +193,7 @@ export function AdminUsersTable({
                         type="button"
                         onClick={() => setFreeze(user.id, !user.isFrozen)}
                         disabled={isPending || activeUserId === user.id || user.isSelf}
-                        className={`w-full rounded-md border px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                        className={`w-full rounded-md border px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] transition-colors disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${
                           user.isFrozen
                             ? "border-emerald-300/50 bg-emerald-400/15 text-emerald-100 hover:bg-emerald-400/25"
                             : "border-red-300/50 bg-red-500/20 text-red-100 hover:bg-red-500/30"
@@ -221,6 +221,5 @@ export function AdminUsersTable({
     </div>
   );
 }
-
 
 
