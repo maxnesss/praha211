@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import metro from "@/app/metro-theme.module.css";
@@ -13,9 +14,19 @@ import {
 } from "@/lib/validation/contact";
 
 export default function ContactPage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,7 +95,16 @@ export default function ContactPage() {
           </div>
 
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-cyan-50 sm:text-4xl">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex items-center gap-2 rounded-md border border-cyan-300/35 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition-colors hover:bg-cyan-500/20"
+            >
+              <span aria-hidden="true">←</span>
+              Zpět
+            </button>
+
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-cyan-50 sm:text-4xl">
               Kontaktujte nás
             </h1>
             <p className="mt-3 text-sm text-cyan-100/75 sm:text-base">
