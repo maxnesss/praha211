@@ -5,6 +5,8 @@ import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
 } from "@/lib/db/serializable-transaction";
+import { getPublicPlayerName } from "@/lib/team-utils";
+import { getTeamValidationMessage, leaveTeamSchema } from "@/lib/validation/team";
 
 type LeaveTeamRouteContext = {
   params: Promise<{ slug: string }>;
@@ -14,103 +16,196 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
   return withApiWriteObservability(
     { request, operation: "teams.leave" },
     async () => {
-  const authResult = await requireAuthedUser({
-    request,
-    rateLimit: {
-      prefix: "teams-leave",
-      max: 8,
-      windowMs: 5 * 60 * 1000,
-      message: "Příliš mnoho pokusů o opuštění týmu. Zkuste to prosím později.",
-    },
-  });
-  if (authResult instanceof NextResponse) {
-    return authResult;
-  }
-  const { userId } = authResult;
-
-  const { slug } = await context.params;
-
-  try {
-    await runSerializableTransactionWithRetry(async (tx) => {
-      const [team, user] = await Promise.all([
-        tx.team.findUnique({
-          where: { slug },
-          select: { id: true, leaderUserId: true },
-        }),
-        tx.user.findUnique({
-          where: { id: userId },
-          select: { teamId: true },
-        }),
-      ]);
-
-      if (!team) {
-        throw new Error("TEAM_NOT_FOUND");
-      }
-
-      if (!user) {
-        throw new Error("USER_NOT_FOUND");
-      }
-
-      if (user.teamId !== team.id) {
-        throw new Error("NOT_MEMBER");
-      }
-
-      if (team.leaderUserId === userId) {
-        throw new Error("LEADER_CANNOT_LEAVE");
-      }
-
-      await tx.user.update({
-        where: { id: userId },
-        data: { teamId: null },
-        select: { id: true },
+      const authResult = await requireAuthedUser({
+        request,
+        rateLimit: {
+          prefix: "teams-leave",
+          max: 8,
+          windowMs: 5 * 60 * 1000,
+          message: "Příliš mnoho pokusů o opuštění týmu. Zkuste to prosím později.",
+        },
       });
-    });
+      if (authResult instanceof NextResponse) {
+        return authResult;
+      }
+      const { userId } = authResult;
 
-    return NextResponse.json({
-      message: "Tým jste úspěšně opustili.",
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message === "TEAM_NOT_FOUND") {
-      return NextResponse.json(
-        { message: "Tým nebyl nalezen." },
-        { status: 404 },
-      );
-    }
+      let body: unknown = {};
+      try {
+        body = (await request.json()) as unknown;
+      } catch {
+        body = {};
+      }
 
-    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
-      return NextResponse.json(
-        { message: "Uživatel nebyl nalezen." },
-        { status: 404 },
-      );
-    }
+      const parsed = leaveTeamSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { message: getTeamValidationMessage(parsed.error) },
+          { status: 400 },
+        );
+      }
 
-    if (error instanceof Error && error.message === "NOT_MEMBER") {
-      return NextResponse.json(
-        { message: "Nejste členem tohoto týmu." },
-        { status: 409 },
-      );
-    }
+      const { slug } = await context.params;
+      const preferredSuccessorUserId = parsed.data.successorUserId ?? null;
 
-    if (error instanceof Error && error.message === "LEADER_CANNOT_LEAVE") {
-      return NextResponse.json(
-        { message: "Velitel nemůže odejít z týmu. Nejprve odeberte členy." },
-        { status: 409 },
-      );
-    }
+      try {
+        const result = await runSerializableTransactionWithRetry(async (tx) => {
+          const [team, user] = await Promise.all([
+            tx.team.findUnique({
+              where: { slug },
+              select: { id: true, leaderUserId: true },
+            }),
+            tx.user.findUnique({
+              where: { id: userId },
+              select: { teamId: true },
+            }),
+          ]);
 
-    if (isSerializableConflictError(error)) {
-      return NextResponse.json(
-        { message: "Probíhá souběžná změna týmů. Zkuste to prosím znovu." },
-        { status: 409 },
-      );
-    }
+          if (!team) {
+            throw new Error("TEAM_NOT_FOUND");
+          }
 
-    console.error("Opuštění týmu selhalo:", error);
-    return NextResponse.json(
-      { message: "Tým se nepodařilo opustit." },
-      { status: 500 },
-    );
-  }
+          if (!user) {
+            throw new Error("USER_NOT_FOUND");
+          }
+
+          if (user.teamId !== team.id) {
+            throw new Error("NOT_MEMBER");
+          }
+
+          let successorDisplayName: string | null = null;
+          let teamDeleted = false;
+
+          if (team.leaderUserId === userId) {
+            let successor: {
+              id: string;
+              nickname: string | null;
+              name: string | null;
+              email: string | null;
+            } | null = null;
+
+            if (preferredSuccessorUserId) {
+              const preferred = await tx.user.findUnique({
+                where: { id: preferredSuccessorUserId },
+                select: {
+                  id: true,
+                  teamId: true,
+                  nickname: true,
+                  name: true,
+                  email: true,
+                },
+              });
+
+              if (
+                !preferred
+                || preferred.id === userId
+                || preferred.teamId !== team.id
+              ) {
+                throw new Error("LEADER_SUCCESSOR_NOT_FOUND");
+              }
+
+              successor = {
+                id: preferred.id,
+                nickname: preferred.nickname,
+                name: preferred.name,
+                email: preferred.email,
+              };
+            } else {
+              successor = await tx.user.findFirst({
+                where: {
+                  teamId: team.id,
+                  id: { not: userId },
+                },
+                select: {
+                  id: true,
+                  nickname: true,
+                  name: true,
+                  email: true,
+                },
+                orderBy: { createdAt: "asc" },
+              });
+            }
+
+            if (!successor) {
+              await tx.team.delete({
+                where: { id: team.id },
+                select: { id: true },
+              });
+              teamDeleted = true;
+            }
+
+            if (successor) {
+              await tx.team.update({
+                where: { id: team.id },
+                data: { leaderUserId: successor.id },
+                select: { id: true },
+              });
+
+              successorDisplayName = getPublicPlayerName(successor);
+            }
+          }
+
+          await tx.user.update({
+            where: { id: userId },
+            data: { teamId: null },
+            select: { id: true },
+          });
+
+          return {
+            successorDisplayName,
+            teamDeleted,
+          };
+        });
+
+        return NextResponse.json({
+          message: result.teamDeleted
+            ? "Tým jste opustili. Protože jste byli poslední člen, tým byl automaticky zrušen."
+            : result.successorDisplayName
+              ? `Tým jste opustili. Velení převzal hráč ${result.successorDisplayName}.`
+              : "Tým jste úspěšně opustili.",
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "TEAM_NOT_FOUND") {
+          return NextResponse.json(
+            { message: "Tým nebyl nalezen." },
+            { status: 404 },
+          );
+        }
+
+        if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+          return NextResponse.json(
+            { message: "Uživatel nebyl nalezen." },
+            { status: 404 },
+          );
+        }
+
+        if (error instanceof Error && error.message === "NOT_MEMBER") {
+          return NextResponse.json(
+            { message: "Nejste členem tohoto týmu." },
+            { status: 409 },
+          );
+        }
+
+        if (error instanceof Error && error.message === "LEADER_SUCCESSOR_NOT_FOUND") {
+          return NextResponse.json(
+            { message: "Zvolený nástupce není členem tohoto týmu." },
+            { status: 409 },
+          );
+        }
+
+        if (isSerializableConflictError(error)) {
+          return NextResponse.json(
+            { message: "Probíhá souběžná změna týmů. Zkuste to prosím znovu." },
+            { status: 409 },
+          );
+        }
+
+        console.error("Opuštění týmu selhalo:", error);
+        return NextResponse.json(
+          { message: "Tým se nepodařilo opustit." },
+          { status: 500 },
+        );
+      }
     },
   );
 }

@@ -28,13 +28,13 @@ export default async function Home() {
   }
 
   return (
-    <main className={`${metro.routeShell}`} style={{ minHeight: "100%" }}>
+    <main className={`${metro.routeShell} flex flex-1 flex-col`}>
       <div className={`${metro.scanlineOverlay} pointer-events-none absolute inset-0 opacity-35`} />
       <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
       <div className={`${metro.gridOverlay} pointer-events-none absolute inset-0 opacity-50`} />
       <div className="pointer-events-none absolute left-1/2 top-[20%] h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-cyan-300/10 blur-[120px]" />
 
-      <section className="relative mx-auto flex h-full w-full max-w-7xl flex-col items-center justify-center px-4 py-4 text-center sm:px-8 sm:py-6">
+      <section className="relative mx-auto flex min-h-0 flex-1 w-full max-w-7xl flex-col items-center justify-center px-4 py-4 text-center sm:px-8 sm:py-6">
         <div className={`${metro.pageReveal} w-full max-w-5xl rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-5 shadow-[0_24px_56px_rgba(0,0,0,0.48)] sm:p-7 ${metro.mobilePanel}`}>
           <Image
             src="/logo/praha-tr.png"

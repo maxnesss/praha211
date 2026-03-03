@@ -79,19 +79,19 @@ export function TeamMembershipActions({
       {isMember ? (
         <div className="mt-3 space-y-3">
           <p className="text-sm text-cyan-100/80">
-            {isLeader ? "Jste velitel tohoto týmu." : "Jste členem tohoto týmu."}
+            {isLeader
+              ? "Jste velitel tohoto týmu. Při odchodu se velení předá dalšímu členovi, nebo se tým při odchodu posledního člena automaticky zruší."
+              : "Jste členem tohoto týmu."}
           </p>
 
-          {!isLeader ? (
-            <button
-              type="button"
-              onClick={handleLeave}
-              disabled={isSubmitting}
-              className="rounded-md border border-rose-300/55 bg-rose-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-100 transition-colors hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? "Zpracovávám..." : "Opustit tým"}
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={handleLeave}
+            disabled={isSubmitting}
+            className="rounded-md border border-rose-300/55 bg-rose-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-100 transition-colors hover:bg-rose-500/25 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? "Zpracovávám..." : "Opustit tým"}
+          </button>
         </div>
       ) : null}
 

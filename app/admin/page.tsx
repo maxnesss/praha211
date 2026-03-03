@@ -22,6 +22,10 @@ export default async function AdminPage() {
     prisma.districtClaimSubmission?.count?.({ where: { status: "PENDING" } }) ??
     Promise.resolve(0);
 
+  const pendingValidationCountPromise =
+    prisma.districtClaimSubmission?.count?.({ where: { status: "PENDING" } }) ??
+    Promise.resolve(0);
+
   const [totalUsers, adminCount, frozenCount, pendingValidationCount] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADMIN" } }),

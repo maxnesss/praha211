@@ -576,6 +576,106 @@ async function testCoreFlows(baseUrl, namespace) {
     memberCAfterLeave?.teamId === null,
     "Po opuštění týmu musí mít člen C teamId = null.",
   );
+
+  await memberA.client.request(`/api/teams/${teamSlug}/apply`, {
+    method: "POST",
+    expectedStatus: 200,
+  });
+  const rejoinMemberARequest = await getJoinRequest(teamId, memberA.userId);
+  await leader.client.request(
+    `/api/teams/${teamSlug}/requests/${rejoinMemberARequest.id}/approve`,
+    {
+      method: "POST",
+      expectedStatus: 200,
+    },
+  );
+
+  await leader.client.request(`/api/teams/${teamSlug}/leader/${memberA.userId}/assign`, {
+    method: "POST",
+    expectedStatus: 200,
+  });
+
+  const leaderAfterAssign = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { leaderUserId: true },
+  });
+  assert(
+    leaderAfterAssign?.leaderUserId === memberA.userId,
+    "Po ručním předání musí být velitelem člen A.",
+  );
+
+  await leader.client.request(`/api/teams/${teamSlug}/leave`, {
+    method: "POST",
+    expectedStatus: 200,
+  });
+
+  const leaderAfterLeave = await prisma.user.findUnique({
+    where: { id: leader.userId },
+    select: { teamId: true },
+  });
+  assert(
+    leaderAfterLeave?.teamId === null,
+    "Původní velitel musí po opuštění týmu mít teamId = null.",
+  );
+
+  await memberB.client.request(`/api/teams/${teamSlug}/apply`, {
+    method: "POST",
+    expectedStatus: 200,
+  });
+  const memberBPromoteRequest = await getJoinRequest(teamId, memberB.userId);
+  await memberA.client.request(
+    `/api/teams/${teamSlug}/requests/${memberBPromoteRequest.id}/approve`,
+    {
+      method: "POST",
+      expectedStatus: 200,
+    },
+  );
+
+  await memberA.client.request(`/api/teams/${teamSlug}/leave`, {
+    method: "POST",
+    expectedStatus: 200,
+  });
+
+  const memberAAfterLeaderLeave = await prisma.user.findUnique({
+    where: { id: memberA.userId },
+    select: { teamId: true },
+  });
+  assert(
+    memberAAfterLeaderLeave?.teamId === null,
+    "Člen A (leader) musí po opuštění týmu mít teamId = null.",
+  );
+
+  const leaderAfterAutoTransfer = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { leaderUserId: true },
+  });
+  assert(
+    leaderAfterAutoTransfer?.leaderUserId === memberB.userId,
+    "Po odchodu leadera se má velení automaticky předat členu B.",
+  );
+
+  await memberB.client.request(`/api/teams/${teamSlug}/leave`, {
+    method: "POST",
+    expectedStatus: 200,
+  });
+
+  const memberBAfterSoloLeave = await prisma.user.findUnique({
+    where: { id: memberB.userId },
+    select: { teamId: true },
+  });
+  assert(
+    memberBAfterSoloLeave?.teamId === null,
+    "Poslední člen musí po opuštění týmu mít teamId = null.",
+  );
+
+  const teamAfterSoloLeave = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { id: true },
+  });
+  assert(
+    teamAfterSoloLeave === null,
+    "Po odchodu posledního člena musí být tým automaticky zrušen.",
+  );
 }
 
 async function main() {

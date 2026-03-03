@@ -1,6 +1,6 @@
 .routeShell {
   position: relative;
-  min-height: 100vh;
+  min-height: 100%;
   overflow: hidden;
   background: #06141d;
   color: #e6fbff;
