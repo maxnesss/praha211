@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/serializable-transaction";
 import { prisma } from "@/lib/prisma";
 import { deleteUserSelfieObjects } from "@/lib/storage/selfie-cleanup";
+import { synchronizeTeamLeaderByVotes } from "@/lib/team-leader-voting";
 import {
   deleteAccountSchema,
   getProfileValidationMessage,
@@ -87,8 +88,10 @@ export async function POST(request: Request) {
       }
 
       if (account.teamId) {
+        const teamId = account.teamId;
+
         const team = await tx.team.findUnique({
-          where: { id: account.teamId },
+          where: { id: teamId },
           select: { id: true, leaderUserId: true },
         });
 
@@ -112,6 +115,24 @@ export async function POST(request: Request) {
             select: { id: true },
           });
         }
+
+        await tx.user.update({
+          where: { id: userId },
+          data: { teamId: null },
+          select: { id: true },
+        });
+
+        await tx.teamLeaderVote.deleteMany({
+          where: {
+            teamId,
+            OR: [
+              { userId },
+              { candidateUserId: userId },
+            ],
+          },
+        });
+
+        await synchronizeTeamLeaderByVotes(tx, teamId);
       }
 
       await tx.user.delete({

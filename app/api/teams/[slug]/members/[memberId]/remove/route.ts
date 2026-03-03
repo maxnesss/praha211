@@ -5,6 +5,7 @@ import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
 } from "@/lib/db/serializable-transaction";
+import { synchronizeTeamLeaderByVotes } from "@/lib/team-leader-voting";
 
 type RemoveTeamMemberRouteContext = {
   params: Promise<{ slug: string; memberId: string }>;
@@ -66,6 +67,18 @@ export async function POST(
         data: { teamId: null },
         select: { id: true },
       });
+
+      await tx.teamLeaderVote.deleteMany({
+        where: {
+          teamId: team.id,
+          OR: [
+            { userId: memberId },
+            { candidateUserId: memberId },
+          ],
+        },
+      });
+
+      await synchronizeTeamLeaderByVotes(tx, team.id);
     });
 
     return NextResponse.json({

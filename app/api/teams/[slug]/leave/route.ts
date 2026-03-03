@@ -5,8 +5,7 @@ import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
 } from "@/lib/db/serializable-transaction";
-import { getPublicPlayerName } from "@/lib/team-utils";
-import { getTeamValidationMessage, leaveTeamSchema } from "@/lib/validation/team";
+import { synchronizeTeamLeaderByVotes } from "@/lib/team-leader-voting";
 
 type LeaveTeamRouteContext = {
   params: Promise<{ slug: string }>;
@@ -30,23 +29,7 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
       }
       const { userId } = authResult;
 
-      let body: unknown = {};
-      try {
-        body = (await request.json()) as unknown;
-      } catch {
-        body = {};
-      }
-
-      const parsed = leaveTeamSchema.safeParse(body);
-      if (!parsed.success) {
-        return NextResponse.json(
-          { message: getTeamValidationMessage(parsed.error) },
-          { status: 400 },
-        );
-      }
-
       const { slug } = await context.params;
-      const preferredSuccessorUserId = parsed.data.successorUserId ?? null;
 
       try {
         const result = await runSerializableTransactionWithRetry(async (tx) => {
@@ -73,75 +56,25 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
             throw new Error("NOT_MEMBER");
           }
 
-          let successorDisplayName: string | null = null;
-          let teamDeleted = false;
-
           if (team.leaderUserId === userId) {
-            let successor: {
-              id: string;
-              nickname: string | null;
-              name: string | null;
-              email: string | null;
-            } | null = null;
+            const otherMemberCount = await tx.user.count({
+              where: {
+                teamId: team.id,
+                id: { not: userId },
+              },
+            });
 
-            if (preferredSuccessorUserId) {
-              const preferred = await tx.user.findUnique({
-                where: { id: preferredSuccessorUserId },
-                select: {
-                  id: true,
-                  teamId: true,
-                  nickname: true,
-                  name: true,
-                  email: true,
-                },
-              });
-
-              if (
-                !preferred
-                || preferred.id === userId
-                || preferred.teamId !== team.id
-              ) {
-                throw new Error("LEADER_SUCCESSOR_NOT_FOUND");
-              }
-
-              successor = {
-                id: preferred.id,
-                nickname: preferred.nickname,
-                name: preferred.name,
-                email: preferred.email,
-              };
-            } else {
-              successor = await tx.user.findFirst({
-                where: {
-                  teamId: team.id,
-                  id: { not: userId },
-                },
-                select: {
-                  id: true,
-                  nickname: true,
-                  name: true,
-                  email: true,
-                },
-                orderBy: { createdAt: "asc" },
-              });
-            }
-
-            if (!successor) {
+            if (otherMemberCount === 0) {
               await tx.team.delete({
                 where: { id: team.id },
                 select: { id: true },
               });
-              teamDeleted = true;
-            }
 
-            if (successor) {
-              await tx.team.update({
-                where: { id: team.id },
-                data: { leaderUserId: successor.id },
-                select: { id: true },
-              });
-
-              successorDisplayName = getPublicPlayerName(successor);
+              return {
+                teamDeleted: true,
+                leaderDisplayName: null,
+                changed: false,
+              };
             }
           }
 
@@ -151,17 +84,28 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
             select: { id: true },
           });
 
+          await tx.teamLeaderVote.deleteMany({
+            where: {
+              teamId: team.id,
+              OR: [
+                { userId },
+                { candidateUserId: userId },
+              ],
+            },
+          });
+
+          const synced = await synchronizeTeamLeaderByVotes(tx, team.id);
           return {
-            successorDisplayName,
-            teamDeleted,
+            ...synced,
+            teamDeleted: false,
           };
         });
 
         return NextResponse.json({
           message: result.teamDeleted
-            ? "Tým jste opustili. Protože jste byli poslední člen, tým byl automaticky zrušen."
-            : result.successorDisplayName
-              ? `Tým jste opustili. Velení převzal hráč ${result.successorDisplayName}.`
+            ? "Tým jste opustili. Tým byl zrušen, protože neměl další členy."
+            : result.changed && result.leaderDisplayName
+              ? `Tým jste opustili. Novým velitelem je ${result.leaderDisplayName}.`
               : "Tým jste úspěšně opustili.",
         });
       } catch (error) {
@@ -182,13 +126,6 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
         if (error instanceof Error && error.message === "NOT_MEMBER") {
           return NextResponse.json(
             { message: "Nejste členem tohoto týmu." },
-            { status: 409 },
-          );
-        }
-
-        if (error instanceof Error && error.message === "LEADER_SUCCESSOR_NOT_FOUND") {
-          return NextResponse.json(
-            { message: "Zvolený nástupce není členem tohoto týmu." },
             { status: 409 },
           );
         }

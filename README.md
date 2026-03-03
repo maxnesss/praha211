@@ -172,7 +172,7 @@ API:
 - `/api/teams`
 - `/api/teams/[slug]/apply`
 - `/api/teams/[slug]/leave`
-- `/api/teams/[slug]/leader/[memberId]/assign`
+- `/api/teams/[slug]/leader/vote`
 - `/api/teams/[slug]/requests/[requestId]/approve`
 - `/api/teams/[slug]/requests/[requestId]/reject`
 - `/api/teams/[slug]/members/[memberId]/remove`
@@ -225,7 +225,7 @@ Poznámky:
 - `POST /api/teams`: `5 / 60 min` (uživatel)
 - `POST /api/teams/[slug]/apply`: `20 / 10 min` (uživatel)
 - `POST /api/teams/[slug]/leave`: `8 / 5 min` (uživatel)
-- `POST /api/teams/[slug]/leader/[memberId]/assign`: `20 / 5 min` (uživatel)
+- `POST /api/teams/[slug]/leader/vote`: `30 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/members/[memberId]/remove`: `15 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/requests/[requestId]/approve`: `20 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/requests/[requestId]/reject`: `20 / 5 min` (uživatel)

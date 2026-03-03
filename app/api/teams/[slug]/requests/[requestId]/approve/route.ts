@@ -5,6 +5,7 @@ import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
 } from "@/lib/db/serializable-transaction";
+import { synchronizeTeamLeaderByVotes } from "@/lib/team-leader-voting";
 import { TEAM_MAX_MEMBERS } from "@/lib/team-utils";
 
 type ApproveJoinRequestRouteContext = {
@@ -118,6 +119,26 @@ export async function POST(
           respondedAt: new Date(),
         },
       });
+
+      await tx.teamLeaderVote.upsert({
+        where: {
+          teamId_userId: {
+            teamId: team.id,
+            userId: request.userId,
+          },
+        },
+        create: {
+          teamId: team.id,
+          userId: request.userId,
+          candidateUserId: team.leaderUserId,
+        },
+        update: {
+          candidateUserId: team.leaderUserId,
+        },
+        select: { id: true },
+      });
+
+      await synchronizeTeamLeaderByVotes(tx, team.id);
 
       return team;
     });

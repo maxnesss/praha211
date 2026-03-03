@@ -113,59 +113,6 @@ export function TeamLeaderPanel({
         </section>
 
         <section className="border-t border-cyan-300/20 pt-4">
-          <p className="text-sm font-semibold text-cyan-100">Předat velení</p>
-          {removableMembers.length > 0 ? (
-            <ul className="mt-3 space-y-2">
-              {removableMembers.map((member) => (
-                <li
-                  key={`promote:${member.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-cyan-300/20 bg-cyan-500/5 px-3 py-2"
-                >
-                  <div>
-                    <p className="flex items-center gap-2 text-sm text-cyan-50">
-                      <span className="relative h-6 w-6 overflow-hidden rounded-full border border-cyan-300/30">
-                        <Image
-                          src={`/user_icons/${member.avatar ?? DEFAULT_USER_AVATAR}.webp`}
-                          alt={`Avatar hráče ${member.displayName}`}
-                          fill
-                          sizes="24px"
-                          className="object-cover"
-                        />
-                      </span>
-                      <Link
-                        href={`/player/${member.id}`}
-                        className="underline decoration-cyan-300/35 underline-offset-2 transition-colors hover:text-white"
-                      >
-                        {member.displayName}
-                      </Link>
-                    </p>
-                    <p className="text-xs text-cyan-100/70">
-                      Body: {member.points} · Odemčeno: {member.completed}/112
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      runAction(
-                        `leader:${member.id}`,
-                        `/api/teams/${teamSlug}/leader/${member.id}/assign`,
-                      )}
-                    disabled={busyKey !== null}
-                    className="rounded-md border border-orange-300/60 bg-orange-400/20 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {busyKey === `leader:${member.id}` ? "..." : "Předat velení"}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-cyan-100/70">
-              Velení není komu předat, tým nemá další členy.
-            </p>
-          )}
-        </section>
-
-        <section className="border-t border-cyan-300/20 pt-4">
           <p className="text-sm font-semibold text-cyan-100">Odebrat hráče</p>
           {removableMembers.length > 0 ? (
             <ul className="mt-3 space-y-2">
