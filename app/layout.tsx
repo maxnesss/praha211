@@ -3,6 +3,7 @@ import { Cinzel_Decorative } from "next/font/google";
 import { CookieConsentDialog } from "@/components/cookie-consent-dialog";
 import { SiteFooter } from "@/components/site-footer";
 import { UmamiAnalytics } from "@/components/umami-analytics";
+import { ViewportHeightSync } from "@/components/viewport-height-sync";
 import { SITE_DESCRIPTION, SITE_NAME, getSiteUrl } from "@/lib/seo";
 import "./globals.css";
 
@@ -56,8 +57,9 @@ export default function RootLayout({
   return (
     <html lang="cs">
       <body className={`${cinzelDecorative.variable} antialiased`}>
-        <div className="flex min-h-screen flex-col">
-          <div className="flex-1">{children}</div>
+        <ViewportHeightSync />
+        <div className="flex flex-col" style={{ minHeight: "var(--app-min-height)" }}>
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
           <SiteFooter />
           <CookieConsentDialog />
           <UmamiAnalytics />
