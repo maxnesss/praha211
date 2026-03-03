@@ -74,6 +74,7 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
           }
 
           let successorDisplayName: string | null = null;
+          let teamDeleted = false;
 
           if (team.leaderUserId === userId) {
             let successor: {
@@ -126,16 +127,22 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
             }
 
             if (!successor) {
-              throw new Error("LEADER_NO_SUCCESSOR");
+              await tx.team.delete({
+                where: { id: team.id },
+                select: { id: true },
+              });
+              teamDeleted = true;
             }
 
-            await tx.team.update({
-              where: { id: team.id },
-              data: { leaderUserId: successor.id },
-              select: { id: true },
-            });
+            if (successor) {
+              await tx.team.update({
+                where: { id: team.id },
+                data: { leaderUserId: successor.id },
+                select: { id: true },
+              });
 
-            successorDisplayName = getPublicPlayerName(successor);
+              successorDisplayName = getPublicPlayerName(successor);
+            }
           }
 
           await tx.user.update({
@@ -146,13 +153,16 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
 
           return {
             successorDisplayName,
+            teamDeleted,
           };
         });
 
         return NextResponse.json({
-          message: result.successorDisplayName
-            ? `Tým jste opustili. Velení převzal hráč ${result.successorDisplayName}.`
-            : "Tým jste úspěšně opustili.",
+          message: result.teamDeleted
+            ? "Tým jste opustili. Protože jste byli poslední člen, tým byl automaticky zrušen."
+            : result.successorDisplayName
+              ? `Tým jste opustili. Velení převzal hráč ${result.successorDisplayName}.`
+              : "Tým jste úspěšně opustili.",
         });
       } catch (error) {
         if (error instanceof Error && error.message === "TEAM_NOT_FOUND") {
@@ -179,16 +189,6 @@ export async function POST(request: Request, context: LeaveTeamRouteContext) {
         if (error instanceof Error && error.message === "LEADER_SUCCESSOR_NOT_FOUND") {
           return NextResponse.json(
             { message: "Zvolený nástupce není členem tohoto týmu." },
-            { status: 409 },
-          );
-        }
-
-        if (error instanceof Error && error.message === "LEADER_NO_SUCCESSOR") {
-          return NextResponse.json(
-            {
-              message:
-                "V týmu není další člen, kterému by šlo předat velení. Nejprve pozvěte dalšího hráče.",
-            },
             { status: 409 },
           );
         }

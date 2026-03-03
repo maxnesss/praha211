@@ -653,6 +653,29 @@ async function testCoreFlows(baseUrl, namespace) {
     leaderAfterAutoTransfer?.leaderUserId === memberB.userId,
     "Po odchodu leadera se má velení automaticky předat členu B.",
   );
+
+  await memberB.client.request(`/api/teams/${teamSlug}/leave`, {
+    method: "POST",
+    expectedStatus: 200,
+  });
+
+  const memberBAfterSoloLeave = await prisma.user.findUnique({
+    where: { id: memberB.userId },
+    select: { teamId: true },
+  });
+  assert(
+    memberBAfterSoloLeave?.teamId === null,
+    "Poslední člen musí po opuštění týmu mít teamId = null.",
+  );
+
+  const teamAfterSoloLeave = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { id: true },
+  });
+  assert(
+    teamAfterSoloLeave === null,
+    "Po odchodu posledního člena musí být tým automaticky zrušen.",
+  );
 }
 
 async function main() {

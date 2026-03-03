@@ -80,7 +80,7 @@ export function TeamMembershipActions({
         <div className="mt-3 space-y-3">
           <p className="text-sm text-cyan-100/80">
             {isLeader
-              ? "Jste velitel tohoto týmu. Při odchodu se velení automaticky předá dalšímu členovi."
+              ? "Jste velitel tohoto týmu. Při odchodu se velení předá dalšímu členovi, nebo se tým při odchodu posledního člena automaticky zruší."
               : "Jste členem tohoto týmu."}
           </p>
 
