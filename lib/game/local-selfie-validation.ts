@@ -31,6 +31,10 @@ type ValidateDistrictSelfieInput = {
   districtName: string;
 };
 
+type ExtractOcrTextOptions = {
+  mirrorHorizontal?: boolean;
+};
+
 const OCR_LANGUAGE = "ces+eng";
 const FACE_RESIZE_WIDTH = 640;
 const OCR_RESIZE_WIDTH = 1500;
@@ -286,15 +290,24 @@ async function detectFaceCount(imageBuffer: Buffer) {
   }
 }
 
-async function extractOcrText(imageBuffer: Buffer) {
-  const processed = await sharp(imageBuffer)
+async function extractOcrText(
+  imageBuffer: Buffer,
+  options: ExtractOcrTextOptions = {},
+) {
+  let pipeline = sharp(imageBuffer)
     .rotate()
     .resize({
       width: OCR_RESIZE_WIDTH,
       height: OCR_RESIZE_WIDTH,
       fit: "inside",
       withoutEnlargement: true,
-    })
+    });
+
+  if (options.mirrorHorizontal) {
+    pipeline = pipeline.flop();
+  }
+
+  const processed = await pipeline
     .grayscale()
     .normalize()
     .sharpen()
@@ -401,6 +414,20 @@ export async function validateDistrictSelfieLocally(
   try {
     ocrText = await extractOcrText(imageBuffer);
     aliasMatch = matchDistrictAlias(ocrText, input.districtName);
+
+    if (!aliasMatch.matched) {
+      try {
+        const mirroredOcrText = await extractOcrText(imageBuffer, { mirrorHorizontal: true });
+        const mirroredAliasMatch = matchDistrictAlias(mirroredOcrText, input.districtName);
+
+        if (mirroredAliasMatch.matched) {
+          ocrText = mirroredOcrText;
+          aliasMatch = mirroredAliasMatch;
+        }
+      } catch (error) {
+        console.error("Lokální OCR fallback pro zrcadlenou selfie selhal:", error);
+      }
+    }
   } catch (error) {
     console.error("Lokální OCR validace selhala:", error);
     reasons.push("Lokální čtení textu z cedule selhalo. Je potřeba ruční kontrola.");
