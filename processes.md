@@ -3,6 +3,9 @@
 Tento dokument popisuje hlavni tokove procesy podle aktualni implementace v kodu.
 Primarne pokryva: registraci, prihlaseni a potvrzeni mestske casti (claim).
 
+Poznamka:
+- Kompletní scoring pravidla (vsechny event typy, achievement tiers, thresholds, backfill pravidla) jsou v `docs/scoring.md`.
+
 ## 1. Proces: Registrace (e-mail + heslo)
 
 ### Spoustec
@@ -132,6 +135,7 @@ Tento proces je dvoukrokovy: nejdriv upload selfie do R2, potom zapis claimu do 
    - `sameDayMultiplier = min(2, 1 + claimsTodayBefore * 0.15)`
    - `streakBonus = streakAfterClaim * 5`
    - `awardedPoints = round(basePoints * sameDayMultiplier + streakBonus)`
+   - detailni score matice (chapter/praha/achievement eventy) je v `docs/scoring.md`
 8. Vytvoreni `DistrictClaim` zaznamu.
 9. `revalidateTag(LEADERBOARD_CACHE_TAG, "max")`.
 10. Odpoved `201` s detailem claimu.

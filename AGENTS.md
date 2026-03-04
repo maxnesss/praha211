@@ -50,6 +50,8 @@ npm run dev
 - Overview/streak/scoring helpers: `lib/game/progress.ts`
 - Claim endpoint: `app/api/districts/[code]/claim/route.ts`
 - Rulebook V1 is trust-based (server-time submission, one claim per user+district)
+- Canonical scoring specification: `docs/scoring.md`
+- When changing scoring rules, update `docs/scoring.md` and run `npm run score:backfill`
 
 ## Coats of arms
 

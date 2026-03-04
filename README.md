@@ -21,6 +21,9 @@ npm run dev
 Aplikace běží na `http://localhost:3000`.
 Produkční doména: `https://www.praha112.cz`.
 
+Kompletní specifikace bodování:
+- `docs/scoring.md` (kanonický scoring dokument)
+
 ## Herní model
 
 - 7 kapitol x 16 městských částí = 112 cílů
@@ -276,6 +279,7 @@ Poznámky:
 ## ADR
 
 - Architektonická rozhodnutí jsou vedená v `docs/adr/` (index: `docs/adr/README.md`).
+- Kompletní scoring specifikace je v `docs/scoring.md`.
 
 Povýšení na admina:
 
