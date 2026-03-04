@@ -116,6 +116,7 @@ export async function POST(request: Request) {
       Bucket: r2Config.bucketName,
       Key: objectKey,
       ContentType: parsed.data.type,
+      ContentLength: parsed.data.size,
       Metadata: {
         userId,
         districtCode: parsed.data.districtCode ?? "unknown",
