@@ -8,6 +8,8 @@ import metro from "@/app/metro-theme.module.css";
 import { PasswordField } from "@/components/password-field";
 import { getFirstZodErrorMessage, signInSchema } from "@/lib/validation/auth";
 
+const LOGIN_RATE_LIMIT_ERROR = "TOO_MANY_LOGIN_ATTEMPTS";
+
 function toVerificationMessage(value: string | null) {
   if (value === "success") {
     return "E-mail byl úspěšně ověřen. Teď se můžete přihlásit.";
@@ -71,7 +73,12 @@ export default function SignInPage() {
     });
 
     if (!result || result.error) {
-      if (result?.error?.includes("EMAIL_NOT_VERIFIED")) {
+      if (
+        result?.status === 429
+        || result?.error?.includes(LOGIN_RATE_LIMIT_ERROR)
+      ) {
+        setError("Příliš mnoho pokusů o přihlášení. Zkuste to prosím za chvíli znovu.");
+      } else if (result?.error?.includes("EMAIL_NOT_VERIFIED")) {
         setError("E-mail ještě není ověřený. Otevřete odkaz z ověřovacího e-mailu.");
       } else {
         setError("Neplatný e-mail nebo heslo.");
