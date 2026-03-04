@@ -235,6 +235,16 @@ export async function POST(request: Request, context: ClaimRouteContext) {
           { status: 202 },
         );
       } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError
+          && error.code === "P2002"
+        ) {
+          return NextResponse.json(
+            { message: "Pro tuto městskou část už probíhá validace nebo čeká žádost." },
+            { status: 409 },
+          );
+        }
+
         console.error("Uložení žádosti o potvrzení městské části selhalo:", error);
         return NextResponse.json(
           { message: "Nepodařilo se uložit žádost o potvrzení městské části." },
