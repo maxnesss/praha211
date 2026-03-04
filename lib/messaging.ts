@@ -1,0 +1,200 @@
+import type { MessageCategory, Prisma, PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { getPublicPlayerName } from "@/lib/team-utils";
+
+const DEFAULT_INBOX_LIMIT = 80;
+const MAX_INBOX_LIMIT = 200;
+
+type MessagingDbClient = Pick<PrismaClient, "user" | "userMessage"> | Prisma.TransactionClient;
+
+function normalizeInboxLimit(limit?: number) {
+  const parsed = Number.isFinite(limit) ? Math.floor(Number(limit)) : DEFAULT_INBOX_LIMIT;
+  return Math.min(Math.max(parsed, 1), MAX_INBOX_LIMIT);
+}
+
+export type UserInboxMessage = {
+  id: string;
+  category: MessageCategory;
+  title: string;
+  body: string;
+  createdAtIso: string;
+  readAtIso: string | null;
+  senderUserId: string | null;
+  senderDisplayName: string;
+};
+
+export type DirectMessageRecipientOption = {
+  userId: string;
+  displayName: string;
+  teamName: string | null;
+};
+
+export type TeamMessagingContext = {
+  teamId: string;
+  teamName: string;
+  recipientUserIds: string[];
+  recipientCount: number;
+};
+
+export async function getUserUnreadMessageCount(
+  userId: string,
+  db: MessagingDbClient = prisma,
+) {
+  return db.userMessage.count({
+    where: {
+      recipientUserId: userId,
+      readAt: null,
+    },
+  });
+}
+
+export async function getUserInboxMessages(
+  userId: string,
+  input?: { limit?: number; db?: MessagingDbClient },
+): Promise<UserInboxMessage[]> {
+  const db = input?.db ?? prisma;
+  const limit = normalizeInboxLimit(input?.limit);
+
+  const messages = await db.userMessage.findMany({
+    where: { recipientUserId: userId },
+    select: {
+      id: true,
+      category: true,
+      title: true,
+      body: true,
+      createdAt: true,
+      readAt: true,
+      sender: {
+        select: {
+          id: true,
+          nickname: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+
+  return messages.map((message) => ({
+    id: message.id,
+    category: message.category,
+    title: message.title,
+    body: message.body,
+    createdAtIso: message.createdAt.toISOString(),
+    readAtIso: message.readAt?.toISOString() ?? null,
+    senderUserId: message.sender?.id ?? null,
+    senderDisplayName: message.sender
+      ? getPublicPlayerName(message.sender)
+      : "Systém PRAHA 112",
+  }));
+}
+
+export async function getDirectMessageRecipientOptions(
+  currentUserId: string,
+): Promise<DirectMessageRecipientOption[]> {
+  const users = await prisma.user.findMany({
+    where: {
+      id: { not: currentUserId },
+      isFrozen: false,
+    },
+    select: {
+      id: true,
+      nickname: true,
+      name: true,
+      email: true,
+      team: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return users
+    .map((user) => ({
+      userId: user.id,
+      displayName: getPublicPlayerName(user),
+      teamName: user.team?.name ?? null,
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName, "cs"));
+}
+
+export async function getTeamMessagingContextForUser(
+  userId: string,
+  db: MessagingDbClient = prisma,
+): Promise<TeamMessagingContext | null> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      team: {
+        select: {
+          id: true,
+          name: true,
+          users: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!user?.team) {
+    return null;
+  }
+
+  const recipientUserIds = user.team.users
+    .map((member) => member.id)
+    .filter((memberId) => memberId !== userId);
+
+  return {
+    teamId: user.team.id,
+    teamName: user.team.name,
+    recipientUserIds,
+    recipientCount: recipientUserIds.length,
+  };
+}
+
+type CreateMessagesForRecipientsInput = {
+  recipientUserIds: string[];
+  senderUserId?: string | null;
+  category: MessageCategory;
+  title: string;
+  body: string;
+  dedupeKey?: string | null;
+  db?: MessagingDbClient;
+};
+
+export async function createMessagesForRecipients(input: CreateMessagesForRecipientsInput) {
+  const db = input.db ?? prisma;
+  const recipientUserIds = [...new Set(
+    input.recipientUserIds
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0),
+  )];
+
+  if (recipientUserIds.length === 0) {
+    return 0;
+  }
+
+  const title = input.title.trim();
+  const body = input.body.trim();
+  const dedupeKey = input.dedupeKey?.trim() || null;
+
+  const result = await db.userMessage.createMany({
+    data: recipientUserIds.map((recipientUserId) => ({
+      recipientUserId,
+      senderUserId: input.senderUserId ?? null,
+      category: input.category,
+      title,
+      body,
+      dedupeKey,
+    })),
+    skipDuplicates: dedupeKey !== null,
+  });
+
+  return result.count;
+}

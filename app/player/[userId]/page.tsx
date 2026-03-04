@@ -116,7 +116,14 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                 >
                   Upravit můj profil
                 </Link>
-              ) : null}
+              ) : (
+                <Link
+                  href={`/zpravy?to=${profile.userId}`}
+                  className="rounded-md border border-orange-300/60 bg-orange-400/20 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-orange-50 transition-colors hover:bg-orange-400/30"
+                >
+                  Napsat zprávu
+                </Link>
+              )}
               <Link
                 href="/kniha-hrdinu"
                 className="rounded-md border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-100 transition-colors hover:bg-cyan-400/20"

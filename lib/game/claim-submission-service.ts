@@ -1,9 +1,11 @@
 import type { Prisma } from "@prisma/client";
+import { buildBadgeOverview } from "@/lib/game/badges";
 import {
   calculateAwardedPoints,
   calculateCurrentStreak,
   countClaimsToday,
 } from "@/lib/game/progress";
+import { createMessagesForRecipients } from "@/lib/messaging";
 import { syncUserScoreEvents } from "@/lib/game/score-ledger";
 
 type CreateApprovedClaimInput = {
@@ -33,14 +35,33 @@ export type ApprovedClaimResult = {
 export async function createApprovedDistrictClaim(
   input: CreateApprovedClaimInput,
 ): Promise<ApprovedClaimResult> {
-  const historicalClaims = await input.tx.districtClaim.findMany({
-    where: {
-      userId: input.userId,
-      claimedAt: { lte: input.claimedAt },
-    },
-    select: { claimedAt: true },
-    orderBy: { claimedAt: "desc" },
-  });
+  const [historicalClaims, claimsBefore, userBadgeContext] = await Promise.all([
+    input.tx.districtClaim.findMany({
+      where: {
+        userId: input.userId,
+        claimedAt: { lte: input.claimedAt },
+      },
+      select: { claimedAt: true },
+      orderBy: { claimedAt: "desc" },
+    }),
+    input.tx.districtClaim.findMany({
+      where: {
+        userId: input.userId,
+      },
+      select: {
+        districtCode: true,
+        claimedAt: true,
+      },
+    }),
+    input.tx.user.findUnique({
+      where: { id: input.userId },
+      select: {
+        teamId: true,
+        hasJoinedTeam: true,
+        hasBeenTeamLeader: true,
+      },
+    }),
+  ]);
 
   const claimDates = historicalClaims.map((claim) => claim.claimedAt);
   const claimsTodayBefore = countClaimsToday(claimDates, input.claimedAt);
@@ -75,10 +96,50 @@ export async function createApprovedDistrictClaim(
     },
   });
 
+  const badgeContext = {
+    joinedTeam: Boolean(userBadgeContext?.hasJoinedTeam || userBadgeContext?.teamId),
+    hasBeenTeamLeader: Boolean(userBadgeContext?.hasBeenTeamLeader),
+  };
+  const unlockedAchievementIdsBefore = new Set(
+    buildBadgeOverview(
+      new Set(claimsBefore.map((existingClaim) => existingClaim.districtCode)),
+      {
+        claimDates: claimsBefore.map((existingClaim) => existingClaim.claimedAt),
+        ...badgeContext,
+      },
+    ).achievementBadges
+      .filter((badge) => badge.unlocked)
+      .map((badge) => badge.id),
+  );
+
   await syncUserScoreEvents({
     db: input.tx,
     userId: input.userId,
   });
+
+  const badgesAfter = buildBadgeOverview(
+    new Set([...claimsBefore.map((existingClaim) => existingClaim.districtCode), input.districtCode]),
+    {
+      claimDates: [...claimsBefore.map((existingClaim) => existingClaim.claimedAt), input.claimedAt],
+      ...badgeContext,
+    },
+  );
+
+  const newlyUnlockedBadges = badgesAfter.achievementBadges.filter(
+    (badge) => badge.unlocked && !unlockedAchievementIdsBefore.has(badge.id),
+  );
+
+  for (const badge of newlyUnlockedBadges) {
+    await createMessagesForRecipients({
+      db: input.tx,
+      recipientUserIds: [input.userId],
+      senderUserId: null,
+      category: "BADGE_UNLOCK",
+      title: `Nový odznak: ${badge.title}`,
+      body: `Právě jste získali odznak „${badge.title}“ (${badge.subtitle}). Pokračujte dál, další výzvy čekají.`,
+      dedupeKey: `badge_unlock:${badge.id}`,
+    });
+  }
 
   return {
     claim,

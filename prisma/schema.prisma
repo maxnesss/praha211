@@ -31,6 +31,14 @@ enum ClaimSubmissionStatus {
   REJECTED
 }
 
+enum MessageCategory {
+  DIRECT
+  TEAM_BROADCAST
+  GLOBAL_BROADCAST
+  BADGE_UNLOCK
+  SYSTEM
+}
+
 model User {
   id                             String            @id @default(cuid())
   email                          String            @unique
@@ -58,6 +66,8 @@ model User {
   claimSubmissions               DistrictClaimSubmission[]
   reviewedClaimSubmissions       DistrictClaimSubmission[] @relation("ClaimSubmissionReviewedBy")
   scoreEvents                    ScoreEvent[]
+  messagesReceived               UserMessage[]      @relation("UserMessagesReceived")
+  messagesSent                   UserMessage[]      @relation("UserMessagesSent")
   createdAt                      DateTime          @default(now())
   updatedAt                      DateTime          @updatedAt
 
@@ -190,4 +200,25 @@ model ScoreEvent {
   @@unique([userId, eventKey])
   @@index([userId, occurredAt])
   @@index([eventType])
+}
+
+model UserMessage {
+  id              String          @id @default(cuid())
+  recipientUserId String
+  senderUserId    String?
+  category        MessageCategory @default(DIRECT)
+  title           String
+  body            String
+  dedupeKey       String?
+  readAt          DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  recipient       User            @relation("UserMessagesReceived", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  sender          User?           @relation("UserMessagesSent", fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@unique([recipientUserId, dedupeKey])
+  @@index([recipientUserId, createdAt])
+  @@index([recipientUserId, readAt, createdAt])
+  @@index([senderUserId, createdAt])
+  @@index([category, createdAt])
 }

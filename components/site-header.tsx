@@ -2,8 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Session } from "next-auth";
 import { GameInfoFab } from "@/components/game-info-fab";
+import { MessageInboxFab } from "@/components/message-inbox-fab";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { getUserNavStats, type UserNavStats } from "@/lib/game/queries";
+import { getUserUnreadMessageCount } from "@/lib/messaging";
 
 type SiteHeaderProps = {
   session: Session | null;
@@ -61,9 +63,13 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
   const homeHref = session?.user ? "/radnice" : "/";
   const headerAvatar = session?.user?.avatar ?? DEFAULT_USER_AVATAR;
   let navStats: UserNavStats | null = null;
+  let unreadMessageCount = 0;
 
   if (session?.user?.id) {
-    navStats = await getUserNavStats(session.user.id);
+    [navStats, unreadMessageCount] = await Promise.all([
+      getUserNavStats(session.user.id),
+      getUserUnreadMessageCount(session.user.id),
+    ]);
   }
 
   return (
@@ -128,6 +134,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
                     </svg>
                   </Link>
                 ) : null}
+                <MessageInboxFab unreadCount={unreadMessageCount} />
                 <GameInfoFab />
               </div>
             ) : (

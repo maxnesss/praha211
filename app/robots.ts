@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/pokladnice",
           "/kniha-hrdinu",
           "/tym",
+          "/zpravy",
           "/profile",
           "/player",
         ],
