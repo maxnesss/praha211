@@ -219,6 +219,12 @@ export function ClaimDistrictForm({
         return;
       }
 
+      // UX: immediately close modal after upload so the page never feels frozen
+      // while server-side validation is still running.
+      setIsModalOpen(false);
+      setSuccess("Selfie byla odeslána ke kontrole. Vyčkejte prosím na výsledek validace.");
+      router.refresh();
+
       const response = await fetch(`/api/districts/${districtCode}/claim`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -238,6 +244,7 @@ export function ClaimDistrictForm({
           return;
         }
 
+        setSuccess(null);
         setError(
           payload?.message
             || "Nepodařilo se odeslat potvrzení městské části po nahrání selfie.",
@@ -262,6 +269,7 @@ export function ClaimDistrictForm({
         return;
       }
 
+      setSuccess(null);
       setError("Nepodařilo se odeslat potvrzení městské části po nahrání selfie.");
       setIsSubmitting(false);
     }
