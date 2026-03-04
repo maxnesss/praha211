@@ -45,6 +45,7 @@ function NavStatTile({ label, value, href, prominent = false, className }: NavSt
     return (
       <Link
         href={href}
+        prefetch={true}
         className={`${containerClass} ${className ?? ""}`}
       >
         {content}
@@ -78,6 +79,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
         {session?.user ? (
           <Link
             href="/profile"
+            prefetch={true}
             aria-label="Profil"
             className="absolute right-4 top-3 text-cyan-100 transition-opacity hover:opacity-90 sm:right-8 sm:top-4"
           >
@@ -98,6 +100,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
 
           <Link
             href={homeHref}
+            prefetch={true}
             className="transition-opacity hover:opacity-90"
             aria-label="Přejít na hlavní stránku"
           >
@@ -116,6 +119,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
                 {session.user.role === "ADMIN" ? (
                   <Link
                     href="/admin"
+                    prefetch={true}
                     aria-label="Otevřít administraci"
                     className="inline-flex h-9 w-9 -translate-y-0.5 items-center justify-center rounded-full border border-orange-300/45 bg-[#1a140d]/88 text-orange-100/80 shadow-[0_8px_16px_rgba(0,0,0,0.28)] transition-colors hover:bg-[#241b12]"
                   >

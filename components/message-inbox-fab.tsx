@@ -20,6 +20,7 @@ export function MessageInboxFab({ unreadCount }: MessageInboxFabProps) {
   return (
     <Link
       href="/zpravy"
+      prefetch={true}
       aria-label={ariaLabel}
       className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/35 bg-[#091a26]/88 text-cyan-100/75 shadow-[0_8px_16px_rgba(0,0,0,0.28)] transition-colors hover:bg-[#0d2230]"
     >
