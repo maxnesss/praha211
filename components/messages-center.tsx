@@ -561,7 +561,7 @@ export function MessagesCenter({
             className="w-full max-w-lg rounded-2xl border border-cyan-300/30 bg-[#081b27]/95 p-5 shadow-[0_24px_52px_rgba(0,0,0,0.55)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.12em] text-cyan-200/70">
                   {CATEGORY_LABELS[openedMessage.category]}
@@ -570,13 +570,6 @@ export function MessagesCenter({
                   {openedMessage.title}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpenedMessageId(null)}
-                className="rounded-md border border-cyan-300/30 px-2 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition-colors hover:bg-cyan-500/15"
-              >
-                Zavřít
-              </button>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-cyan-100/75">
