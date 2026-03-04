@@ -66,7 +66,13 @@ function BadgeChip({
 
   if (href) {
     return (
-      <Link href={href} className={`${baseClassName} ${stateClassName}`} style={style} title={`${subtitle} · ${title}`}>
+      <Link
+        href={href}
+        prefetch={true}
+        className={`${baseClassName} ${stateClassName}`}
+        style={style}
+        title={`${subtitle} · ${title}`}
+      >
         {content}
       </Link>
     );

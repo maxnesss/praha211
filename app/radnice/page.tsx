@@ -66,6 +66,7 @@ function OverviewChapterCard({
   return (
     <Link
       href={`/chapter/${chapter.slug}`}
+      prefetch={true}
       className={`${metro.staggerItem} group rounded-2xl border border-cyan-300/30 bg-[#091925]/70 p-5 transition-all hover:border-cyan-200/80 hover:bg-[#0b1f2f]/85 ${metro.mobileCard}`}
       style={{ "--stagger": index } as CSSProperties}
     >
