@@ -78,6 +78,8 @@ export default function SignInPage() {
         || result?.error?.includes(LOGIN_RATE_LIMIT_ERROR)
       ) {
         setError("Příliš mnoho pokusů o přihlášení. Zkuste to prosím za chvíli znovu.");
+      } else if (result?.error?.includes("ACCOUNT_FROZEN")) {
+        setError("Váš účet je zmrazený. Kontaktujte prosím podporu.");
       } else if (result?.error?.includes("EMAIL_NOT_VERIFIED")) {
         setError("E-mail ještě není ověřený. Otevřete odkaz z ověřovacího e-mailu.");
       } else {

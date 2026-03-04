@@ -43,6 +43,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        if (user.isFrozen) {
+          throw new Error("ACCOUNT_FROZEN");
+        }
+
         if (!user.emailVerifiedAt) {
           throw new Error("EMAIL_NOT_VERIFIED");
         }
