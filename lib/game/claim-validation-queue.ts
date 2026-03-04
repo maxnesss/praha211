@@ -18,6 +18,9 @@ const AUTO_VALIDATION_MANUAL_REVIEW_NOTE =
   "Automatická validace nedokázala potvrdit ceduli, žádost čeká na ruční schválení.";
 const AUTO_VALIDATION_RETRY_NOTE =
   "Automatická validace selhala interní chybou, pokus bude zopakován.";
+const DEFAULT_VALIDATION_LOCK_STALE_MS = 10 * 60 * 1000;
+const MIN_VALIDATION_LOCK_STALE_MS = 60 * 1000;
+const MAX_VALIDATION_LOCK_STALE_MS = 24 * 60 * 60 * 1000;
 
 function shouldBypassLocalValidationInCI() {
   return process.env.CI === "true";
@@ -43,6 +46,24 @@ function getLocalValidationTimeoutMs() {
     return 90_000;
   }
   return parsed;
+}
+
+function getValidationLockStaleMs() {
+  const raw = process.env.CLAIM_VALIDATION_LOCK_STALE_MS;
+  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
+
+  if (Number.isNaN(parsed)) {
+    return DEFAULT_VALIDATION_LOCK_STALE_MS;
+  }
+
+  return Math.min(
+    Math.max(parsed, MIN_VALIDATION_LOCK_STALE_MS),
+    MAX_VALIDATION_LOCK_STALE_MS,
+  );
+}
+
+function getValidationLockStaleThreshold(now: Date) {
+  return new Date(now.getTime() - getValidationLockStaleMs());
 }
 
 function buildTimedOutLocalValidation(timeoutMs: number): LocalClaimValidationResult {
@@ -246,6 +267,8 @@ export async function processPendingClaimValidations(input?: {
   limit?: number;
 }): Promise<ClaimValidationQueueResult> {
   const limit = Math.min(Math.max(input?.limit ?? 3, 1), 20);
+  const scanStartedAt = new Date();
+  const staleLockThreshold = getValidationLockStaleThreshold(scanStartedAt);
   const result: ClaimValidationQueueResult = {
     scanned: 0,
     locked: 0,
@@ -258,7 +281,13 @@ export async function processPendingClaimValidations(input?: {
   const candidates = await prisma.districtClaimSubmission.findMany({
     where: {
       status: ClaimSubmissionStatus.PENDING,
-      localValidatedAt: null,
+      OR: [
+        { localValidatedAt: null },
+        {
+          reviewNote: AUTO_VALIDATION_IN_PROGRESS_NOTE,
+          localValidatedAt: { lte: staleLockThreshold },
+        },
+      ],
     },
     orderBy: { createdAt: "asc" },
     take: limit,
@@ -276,15 +305,23 @@ export async function processPendingClaimValidations(input?: {
 
   for (const candidate of candidates as QueueCandidate[]) {
     result.scanned += 1;
+    const lockAttemptedAt = new Date();
+    const lockStaleThreshold = getValidationLockStaleThreshold(lockAttemptedAt);
 
     const lock = await prisma.districtClaimSubmission.updateMany({
       where: {
         id: candidate.id,
         status: ClaimSubmissionStatus.PENDING,
-        localValidatedAt: null,
+        OR: [
+          { localValidatedAt: null },
+          {
+            reviewNote: AUTO_VALIDATION_IN_PROGRESS_NOTE,
+            localValidatedAt: { lte: lockStaleThreshold },
+          },
+        ],
       },
       data: {
-        localValidatedAt: new Date(),
+        localValidatedAt: lockAttemptedAt,
         reviewNote: AUTO_VALIDATION_IN_PROGRESS_NOTE,
       },
     });
