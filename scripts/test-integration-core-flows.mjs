@@ -24,6 +24,21 @@ function buildNamespace() {
   return `core-flows-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function buildNickname(namespace, label) {
+  const normalized = `${namespace}-${label}`
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  const trimmed = normalized.slice(0, 40);
+  if (trimmed.length >= 2) {
+    return trimmed;
+  }
+
+  return `u${Date.now().toString(36)}`;
+}
+
 function delay(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -432,6 +447,7 @@ async function cleanupByNamespace(namespace) {
 
 async function registerAndLogin(baseUrl, namespace, label, name) {
   const email = `${namespace}.${label}@tests.praha112.local`;
+  const nickname = buildNickname(namespace, label);
   const client = new SessionClient(baseUrl);
 
   await client.request("/api/auth/register", {
@@ -440,6 +456,7 @@ async function registerAndLogin(baseUrl, namespace, label, name) {
       email,
       password: PASSWORD,
       name,
+      nickname,
       registrationCode: REGISTRATION_CODE,
       privacyPolicyAccepted: true,
     },
