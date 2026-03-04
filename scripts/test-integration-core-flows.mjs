@@ -524,9 +524,27 @@ async function testCoreFlows(baseUrl, namespace) {
     );
   } else {
     assert(
-      firstClaim.payload?.validationMode === "manual_review",
-      "Při statusu 202 musí být claim ve stavu manual_review.",
+      firstClaim.payload?.validationMode === "queued",
+      "Při statusu 202 musí být claim ve stavu queued.",
     );
+
+    const claimStatus = await primary.client.request("/api/districts/D001/claim", {
+      expectedStatus: 200,
+    });
+    const status = claimStatus.payload?.status;
+
+    assert(
+      status === "PENDING" || status === "CLAIMED",
+      "Po queued potvrzení musí status claimu být PENDING nebo CLAIMED.",
+    );
+
+    if (status === "PENDING") {
+      const pendingState = claimStatus.payload?.submission?.pendingState;
+      assert(
+        pendingState === "VALIDATING" || pendingState === "MANUAL_REVIEW",
+        "Pending submission musí mít stav VALIDATING nebo MANUAL_REVIEW.",
+      );
+    }
   }
 
   await primary.client.request("/api/districts/D001/claim", {
