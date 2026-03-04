@@ -92,6 +92,7 @@ export function ClaimDistrictForm({
 }: ClaimDistrictFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStage, setSubmitStage] = useState<"idle" | "uploading" | "validating">("idle");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -104,6 +105,7 @@ export function ClaimDistrictForm({
     setError(null);
     setSuccess(null);
     setIsSubmitting(true);
+    setSubmitStage("uploading");
 
     const storeUnlockEffect = () => {
       setShowUnlockEffect(true);
@@ -112,6 +114,11 @@ export function ClaimDistrictForm({
         const storageKey = getUnlockEffectStorageKey(districtCode);
         window.sessionStorage.setItem(storageKey, String(Date.now()));
       }
+    };
+
+    const stopSubmitting = () => {
+      setIsSubmitting(false);
+      setSubmitStage("idle");
     };
 
     const applyRecoveredClaimState = async () => {
@@ -129,11 +136,9 @@ export function ClaimDistrictForm({
         }
 
         if (statusPayload.status === "CLAIMED") {
-          setSuccess(
-            "Městská část byla potvrzena. Dokončení proběhlo i přes opožděnou odpověď.",
-          );
+          setSuccess("Městská část byla potvrzena.");
           setIsModalOpen(false);
-          setIsSubmitting(false);
+          stopSubmitting();
           storeUnlockEffect();
           router.refresh();
           return true;
@@ -144,7 +149,7 @@ export function ClaimDistrictForm({
             "Žádost byla přijata a čeká na ruční schválení administrátorem.",
           );
           setIsModalOpen(false);
-          setIsSubmitting(false);
+          stopSubmitting();
           router.refresh();
           return true;
         }
@@ -162,19 +167,19 @@ export function ClaimDistrictForm({
 
     if (!(selfieFile instanceof File) || selfieFile.size === 0) {
       setError("Nahrajte selfie soubor.");
-      setIsSubmitting(false);
+      stopSubmitting();
       return;
     }
 
     if (!isAllowedSelfieMimeType(selfieFile.type)) {
       setError("Nepodporovaný formát souboru. Nahrajte prosím JPG, PNG, WEBP nebo HEIC.");
-      setIsSubmitting(false);
+      stopSubmitting();
       return;
     }
 
     if (selfieFile.size > SELFIE_MAX_SIZE_BYTES) {
       setError("Soubor je příliš velký. Maximální velikost je 10 MB.");
-      setIsSubmitting(false);
+      stopSubmitting();
       return;
     }
 
@@ -201,7 +206,7 @@ export function ClaimDistrictForm({
         || !signPayload.contentType
       ) {
         setError(signPayload?.message || "Nepodařilo se připravit upload selfie.");
-        setIsSubmitting(false);
+        stopSubmitting();
         return;
       }
 
@@ -215,14 +220,13 @@ export function ClaimDistrictForm({
 
       if (!uploadResponse.ok) {
         setError("Nahrání selfie selhalo. Zkuste to prosím znovu.");
-        setIsSubmitting(false);
+        stopSubmitting();
         return;
       }
 
-      // UX: immediately close modal after upload so the page never feels frozen
-      // while server-side validation is still running.
+      setSubmitStage("validating");
       setIsModalOpen(false);
-      setSuccess("Selfie byla odeslána ke kontrole. Vyčkejte prosím na výsledek validace.");
+      setSuccess("Selfie nahrána. Probíhá validace.");
       router.refresh();
 
       const response = await fetch(`/api/districts/${districtCode}/claim`, {
@@ -249,7 +253,8 @@ export function ClaimDistrictForm({
           payload?.message
             || "Nepodařilo se odeslat potvrzení městské části po nahrání selfie.",
         );
-        setIsSubmitting(false);
+        setIsModalOpen(true);
+        stopSubmitting();
         return;
       }
 
@@ -257,9 +262,20 @@ export function ClaimDistrictForm({
         | { message?: string }
         | null;
 
-      setSuccess(payload?.message || "Potvrzení přijato.");
+      if (response.status === 202) {
+        setSuccess(
+          payload?.message
+            || "Žádost byla přijata a čeká na ruční schválení administrátorem.",
+        );
+        setIsModalOpen(false);
+        stopSubmitting();
+        router.refresh();
+        return;
+      }
+
+      setSuccess(payload?.message || "Městská část byla úspěšně potvrzena.");
       setIsModalOpen(false);
-      setIsSubmitting(false);
+      stopSubmitting();
       storeUnlockEffect();
       router.refresh();
     } catch (error) {
@@ -271,7 +287,8 @@ export function ClaimDistrictForm({
 
       setSuccess(null);
       setError("Nepodařilo se odeslat potvrzení městské části po nahrání selfie.");
-      setIsSubmitting(false);
+      setIsModalOpen(true);
+      stopSubmitting();
     }
   }
 
@@ -376,11 +393,17 @@ export function ClaimDistrictForm({
         onClick={() => {
           setError(null);
           setSuccess(null);
+          setSubmitStage("idle");
           setIsModalOpen(true);
         }}
-        className="mt-6 flex w-full justify-center rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30"
+        disabled={isSubmitting}
+        className="mt-6 flex w-full justify-center rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Odemknout městskou část
+        {submitStage === "uploading"
+          ? "Nahrávám selfie..."
+          : submitStage === "validating"
+            ? "Validuji..."
+            : "Odemknout městskou část"}
       </button>
 
       {isModalOpen ? (
@@ -396,6 +419,7 @@ export function ClaimDistrictForm({
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
+                disabled={isSubmitting}
                 className="rounded-md border border-cyan-300/35 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-400/10"
               >
                 Zavřít
@@ -413,6 +437,7 @@ export function ClaimDistrictForm({
                   type="file"
                   accept={SELFIE_ALLOWED_MIME_TYPES.join(",")}
                   required
+                  disabled={isSubmitting}
                   className="w-full rounded-md border border-cyan-300/30 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 file:mr-3 file:rounded-md file:border-0 file:bg-cyan-500/15 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-cyan-100 hover:file:bg-cyan-500/25"
                 />
               </div>
@@ -422,6 +447,7 @@ export function ClaimDistrictForm({
                   name="attestVisited"
                   type="checkbox"
                   required
+                  disabled={isSubmitting}
                   className="mt-0.5 h-4 w-4 rounded border-cyan-300/40 bg-[#08161f] text-orange-300 focus:ring-orange-200"
                 />
                 Tuto městskou část jsem fyzicky navštívil/a.
@@ -432,6 +458,7 @@ export function ClaimDistrictForm({
                   name="attestSignVisible"
                   type="checkbox"
                   required
+                  disabled={isSubmitting}
                   className="mt-0.5 h-4 w-4 rounded border-cyan-300/40 bg-[#08161f] text-orange-300 focus:ring-orange-200"
                 />
                 Na selfie je vidět oficiální cedule městské části.
@@ -453,6 +480,7 @@ export function ClaimDistrictForm({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
+                  disabled={isSubmitting}
                   className="rounded-md border border-cyan-300/35 px-4 py-2 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-400/10"
                 >
                   Zrušit
@@ -462,7 +490,11 @@ export function ClaimDistrictForm({
                   disabled={isSubmitting}
                   className="rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {isSubmitting ? "Odesílám..." : "Potvrdit"}
+                  {submitStage === "uploading"
+                    ? "Nahrávám selfie..."
+                    : submitStage === "validating"
+                      ? "Validuji..."
+                      : "Potvrdit"}
                 </button>
               </div>
             </form>
