@@ -30,11 +30,12 @@ const nameSchema = z
   .optional()
   .transform((value) => (value && value.length > 0 ? value : undefined));
 
-const nicknameSchema = z
+export const nicknameSchema = z
   .string()
   .trim()
   .min(2, "Přezdívka musí mít alespoň 2 znaky.")
-  .max(40, "Přezdívka může mít maximálně 40 znaků.");
+  .max(40, "Přezdívka může mít maximálně 40 znaků.")
+  .refine((value) => !/\s/.test(value), "Přezdívka nesmí obsahovat mezery.");
 
 const privacyPolicyAcceptedSchema = z
   .boolean()

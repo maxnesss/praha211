@@ -52,7 +52,8 @@ const addUserSchema = z.object({
     .string()
     .trim()
     .min(2, "Přezdívka musí mít alespoň 2 znaky.")
-    .max(40, "Přezdívka může mít maximálně 40 znaků."),
+    .max(40, "Přezdívka může mít maximálně 40 znaků.")
+    .refine((value) => !/\s/.test(value), "Přezdívka nesmí obsahovat mezery."),
   name: z
     .string()
     .trim()

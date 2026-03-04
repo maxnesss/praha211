@@ -2,18 +2,35 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import metro from "@/app/metro-theme.module.css";
 import { PasswordField } from "@/components/password-field";
-import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
+import {
+  getFirstZodErrorMessage,
+  nicknameSchema,
+  registerSchema,
+} from "@/lib/validation/auth";
 
 const REDIRECT_DELAY_MS = 3500;
+const NICKNAME_AVAILABILITY_DEBOUNCE_MS = 320;
+
+type NicknameAvailabilityState =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "available"; message: string }
+  | { kind: "taken"; message: string }
+  | { kind: "invalid"; message: string }
+  | { kind: "error"; message: string };
 
 export default function SignUpPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState("");
+  const [nicknameAvailability, setNicknameAvailability] = useState<NicknameAvailabilityState>({
+    kind: "idle",
+  });
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -23,6 +40,92 @@ export default function SignUpPage() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const trimmedNickname = nicknameDraft.trim();
+    const parsedNickname = nicknameSchema.safeParse(trimmedNickname);
+    if (!parsedNickname.success) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/auth/nickname-availability?nickname=${encodeURIComponent(parsedNickname.data)}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+
+        const payload = (await response.json().catch(() => null)) as
+          | {
+            available?: boolean;
+            message?: string;
+          }
+          | null;
+
+        if (!response.ok) {
+          setNicknameAvailability({
+            kind: "error",
+            message: payload?.message ?? "Kontrola přezdívky se nepodařila.",
+          });
+          return;
+        }
+
+        if (payload?.available) {
+          setNicknameAvailability({
+            kind: "available",
+            message: payload.message ?? "Přezdívka je volná.",
+          });
+          return;
+        }
+
+        setNicknameAvailability({
+          kind: "taken",
+          message: payload?.message ?? "Tuto přezdívku už používá jiný hráč.",
+        });
+      } catch {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setNicknameAvailability({
+          kind: "error",
+          message: "Kontrola přezdívky se nepodařila.",
+        });
+      }
+    }, NICKNAME_AVAILABILITY_DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [nicknameDraft]);
+
+  function handleNicknameChange(event: ChangeEvent<HTMLInputElement>) {
+    const nextNickname = event.target.value;
+    setNicknameDraft(nextNickname);
+
+    const trimmedNickname = nextNickname.trim();
+    if (trimmedNickname.length === 0) {
+      setNicknameAvailability({ kind: "idle" });
+      return;
+    }
+
+    const parsedNickname = nicknameSchema.safeParse(trimmedNickname);
+    if (!parsedNickname.success) {
+      setNicknameAvailability({
+        kind: "invalid",
+        message: getFirstZodErrorMessage(parsedNickname.error),
+      });
+      return;
+    }
+
+    setNicknameAvailability({ kind: "checking" });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,6 +153,18 @@ export default function SignUpPage() {
 
     if (parsed.data.password !== confirmPassword) {
       setError("Hesla se neshodují.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (nicknameAvailability.kind === "checking") {
+      setError("Počkejte prosím na dokončení kontroly přezdívky.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (nicknameAvailability.kind === "taken" || nicknameAvailability.kind === "invalid") {
+      setError(nicknameAvailability.message);
       setIsSubmitting(false);
       return;
     }
@@ -95,6 +210,8 @@ export default function SignUpPage() {
     }
 
     form.reset();
+    setNicknameDraft("");
+    setNicknameAvailability({ kind: "idle" });
     setSuccess(
       `${payload?.message
         || "Účet byl vytvořen. Pro dokončení registrace potvrďte odkaz v ověřovacím e-mailu."
@@ -146,9 +263,22 @@ export default function SignUpPage() {
                 required
                 minLength={2}
                 maxLength={40}
+                value={nicknameDraft}
+                onChange={handleNicknameChange}
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />
               <p className="text-xs text-cyan-100/65">Přezdívku po registraci nelze změnit.</p>
+              {nicknameAvailability.kind === "checking" ? (
+                <p className="text-xs text-cyan-100/75">Kontroluji dostupnost přezdívky...</p>
+              ) : null}
+              {nicknameAvailability.kind === "available" ? (
+                <p className="text-xs text-emerald-200">{nicknameAvailability.message}</p>
+              ) : null}
+              {nicknameAvailability.kind === "taken"
+                || nicknameAvailability.kind === "invalid"
+                || nicknameAvailability.kind === "error" ? (
+                  <p className="text-xs text-rose-200">{nicknameAvailability.message}</p>
+                ) : null}
             </div>
 
             <div className="space-y-1.5">
@@ -244,7 +374,12 @@ export default function SignUpPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting
+                || nicknameAvailability.kind === "checking"
+                || nicknameAvailability.kind === "taken"
+                || nicknameAvailability.kind === "invalid"
+              }
               className="w-full rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? "Vytvářím účet..." : "Vytvořit účet"}
