@@ -41,8 +41,8 @@ function buildBypassedLocalValidation() {
 function getLocalValidationTimeoutMs() {
   const raw = process.env.LOCAL_SELFIE_VALIDATION_TIMEOUT_MS;
   const parsed = raw ? Number.parseInt(raw, 10) : NaN;
-  if (Number.isNaN(parsed) || parsed < 10_000) {
-    return 30_000;
+  if (Number.isNaN(parsed) || parsed < 30_000) {
+    return 90_000;
   }
   return parsed;
 }
