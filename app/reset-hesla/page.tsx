@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import metro from "@/app/metro-theme.module.css";
 import { PasswordField } from "@/components/password-field";
 import {
@@ -30,7 +30,6 @@ function readResetContext(): ResetContext | null {
 }
 
 export default function ResetPasswordPage() {
-  const resetContext = useMemo(() => readResetContext(), []);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,6 +39,7 @@ export default function ResetPasswordPage() {
     setError(null);
     setMessage(null);
 
+    const resetContext = readResetContext();
     if (!resetContext) {
       setError("Odkaz pro reset hesla je neplatný nebo neúplný.");
       return;
@@ -152,7 +152,7 @@ export default function ResetPasswordPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting || !resetContext}
+              disabled={isSubmitting}
               className="w-full rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? "Ukládám..." : "Nastavit heslo"}
