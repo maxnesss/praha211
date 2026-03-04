@@ -39,18 +39,42 @@ export function MetroPageSkeleton({ children }: MetroPageSkeletonProps) {
       <div className={`${metro.scanlineOverlay} pointer-events-none absolute inset-0 opacity-35`} />
       <div className={`${metro.backdropGradient} pointer-events-none absolute inset-0`} />
 
-      <header className="relative mx-auto w-full max-w-7xl px-4 pt-4 sm:px-8">
-        <div className="flex items-center justify-between rounded-xl border border-cyan-300/25 bg-[#0b1d2a]/80 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <SkeletonBlock className="h-9 w-9 rounded-full" />
-            <SkeletonBlock className="h-4 w-28 rounded-md" />
+      <header className="border-b border-cyan-300/25 bg-[#071824]/90 backdrop-blur">
+        <nav className="relative mx-auto w-full max-w-7xl px-4 py-3 sm:px-8 sm:py-4">
+          <div className="absolute right-4 top-3 sm:right-8 sm:top-4">
+            <SkeletonBlock className="h-8 w-8 rounded-full" />
           </div>
-          <div className="flex items-center gap-2">
-            <SkeletonBlock className="h-8 w-16 rounded-md" />
-            <SkeletonBlock className="h-8 w-16 rounded-md" />
-            <SkeletonBlock className="h-8 w-16 rounded-md" />
+
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div className="h-8 w-8" aria-hidden />
+            <SkeletonBlock className="mx-auto h-[30vh] w-[30vh] max-h-[14.5rem] max-w-[14.5rem] min-h-16 min-w-16 rounded-full" />
+            <div className="justify-self-end self-stretch">
+              <div className="flex h-full flex-col items-end justify-end gap-2 pb-0.5 sm:pb-1">
+                <SkeletonBlock className="h-9 w-9 rounded-full" />
+                <SkeletonBlock className="h-9 w-9 rounded-full" />
+                <SkeletonBlock className="h-9 w-9 rounded-full" />
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div className="mt-2 border-t border-cyan-300/20 pt-2">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
+              {Array.from({ length: 5 }, (_, index) => (
+                <article
+                  key={`header-stat-${index}`}
+                  className={
+                    index === 2
+                      ? "rounded-lg border border-orange-300/60 bg-gradient-to-b from-orange-400/25 to-orange-500/10 px-3 py-2"
+                      : "rounded-md border border-cyan-300/25 bg-cyan-500/5 px-2 py-1.5"
+                  }
+                >
+                  <SkeletonBlock className="h-2.5 w-16 rounded-md" />
+                  <SkeletonBlock className="mt-1.5 h-4 w-14 rounded-md" />
+                </article>
+              ))}
+            </div>
+          </div>
+        </nav>
       </header>
 
       <section className={metro.shellContent}>
