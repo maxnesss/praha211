@@ -107,6 +107,17 @@ export function ClaimDistrictForm({
   const [showUnlockEffect, setShowUnlockEffect] = useState(() =>
     consumePendingUnlockEffect(districtCode),
   );
+  const isBusyStage = submitStage === "uploading" || submitStage === "validating";
+  const submitButtonLabel = submitStage === "uploading"
+    ? "Nahrávám selfie..."
+    : submitStage === "validating"
+      ? "Validuji..."
+      : "Potvrdit";
+  const unlockButtonLabel = submitStage === "uploading"
+    ? "Nahrávám selfie..."
+    : submitStage === "validating"
+      ? "Validuji..."
+      : "Odemknout městskou část";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -457,13 +468,15 @@ export function ClaimDistrictForm({
           setIsModalOpen(true);
         }}
         disabled={isSubmitting}
-        className="mt-6 flex w-full justify-center rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {submitStage === "uploading"
-          ? "Nahrávám selfie..."
-          : submitStage === "validating"
-            ? "Validuji..."
-            : "Odemknout městskou část"}
+        {isBusyStage ? (
+          <span
+            aria-hidden="true"
+            className="h-4 w-4 animate-spin rounded-full border-2 border-orange-50/80 border-t-transparent"
+          />
+        ) : null}
+        <span>{unlockButtonLabel}</span>
       </button>
 
       {isModalOpen ? (
@@ -548,13 +561,15 @@ export function ClaimDistrictForm({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="inline-flex items-center gap-2 rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {submitStage === "uploading"
-                    ? "Nahrávám selfie..."
-                    : submitStage === "validating"
-                      ? "Validuji..."
-                      : "Potvrdit"}
+                  {isBusyStage ? (
+                    <span
+                      aria-hidden="true"
+                      className="h-4 w-4 animate-spin rounded-full border-2 border-orange-50/80 border-t-transparent"
+                    />
+                  ) : null}
+                  <span>{submitButtonLabel}</span>
                 </button>
               </div>
             </form>
