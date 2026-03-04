@@ -126,12 +126,12 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
 
         {session?.user ? (
           <div className="mt-2 flex justify-end">
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center justify-end gap-2">
               {session.user.role === "ADMIN" ? (
                 <Link
                   href="/admin"
                   aria-label="Otevřít administraci"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-orange-300/45 bg-[#1a140d]/88 text-orange-100/80 shadow-[0_8px_16px_rgba(0,0,0,0.28)] transition-colors hover:bg-[#241b12]"
+                  className="inline-flex h-9 w-9 -translate-y-0.5 items-center justify-center rounded-full border border-orange-300/45 bg-[#1a140d]/88 text-orange-100/80 shadow-[0_8px_16px_rgba(0,0,0,0.28)] transition-colors hover:bg-[#241b12]"
                 >
                   <svg
                     viewBox="0 0 24 24"
