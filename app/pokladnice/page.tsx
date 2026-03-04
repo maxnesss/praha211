@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -14,6 +15,8 @@ type BadgeChipProps = {
   unlocked: boolean;
   accentColor?: string;
   href?: string;
+  imageSrc?: string;
+  imageAlt?: string;
 };
 
 function BadgeChip({
@@ -22,6 +25,8 @@ function BadgeChip({
   unlocked,
   accentColor,
   href,
+  imageSrc,
+  imageAlt,
 }: BadgeChipProps) {
   const baseClassName =
     "group flex h-[4.4rem] w-full min-w-0 flex-col justify-between rounded-md border px-2.5 py-2 text-left transition-transform hover:-translate-y-0.5";
@@ -40,7 +45,20 @@ function BadgeChip({
 
   const content = (
     <>
-      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]">{subtitle}</p>
+      <div className="flex min-w-0 items-center gap-2">
+        {imageSrc ? (
+          <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-sm border border-cyan-200/25 bg-[#071521]">
+            <Image
+              src={imageSrc}
+              alt={imageAlt ?? subtitle}
+              fill
+              sizes="24px"
+              className={`object-cover ${unlocked ? "" : "grayscale"}`}
+            />
+          </span>
+        ) : null}
+        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]">{subtitle}</p>
+      </div>
       <p className="overflow-hidden text-[11px] font-semibold leading-4 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
         {title}
       </p>
@@ -195,6 +213,8 @@ export default async function BadgesPage() {
                     subtitle={`Praha ${badge.number}`}
                     unlocked={badge.unlocked}
                     accentColor={accent}
+                    imageSrc={`/coats/praha${badge.number}.webp`}
+                    imageAlt={`Znak Praha ${badge.number}`}
                   />
                 );
               })}

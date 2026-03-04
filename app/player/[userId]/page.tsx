@@ -33,6 +33,8 @@ function MiniBadgeChip(props: {
   value: string;
   unlocked: boolean;
   accentColor?: string;
+  imageSrc?: string;
+  imageAlt?: string;
 }) {
   const stateClass = props.unlocked
     ? "border-cyan-300/35 bg-cyan-500/10 text-cyan-50"
@@ -48,6 +50,19 @@ function MiniBadgeChip(props: {
           }
         : undefined}
     >
+      {props.imageSrc ? (
+        <span className="mx-auto mb-1 block">
+          <span className="relative mx-auto block h-6 w-6 overflow-hidden rounded-sm border border-cyan-200/25 bg-[#071521]">
+            <Image
+              src={props.imageSrc}
+              alt={props.imageAlt ?? props.label}
+              fill
+              sizes="24px"
+              className={`object-cover ${props.unlocked ? "" : "grayscale"}`}
+            />
+          </span>
+        </span>
+      ) : null}
       <p className="text-[10px] uppercase tracking-[0.14em]">{props.label}</p>
       <p className={`${metro.monoDigit} mt-0.5 text-xs font-semibold`}>{props.value}</p>
     </article>
@@ -223,6 +238,8 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                     value={`${badge.completed}/${badge.total}`}
                     unlocked={badge.unlocked}
                     accentColor={PRAHA_ACCENTS[(badge.number - 1) % PRAHA_ACCENTS.length]}
+                    imageSrc={`/coats/praha${badge.number}.webp`}
+                    imageAlt={`Znak Praha ${badge.number}`}
                   />
                 ))}
               </div>
