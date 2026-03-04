@@ -35,6 +35,7 @@ export default function SignUpPage() {
     const confirmPassword = String(formData.get("confirmPassword") || "");
     const parsed = registerSchema.safeParse({
       name: String(formData.get("name") || ""),
+      nickname: String(formData.get("nickname") || ""),
       email: String(formData.get("email") || ""),
       password: String(formData.get("password") || ""),
       registrationCode: String(formData.get("registrationCode") || ""),
@@ -55,6 +56,7 @@ export default function SignUpPage() {
 
     const {
       name,
+      nickname,
       email,
       password,
       registrationCode,
@@ -66,6 +68,7 @@ export default function SignUpPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
+        nickname,
         email,
         password,
         registrationCode,
@@ -129,6 +132,23 @@ export default function SignUpPage() {
                 autoComplete="name"
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="nickname" className="text-sm font-medium text-cyan-100">
+                Přezdívka
+              </label>
+              <input
+                id="nickname"
+                name="nickname"
+                type="text"
+                autoComplete="nickname"
+                required
+                minLength={2}
+                maxLength={40}
+                className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
+              />
+              <p className="text-xs text-cyan-100/65">Přezdívku po registraci nelze změnit.</p>
             </div>
 
             <div className="space-y-1.5">

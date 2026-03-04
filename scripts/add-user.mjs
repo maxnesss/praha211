@@ -28,7 +28,7 @@ function printUsage() {
 Přidá uživatele do databáze.
 
 Použití:
-  npm run user:add -- --email you@example.com --password "YourPass123"
+  npm run user:add -- --email you@example.com --password "YourPass123" --nickname "VasePrezdivka"
 
 Volitelné:
   --name "Celé jméno"
@@ -36,8 +36,8 @@ Volitelné:
   --help
 
 Příklady:
-  npm run user:add -- --email admin@praha211.com --password "AdminPass123" --role ADMIN --name "Admin"
-  npm run user:add -- --email user@praha211.com --password "UserPass123"
+  npm run user:add -- --email admin@praha211.com --password "AdminPass123" --nickname "Admin01" --role ADMIN --name "Admin"
+  npm run user:add -- --email user@praha211.com --password "UserPass123" --nickname "Hrac112"
 `);
 }
 
@@ -48,6 +48,11 @@ const addUserSchema = z.object({
     .email("Zadejte platnou e-mailovou adresu.")
     .transform((value) => value.toLowerCase()),
   password: z.string().min(8, "Heslo musí mít alespoň 8 znaků."),
+  nickname: z
+    .string()
+    .trim()
+    .min(2, "Přezdívka musí mít alespoň 2 znaky.")
+    .max(40, "Přezdívka může mít maximálně 40 znaků."),
   name: z
     .string()
     .trim()
@@ -65,11 +70,12 @@ async function main() {
 
   const emailInput = getArgValue("--email");
   const password = getArgValue("--password");
+  const nicknameInput = getArgValue("--nickname");
   const nameInput = getArgValue("--name");
   const roleInput = (getArgValue("--role") || "USER").toUpperCase();
 
-  if (!emailInput || !password) {
-    console.error("Chyba: --email a --password jsou povinné.\n");
+  if (!emailInput || !password || !nicknameInput) {
+    console.error("Chyba: --email, --password a --nickname jsou povinné.\n");
     printUsage();
     process.exitCode = 1;
     return;
@@ -78,6 +84,7 @@ async function main() {
   const parsed = addUserSchema.safeParse({
     email: emailInput,
     password,
+    nickname: nicknameInput,
     name: nameInput,
     role: roleInput,
   });
@@ -89,7 +96,13 @@ async function main() {
     return;
   }
 
-  const { email, password: normalizedPassword, name, role } = parsed.data;
+  const {
+    email,
+    password: normalizedPassword,
+    nickname,
+    name,
+    role,
+  } = parsed.data;
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -102,12 +115,28 @@ async function main() {
     return;
   }
 
+  const existingNickname = await prisma.user.findFirst({
+    where: {
+      nickname: {
+        equals: nickname,
+        mode: "insensitive",
+      },
+    },
+    select: { id: true },
+  });
+  if (existingNickname) {
+    console.error(`Chyba: Přezdívku "${nickname}" už používá jiný hráč.`);
+    process.exitCode = 1;
+    return;
+  }
+
   const passwordHash = await hash(normalizedPassword, 12);
 
   const user = await prisma.user.create({
     data: {
       email,
       name,
+      nickname,
       avatar: "male/dobrodruh",
       passwordHash,
       role,
@@ -117,6 +146,7 @@ async function main() {
       id: true,
       email: true,
       name: true,
+      nickname: true,
       role: true,
       createdAt: true,
     },

@@ -14,14 +14,13 @@ import {
   deleteAccountSchema,
   getProfileValidationMessage,
   updateAvatarSchema,
-  updateNicknameSchema,
 } from "@/lib/validation/profile";
 
 type ProfileSettingsFormsProps = {
   name: string | null;
   email: string;
   hasPassword: boolean;
-  initialNickname: string | null;
+  initialNickname: string;
   initialAvatar: string | null;
   role: "ADMIN" | "USER";
   showRole: boolean;
@@ -38,11 +37,6 @@ export function ProfileSettingsForms({
 }: ProfileSettingsFormsProps) {
   const router = useRouter();
   const { update } = useSession();
-  const [nicknameDraft, setNicknameDraft] = useState(initialNickname ?? "");
-  const [nicknameValue, setNicknameValue] = useState(initialNickname);
-  const [nicknameError, setNicknameError] = useState<string | null>(null);
-  const [isNicknameSubmitting, setIsNicknameSubmitting] = useState(false);
-  const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
 
   const resolvedInitialAvatar = initialAvatar ?? DEFAULT_USER_AVATAR;
   const [avatarValue, setAvatarValue] = useState(resolvedInitialAvatar);
@@ -60,39 +54,6 @@ export function ProfileSettingsForms({
   const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
   const [isDeleteAccountSubmitting, setIsDeleteAccountSubmitting] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
-
-  async function handleNicknameSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setNicknameError(null);
-    setIsNicknameSubmitting(true);
-
-    const parsed = updateNicknameSchema.safeParse({ nickname: nicknameDraft });
-    if (!parsed.success) {
-      setNicknameError(getProfileValidationMessage(parsed.error));
-      setIsNicknameSubmitting(false);
-      return;
-    }
-
-    const response = await fetch("/api/profile/nickname", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nickname: nicknameDraft }),
-    });
-
-    const payload = (await response.json().catch(() => null)) as
-      | { message?: string }
-      | null;
-
-    if (!response.ok) {
-      setNicknameError(payload?.message ?? "Přezdívku se nepodařilo uložit.");
-      setIsNicknameSubmitting(false);
-      return;
-    }
-
-    setNicknameValue(parsed.data.nickname);
-    setIsNicknameSubmitting(false);
-    setIsNicknameModalOpen(false);
-  }
 
   async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -254,33 +215,10 @@ export function ProfileSettingsForms({
             Přezdívka
           </dt>
           <dd className="text-cyan-50">
-            <div className="flex items-center gap-2">
-              <span>{nicknameValue ?? "Neuvedeno"}</span>
-              <button
-                type="button"
-                aria-label="Upravit přezdívku"
-                onClick={() => {
-                  setNicknameError(null);
-                  setNicknameDraft(nicknameValue ?? "");
-                  setIsNicknameModalOpen(true);
-                }}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-cyan-300/35 bg-cyan-500/10 text-cyan-100 transition-colors hover:bg-cyan-500/20"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4"
-                  aria-hidden="true"
-                >
-                  <path d="M12 20h9" />
-                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
-                </svg>
-              </button>
-            </div>
+            <p>{initialNickname}</p>
+            <p className="mt-1 text-xs text-cyan-100/70">
+              Přezdívku po registraci nelze změnit.
+            </p>
           </dd>
 
           <dt className="font-semibold uppercase tracking-[0.14em] text-cyan-200/65">
@@ -479,69 +417,6 @@ export function ProfileSettingsForms({
                 </div>
               </form>
             </div>
-          </div>
-        </div>
-      ) : null}
-
-      {isNicknameModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030b11]/80 p-4">
-          <div className="w-full max-w-md rounded-xl border border-cyan-300/35 bg-[#0b1f2f] p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-cyan-50">Upravit přezdívku</h2>
-                <p className="mt-1 text-sm text-cyan-100/70">
-                  Změňte přezdívku, která se zobrazuje v profilu.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsNicknameModalOpen(false)}
-                className="rounded-md border border-cyan-300/35 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-400/10"
-              >
-                Zavřít
-              </button>
-            </div>
-
-            <form className="mt-5 space-y-4" onSubmit={handleNicknameSubmit} autoComplete="off">
-              <div className="space-y-1.5">
-                <label htmlFor="nickname" className="text-sm font-medium text-cyan-100">
-                  Přezdívka
-                </label>
-                <input
-                  id="nickname"
-                  name="nickname"
-                  type="text"
-                  autoComplete="off"
-                  value={nicknameDraft}
-                  onChange={(event) => setNicknameDraft(event.target.value)}
-                  maxLength={40}
-                  className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
-                />
-              </div>
-
-              {nicknameError ? (
-                <p className="rounded-md border border-rose-400/50 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
-                  {nicknameError}
-                </p>
-              ) : null}
-
-              <div className="flex items-center justify-end gap-3 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsNicknameModalOpen(false)}
-                  className="rounded-md border border-cyan-300/35 px-4 py-2 text-sm font-medium text-cyan-100 transition-colors hover:bg-cyan-400/10"
-                >
-                  Zrušit
-                </button>
-                <button
-                  type="submit"
-                  disabled={isNicknameSubmitting}
-                  className="rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {isNicknameSubmitting ? "Ukládám..." : "Uložit"}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       ) : null}

@@ -21,6 +21,7 @@ async function createUser(namespace, label) {
     data: {
       email: `${namespace}.${label}@tests.praha112.local`,
       name: `Leaderboard ${label}`,
+      nickname: `${namespace.slice(-10)}-${label}`.slice(0, 40),
       avatar: "male/dobrodruh",
       role: "USER",
     },

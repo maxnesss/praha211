@@ -67,6 +67,7 @@ function createFixture(namespace) {
       data: {
         email: `${namespace}.${label}@tests.praha112.local`,
         name: `Concurrency ${label}`,
+        nickname: `${namespace.slice(-10)}-${label}`.slice(0, 40),
         avatar: "male/dobrodruh",
         role: "USER",
       },

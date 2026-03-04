@@ -7,7 +7,7 @@ import {
   createEmailVerificationToken,
   sendEmailVerificationEmail,
 } from "@/lib/email-verification";
-import { generateUniqueNickname } from "@/lib/nickname-utils";
+import { isNicknameTaken } from "@/lib/nickname-utils";
 import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 import { prisma } from "@/lib/prisma";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
           );
         }
 
-        const { email, password, name, privacyPolicyAccepted } = parsed.data;
+        const { email, password, name, nickname, privacyPolicyAccepted } = parsed.data;
         const skipEmailDelivery = shouldSkipVerificationEmailDelivery(email);
 
         const existingUser = await prisma.user.findUnique({
@@ -134,10 +134,16 @@ export async function POST(request: Request) {
           return genericFollowupResponse();
         }
 
+        const nicknameTaken = await isNicknameTaken(nickname);
+        if (nicknameTaken) {
+          return NextResponse.json(
+            { message: "Tuto přezdívku už používá jiný hráč." },
+            { status: 409 },
+          );
+        }
+
         const verificationToken = createEmailVerificationToken();
         const passwordHash = await hash(password, 12);
-
-        const nickname = await generateUniqueNickname(name ?? null);
 
         const user = await prisma.user.create({
           data: {
@@ -211,6 +217,16 @@ export async function POST(request: Request) {
           error instanceof Prisma.PrismaClientKnownRequestError
           && error.code === "P2002"
         ) {
+          const target = Array.isArray(error.meta?.target)
+            ? error.meta.target.map((value) => String(value))
+            : [];
+          if (target.includes("nickname")) {
+            return NextResponse.json(
+              { message: "Tuto přezdívku už používá jiný hráč." },
+              { status: 409 },
+            );
+          }
+
           return genericFollowupResponse();
         }
 

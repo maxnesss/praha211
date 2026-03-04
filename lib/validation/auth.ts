@@ -30,6 +30,12 @@ const nameSchema = z
   .optional()
   .transform((value) => (value && value.length > 0 ? value : undefined));
 
+const nicknameSchema = z
+  .string()
+  .trim()
+  .min(2, "Přezdívka musí mít alespoň 2 znaky.")
+  .max(40, "Přezdívka může mít maximálně 40 znaků.");
+
 const privacyPolicyAcceptedSchema = z
   .boolean()
   .refine((value) => value, "Pro registraci je nutné potvrdit ochranu osobních údajů.");
@@ -41,6 +47,7 @@ export const signInSchema = z.object({
 
 export const registerSchema = z.object({
   name: nameSchema,
+  nickname: nicknameSchema,
   email: emailSchema,
   password: passwordSchema,
   registrationCode: registrationCodeSchema,
@@ -72,4 +79,3 @@ export const addUserSchema = registerSchema.extend({
 export function getFirstZodErrorMessage(error: z.ZodError) {
   return error.issues[0]?.message ?? "Neplatný vstup.";
 }
-

@@ -54,7 +54,7 @@ export default async function ProfilePage() {
               name={user.name}
               email={user.email}
               hasPassword={Boolean(user.passwordHash)}
-              initialNickname={user.nickname}
+              initialNickname={user.nickname ?? "Hráč"}
               initialAvatar={user.avatar}
               role={user.role}
               showRole={session.user.role === "ADMIN"}
