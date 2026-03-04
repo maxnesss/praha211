@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { MessageCategory, Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
@@ -15,6 +15,28 @@ import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
 const TEST_AUTOMATION_EMAIL_DOMAIN = "@tests.praha112.local";
 const GENERIC_REGISTRATION_FOLLOWUP_MESSAGE =
   "Pokud je to potřeba, poslali jsme na zadaný e-mail pokyny pro dokončení registrace.";
+const WELCOME_OVERVIEW_MESSAGE = {
+  title: "Vítejte v PRAHA 112",
+  body: [
+    "Vítejte ve hře PRAHA 112.",
+    "",
+    "Cílem je odemknout všech 112 pražských katastrálních území.",
+    "Postup, skóre i denní sérii najdete v přehledu Radnice.",
+    "",
+    "Přejeme hodně štěstí při první kapitole.",
+  ].join("\n"),
+};
+const WELCOME_RULES_MESSAGE = {
+  title: "Pravidla hry v kostce",
+  body: [
+    "1) U městské části vždy odešlete selfie se značkou.",
+    "2) Každou městskou část lze potvrdit jen jednou.",
+    "3) Dokončení je konečné: 112/112.",
+    "4) Skóre je otevřená soutěž: základ + denní násobitel + bonus za sérii.",
+    "",
+    "Hrajte fair play a bezpečně.",
+  ].join("\n"),
+};
 
 function shouldSkipVerificationEmailDelivery(email: string) {
   return email.endsWith(TEST_AUTOMATION_EMAIL_DOMAIN);
@@ -131,6 +153,32 @@ export async function POST(request: Request) {
           },
           select: { id: true, email: true },
         });
+
+        try {
+          await prisma.userMessage.createMany({
+            data: [
+              {
+                recipientUserId: user.id,
+                senderUserId: null,
+                category: MessageCategory.SYSTEM,
+                title: WELCOME_OVERVIEW_MESSAGE.title,
+                body: WELCOME_OVERVIEW_MESSAGE.body,
+                dedupeKey: "system:welcome-overview:v1",
+              },
+              {
+                recipientUserId: user.id,
+                senderUserId: null,
+                category: MessageCategory.SYSTEM,
+                title: WELCOME_RULES_MESSAGE.title,
+                body: WELCOME_RULES_MESSAGE.body,
+                dedupeKey: "system:welcome-rules:v1",
+              },
+            ],
+            skipDuplicates: true,
+          });
+        } catch (error) {
+          console.error("Vytvoření uvítacích zpráv po registraci selhalo:", error);
+        }
 
         if (!skipEmailDelivery) {
           try {
