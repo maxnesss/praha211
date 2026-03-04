@@ -15,8 +15,6 @@ type BadgeChipProps = {
   unlocked: boolean;
   accentColor?: string;
   href?: string;
-  imageSrc?: string;
-  imageAlt?: string;
 };
 
 function BadgeChip({
@@ -25,8 +23,6 @@ function BadgeChip({
   unlocked,
   accentColor,
   href,
-  imageSrc,
-  imageAlt,
 }: BadgeChipProps) {
   const baseClassName =
     "group flex h-[4.4rem] w-full min-w-0 flex-col justify-between rounded-md border px-2.5 py-2 text-left transition-transform hover:-translate-y-0.5";
@@ -45,20 +41,7 @@ function BadgeChip({
 
   const content = (
     <>
-      <div className="flex min-w-0 items-center gap-2">
-        {imageSrc ? (
-          <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-sm border border-cyan-200/25 bg-[#071521]">
-            <Image
-              src={imageSrc}
-              alt={imageAlt ?? subtitle}
-              fill
-              sizes="24px"
-              className={`object-cover ${unlocked ? "" : "grayscale"}`}
-            />
-          </span>
-        ) : null}
-        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]">{subtitle}</p>
-      </div>
+      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]">{subtitle}</p>
       <p className="overflow-hidden text-[11px] font-semibold leading-4 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
         {title}
       </p>
@@ -76,6 +59,53 @@ function BadgeChip({
   return (
     <article className={`${baseClassName} ${stateClassName}`} style={style} title={`${subtitle} · ${title}`}>
       {content}
+    </article>
+  );
+}
+
+type PrahaCoatBadgeTileProps = {
+  number: number;
+  completed: number;
+  total: number;
+  unlocked: boolean;
+  accentColor: string;
+};
+
+function PrahaCoatBadgeTile({
+  number,
+  completed,
+  total,
+  unlocked,
+  accentColor,
+}: PrahaCoatBadgeTileProps) {
+  const unlockedStyle = unlocked
+    ? {
+        borderColor: `${accentColor}bb`,
+        boxShadow: `0 0 14px ${accentColor}2d`,
+      }
+    : undefined;
+
+  return (
+    <article
+      aria-label={`Praha ${number}`}
+      title={`Praha ${number} · ${completed}/${total}`}
+      className={`group block rounded-md border p-1 transition-transform hover:-translate-y-0.5 ${
+        unlocked
+          ? "border-cyan-300/30 bg-cyan-500/8"
+          : "border-cyan-300/15 bg-[#08161f]/55 opacity-80 grayscale"
+      }`}
+      style={unlockedStyle}
+    >
+      <div className="relative aspect-square w-full overflow-hidden rounded-sm">
+        <Image
+          src={`/coats/praha${number}.webp`}
+          alt={`Znak Praha ${number}`}
+          fill
+          sizes="(max-width: 640px) 18vw, (max-width: 1024px) 14vw, 56px"
+          quality={55}
+          className={`object-cover ${unlocked ? "" : "grayscale"}`}
+        />
+      </div>
     </article>
   );
 }
@@ -207,14 +237,13 @@ export default async function BadgesPage() {
                 const accent = prahaAccents[(badge.number - 1) % prahaAccents.length];
 
                 return (
-                  <BadgeChip
+                  <PrahaCoatBadgeTile
                     key={`praha-${badge.number}`}
-                    title={`${badge.completed}/${badge.total}`}
-                    subtitle={`Praha ${badge.number}`}
+                    number={badge.number}
+                    completed={badge.completed}
+                    total={badge.total}
                     unlocked={badge.unlocked}
                     accentColor={accent}
-                    imageSrc={`/coats/praha${badge.number}.webp`}
-                    imageAlt={`Znak Praha ${badge.number}`}
                   />
                 );
               })}
