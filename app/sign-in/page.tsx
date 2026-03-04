@@ -127,7 +127,7 @@ export default function SignInPage() {
                   href="/zapomenute-heslo"
                   className="text-xs font-medium text-cyan-50/80 hover:text-cyan-50"
                 >
-                  ZapomnÄ›l jsem heslo
+                  Zapomněl jsem heslo
                 </Link>
               </div>
             </div>

@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
     setMessage(null);
 
     if (!resetContext) {
-      setError("Odkaz pro reset hesla je neplatnÃ½ nebo neÃºplnÃ½.");
+      setError("Odkaz pro reset hesla je neplatný nebo neúplný.");
       return;
     }
 
@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
     const passwordConfirm = String(formData.get("passwordConfirm") || "");
 
     if (password !== passwordConfirm) {
-      setError("Hesla se neshodujÃ­.");
+      setError("Hesla se neshodují.");
       return;
     }
 
@@ -77,18 +77,18 @@ export default function ResetPasswordPage() {
 
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
-        setError(payload?.message ?? "Obnova hesla se nepodaÅ™ila.");
+        setError(payload?.message ?? "Obnova hesla se nepodařila.");
         setIsSubmitting(false);
         return;
       }
 
-      setMessage(payload?.message ?? "Heslo bylo zmÄ›nÄ›no.");
+      setMessage(payload?.message ?? "Heslo bylo změněno.");
       form.reset();
       setTimeout(() => {
         window.location.href = "/sign-in";
       }, 1500);
     } catch {
-      setError("Obnova hesla se nepodaÅ™ila.");
+      setError("Obnova hesla se nepodařila.");
     } finally {
       setIsSubmitting(false);
     }
@@ -101,9 +101,9 @@ export default function ResetPasswordPage() {
 
       <section className="relative flex min-h-screen items-center justify-center px-6 py-12">
         <div className={`${metro.pageReveal} w-full max-w-md rounded-2xl border border-cyan-300/35 bg-[#0c202e]/85 p-6 shadow-[0_20px_48px_rgba(0,0,0,0.5)] sm:p-8 ${metro.mobilePanel}`}>
-          <h1 className="text-2xl font-semibold tracking-tight text-cyan-50">NovÃ© heslo</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-cyan-50">Nové heslo</h1>
           <p className="mt-2 text-sm text-cyan-100/75">
-            Zadejte novÃ© heslo. Odkaz je platnÃ½ pouze omezenou dobu.
+            Zadejte nové heslo. Odkaz je platný pouze omezenou dobu.
           </p>
 
           <form
@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
           >
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-sm font-medium text-cyan-100">
-                NovÃ© heslo
+                Nové heslo
               </label>
               <PasswordField
                 id="password"
@@ -122,7 +122,7 @@ export default function ResetPasswordPage() {
                 required
                 className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
               />
-              <p className="text-xs text-cyan-200/70">MinimÃ¡lnÄ› 8 znakÅ¯.</p>
+              <p className="text-xs text-cyan-200/70">Minimálně 8 znaků.</p>
             </div>
 
             <div className="space-y-1.5">
@@ -155,14 +155,14 @@ export default function ResetPasswordPage() {
               disabled={isSubmitting || !resetContext}
               className="w-full rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isSubmitting ? "UklÃ¡dÃ¡m..." : "Nastavit heslo"}
+              {isSubmitting ? "Ukládám..." : "Nastavit heslo"}
             </button>
           </form>
 
           <p className="mt-5 text-sm text-cyan-100/75">
-            Chcete se pÅ™ihlÃ¡sit?{" "}
+            Chcete se přihlásit?{" "}
             <Link href="/sign-in" className="font-medium text-cyan-50 hover:text-cyan-100">
-              PÅ™ejÃ­t na pÅ™ihlÃ¡Å¡enÃ­
+              Přejít na přihlášení
             </Link>
           </p>
         </div>

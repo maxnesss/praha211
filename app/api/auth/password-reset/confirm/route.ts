@@ -18,7 +18,7 @@ export async function POST(request: Request) {
         prefix: "password-reset-confirm",
         max: 10,
         windowMs: 10 * 60 * 1000,
-        message: "PÅ™Ã­liÅ¡ mnoho pokusÅ¯. Zkuste to prosÃ­m pozdÄ›ji.",
+        message: "Příliš mnoho pokusů. Zkuste to prosím později.",
       });
       if (rateLimited) {
         return rateLimited;
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         body = (await request.json()) as unknown;
       } catch {
         return NextResponse.json(
-          { message: "NeplatnÃ© tÄ›lo poÅ¾adavku." },
+          { message: "Neplatné tělo požadavku." },
           { status: 400 },
         );
       }
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
       if (!tokenMatches || !tokenNotExpired || !user) {
         return NextResponse.json(
-          { message: "Odkaz pro reset hesla je neplatnÃ½ nebo expirovanÃ½." },
+          { message: "Odkaz pro reset hesla je neplatný nebo expirovaný." },
           { status: 400 },
         );
       }
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json(
-        { message: "Heslo bylo zmÄ›nÄ›no. NynÃ­ se mÅ¯Å¾ete pÅ™ihlÃ¡sit." },
+        { message: "Heslo bylo změněno. Nyní se můžete přihlásit." },
         { status: 200 },
       );
     },

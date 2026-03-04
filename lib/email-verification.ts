@@ -189,13 +189,13 @@ function buildPasswordResetEmailText(input: PasswordResetEmailTemplateInput) {
   return [
     "PRAHA 112",
     "",
-    "PoÅ¾Ã¡dali jste o reset hesla.",
-    "Pro nastavenÃ­ novÃ©ho hesla otevÅ™ete tento odkaz:",
+    "Požádali jste o reset hesla.",
+    "Pro nastavení nového hesla otevřete tento odkaz:",
     input.resetUrl,
     "",
     "Platnost odkazu je 2 hodiny.",
     "",
-    "Pokud jste o reset neÅ¾Ã¡dali, tento e-mail mÅ¯Å¾ete ignorovat.",
+    "Pokud jste o reset nežádali, tento e-mail můžete ignorovat.",
   ].join("\n");
 }
 
@@ -231,28 +231,28 @@ function buildPasswordResetEmailHtml(input: PasswordResetEmailTemplateInput) {
             <tr>
               <td style="padding:16px 28px 0;text-align:center;">
                 <p style="margin:0;color:#c9eef6;font-size:16px;line-height:1.6;">
-                  PoÅ¾Ã¡dali jste o obnovu hesla. KliknÄ›te na tlaÄÃ­tko nÃ­Å¾e a nastavte si novÃ© heslo.
+                  Požádali jste o obnovu hesla. Klikněte na tlačítko níže a nastavte si nové heslo.
                 </p>
               </td>
             </tr>
             <tr>
               <td style="padding:24px 28px 0;text-align:center;">
                 <a href="${input.resetUrl}" style="display:inline-block;padding:12px 22px;border-radius:12px;background:#22d3ee;color:#06202b;text-decoration:none;font-size:16px;font-weight:700;">
-                  Nastavit novÃ© heslo
+                  Nastavit nové heslo
                 </a>
               </td>
             </tr>
             <tr>
               <td style="padding:18px 28px 0;text-align:center;">
                 <p style="margin:0;color:#9cc3ce;font-size:14px;line-height:1.6;">
-                  Odkaz je platnÃ½ 2 hodiny.
+                  Odkaz je platný 2 hodiny.
                 </p>
               </td>
             </tr>
             <tr>
               <td style="padding:14px 28px 0;text-align:center;">
                 <p style="margin:0;color:#9cc3ce;font-size:13px;line-height:1.6;word-break:break-word;">
-                  Pokud tlaÄÃ­tko nefunguje, pouÅ¾ijte tento odkaz:<br />
+                  Pokud tlačítko nefunguje, použijte tento odkaz:<br />
                   <a href="${input.resetUrl}" style="color:#67e8f9;text-decoration:underline;">${input.resetUrl}</a>
                 </p>
               </td>
@@ -260,7 +260,7 @@ function buildPasswordResetEmailHtml(input: PasswordResetEmailTemplateInput) {
             <tr>
               <td style="padding:18px 28px 28px;text-align:center;">
                 <p style="margin:0;color:#86aebb;font-size:12px;line-height:1.6;">
-                  Pokud jste o reset neÅ¾Ã¡dali, e-mail mÅ¯Å¾ete ignorovat.<br />
+                  Pokud jste o reset nežádali, e-mail můžete ignorovat.<br />
                   <a href="${signInUrl}" style="color:#86aebb;text-decoration:underline;">www.praha112.cz</a>
                 </p>
               </td>

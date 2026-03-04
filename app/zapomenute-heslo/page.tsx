@@ -37,18 +37,18 @@ export default function ForgotPasswordPage() {
 
       const payload = (await response.json().catch(() => null)) as { message?: string } | null;
       if (!response.ok) {
-        setError(payload?.message ?? "OdeslÃ¡nÃ­ odkazu se nepodaÅ™ilo.");
+        setError(payload?.message ?? "Odeslání odkazu se nepodařilo.");
         setIsSubmitting(false);
         return;
       }
 
       setMessage(
         payload?.message
-          ?? "Pokud ÃºÄet existuje, poslali jsme odkaz pro reset hesla na zadanÃ½ e-mail.",
+          ?? "Pokud účet existuje, poslali jsme odkaz pro reset hesla na zadaný e-mail.",
       );
       form.reset();
     } catch {
-      setError("OdeslÃ¡nÃ­ odkazu se nepodaÅ™ilo.");
+      setError("Odeslání odkazu se nepodařilo.");
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
         <div className={`${metro.pageReveal} w-full max-w-md rounded-2xl border border-cyan-300/35 bg-[#0c202e]/85 p-6 shadow-[0_20px_48px_rgba(0,0,0,0.5)] sm:p-8 ${metro.mobilePanel}`}>
           <h1 className="text-2xl font-semibold tracking-tight text-cyan-50">Obnova hesla</h1>
           <p className="mt-2 text-sm text-cyan-100/75">
-            Zadejte e-mail a poÅ¡leme vÃ¡m odkaz pro nastavenÃ­ novÃ©ho hesla.
+            Zadejte e-mail a pošleme vám odkaz pro nastavení nového hesla.
           </p>
 
           <form
@@ -102,14 +102,14 @@ export default function ForgotPasswordPage() {
               disabled={isSubmitting}
               className="w-full rounded-md border border-orange-300/60 bg-orange-400/20 px-4 py-2 text-sm font-semibold text-orange-50 transition-colors hover:bg-orange-400/30 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isSubmitting ? "OdesÃ­lÃ¡m..." : "Poslat odkaz"}
+              {isSubmitting ? "Odesílám..." : "Poslat odkaz"}
             </button>
           </form>
 
           <p className="mt-5 text-sm text-cyan-100/75">
-            VzpomnÄ›li jste si?{" "}
+            Vzpomněli jste si?{" "}
             <Link href="/sign-in" className="font-medium text-cyan-50 hover:text-cyan-100">
-              ZpÄ›t na pÅ™ihlÃ¡Å¡enÃ­
+              Zpět na přihlášení
             </Link>
           </p>
         </div>

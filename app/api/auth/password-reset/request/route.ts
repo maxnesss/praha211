@@ -20,7 +20,7 @@ export async function POST(request: Request) {
         prefix: "password-reset-request",
         max: 6,
         windowMs: 15 * 60 * 1000,
-        message: "PÅ™Ã­liÅ¡ mnoho pokusÅ¯. Zkuste to prosÃ­m pozdÄ›ji.",
+        message: "Příliš mnoho pokusů. Zkuste to prosím později.",
       });
       if (rateLimited) {
         return rateLimited;
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         body = (await request.json()) as unknown;
       } catch {
         return NextResponse.json(
-          { message: "NeplatnÃ© tÄ›lo poÅ¾adavku." },
+          { message: "Neplatné tělo požadavku." },
           { status: 400 },
         );
       }
@@ -67,14 +67,14 @@ export async function POST(request: Request) {
             token: resetToken.token,
           });
         } catch (error) {
-          console.error("OdeslÃ¡nÃ­ reset e-mailu selhalo:", error);
+          console.error("Odeslání reset e-mailu selhalo:", error);
         }
       }
 
       return NextResponse.json(
         {
           message:
-            "Pokud ÃºÄet existuje, poslali jsme odkaz pro reset hesla na zadanÃ½ e-mail.",
+            "Pokud účet existuje, poslali jsme odkaz pro reset hesla na zadaný e-mail.",
         },
         { status: 200 },
       );
