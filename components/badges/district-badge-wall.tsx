@@ -46,7 +46,7 @@ function DistrictCoatTile({ badge }: { badge: DistrictBadgeWallItem }) {
           alt={`${badge.name} znak`}
           fill
           loader={coatImageLoader}
-          sizes="(max-width: 640px) 22vw, (max-width: 1024px) 14vw, 56px"
+          sizes="(max-width: 640px) 18vw, (max-width: 1024px) 14vw, 56px"
           quality={55}
           className={`object-cover ${badge.unlocked ? "" : "grayscale"}`}
         />
@@ -94,7 +94,7 @@ export function DistrictBadgeWall({ badges }: DistrictBadgeWallProps) {
 
   return (
     <>
-      <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-14">
+      <div className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-14">
         {visibleBadges.map((badge) => (
           <DistrictCoatTile key={badge.code} badge={badge} />
         ))}

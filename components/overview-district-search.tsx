@@ -20,6 +20,13 @@ export function OverviewDistrictSearch() {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
+  const closeSearchFocus = () => {
+    setIsFocused(false);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
   const normalizedQuery = normalizeSearchValue(query);
   const shouldShowDropdown = isFocused && normalizedQuery.length >= MIN_QUERY_LENGTH;
 
@@ -50,7 +57,7 @@ export function OverviewDistrictSearch() {
           autoCapitalize="off"
           spellCheck={false}
           placeholder="Vyhledej čtvrť"
-          className="w-full rounded-xl border border-cyan-300/35 bg-[#081823] px-3 py-2 text-sm text-cyan-50 outline-none transition placeholder:text-cyan-200/45 focus:border-cyan-200/80"
+          className="w-full rounded-xl border border-cyan-300/35 bg-[#081823] px-3 py-2 text-base text-cyan-50 outline-none transition placeholder:text-cyan-200/45 focus:border-cyan-200/80 sm:text-sm"
         />
 
         {shouldShowDropdown ? (
@@ -62,6 +69,7 @@ export function OverviewDistrictSearch() {
                     <div className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 transition hover:bg-cyan-500/10">
                       <Link
                         href={`/district/${district.code}`}
+                        onClick={closeSearchFocus}
                         className="min-w-0 flex-1 text-sm text-cyan-50"
                       >
                         <span className="font-medium">{district.name}</span>
@@ -69,6 +77,7 @@ export function OverviewDistrictSearch() {
 
                       <Link
                         href={`/chapter/${district.chapterSlug}`}
+                        onClick={closeSearchFocus}
                         className="shrink-0 rounded-md border border-cyan-300/35 bg-cyan-500/10 px-2 py-1 text-xs font-medium text-cyan-100 transition hover:bg-cyan-500/20"
                       >
                         {district.chapterName}
