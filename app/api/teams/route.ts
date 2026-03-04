@@ -93,6 +93,15 @@ export async function POST(request: Request) {
         },
       });
 
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          hasJoinedTeam: true,
+          hasBeenTeamLeader: true,
+        },
+        select: { id: true },
+      });
+
       await tx.teamLeaderVote.create({
         data: {
           teamId: team.id,

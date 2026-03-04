@@ -87,6 +87,45 @@ export async function getUserClaimedDistrictCodes(userId: string) {
   return new Set(claims.map((claim) => claim.districtCode));
 }
 
+type UserBadgeContextSnapshot = {
+  teamId: string | null;
+  hasJoinedTeam: boolean;
+  hasBeenTeamLeader: boolean;
+  ledTeam: { id: string } | null;
+};
+
+function toBadgeContext(user: UserBadgeContextSnapshot | null) {
+  return {
+    joinedTeam: Boolean(user?.hasJoinedTeam || user?.teamId),
+    hasBeenTeamLeader: Boolean(user?.hasBeenTeamLeader || user?.ledTeam),
+  };
+}
+
+export async function getUserBadgeOverview(userId: string) {
+  const [claims, user] = await Promise.all([
+    getUserGameClaims(userId),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        teamId: true,
+        hasJoinedTeam: true,
+        hasBeenTeamLeader: true,
+        ledTeam: {
+          select: { id: true },
+        },
+      },
+    }),
+  ]);
+
+  return buildBadgeOverview(
+    new Set(claims.map((claim) => claim.districtCode)),
+    {
+      claimDates: claims.map((claim) => claim.claimedAt),
+      ...toBadgeContext(user),
+    },
+  );
+}
+
 const LEADERBOARD_RANKING_CTE = Prisma.sql`
   WITH active_users AS (
     SELECT DISTINCT dc."userId"
@@ -308,6 +347,12 @@ export async function getPublicPlayerProfile(userId: string): Promise<PublicPlay
       name: true,
       email: true,
       avatar: true,
+      teamId: true,
+      hasJoinedTeam: true,
+      hasBeenTeamLeader: true,
+      ledTeam: {
+        select: { id: true },
+      },
       team: {
         select: {
           name: true,
@@ -326,7 +371,10 @@ export async function getPublicPlayerProfile(userId: string): Promise<PublicPlay
     getUserScoreTotal(user.id),
   ]);
   const overview = buildOverview(claims);
-  const badges = buildBadgeOverview(overview.completedCodes);
+  const badges = buildBadgeOverview(overview.completedCodes, {
+    claimDates: claims.map((claim) => claim.claimedAt),
+    ...toBadgeContext(user),
+  });
 
   return {
     userId: user.id,
@@ -352,6 +400,12 @@ const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats
     prisma.user.findUnique({
       where: { id: userId },
       select: {
+        teamId: true,
+        hasJoinedTeam: true,
+        hasBeenTeamLeader: true,
+        ledTeam: {
+          select: { id: true },
+        },
         team: {
           select: {
             name: true,
@@ -362,7 +416,10 @@ const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats
     }),
   ]);
   const overview = buildOverview(claims);
-  const badges = buildBadgeOverview(overview.completedCodes);
+  const badges = buildBadgeOverview(overview.completedCodes, {
+    claimDates: claims.map((claim) => claim.claimedAt),
+    ...toBadgeContext(user),
+  });
   const claimsTodayCount = countClaimsToday(claims.map((claim) => claim.claimedAt));
   const streakMessage = claimsTodayCount > 0
     ? overview.currentStreak <= 1

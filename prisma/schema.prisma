@@ -46,6 +46,8 @@ model User {
   emailVerificationTokenHash     String?
   emailVerificationTokenExpiresAt DateTime?
   privacyPolicyAcceptedAt DateTime?
+  hasJoinedTeam                  Boolean           @default(false)
+  hasBeenTeamLeader              Boolean           @default(false)
   team                           Team?             @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
   ledTeam                        Team?             @relation("TeamLeader")
   teamJoinRequests               TeamJoinRequest[]

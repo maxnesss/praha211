@@ -6,8 +6,7 @@ import { DistrictBadgeWall } from "@/components/badges/district-badge-wall";
 import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
-import { buildBadgeOverview } from "@/lib/game/badges";
-import { getUserClaimedDistrictCodes } from "@/lib/game/queries";
+import { getUserBadgeOverview } from "@/lib/game/queries";
 
 type BadgeChipProps = {
   title: string;
@@ -15,6 +14,8 @@ type BadgeChipProps = {
   unlocked: boolean;
   accentColor?: string;
   href?: string;
+  imageSrc?: string;
+  imageAlt?: string;
 };
 
 function BadgeChip({
@@ -23,6 +24,8 @@ function BadgeChip({
   unlocked,
   accentColor,
   href,
+  imageSrc,
+  imageAlt,
 }: BadgeChipProps) {
   const baseClassName =
     "group flex h-[4.4rem] w-full min-w-0 flex-col justify-between rounded-md border px-2.5 py-2 text-left transition-transform hover:-translate-y-0.5";
@@ -41,7 +44,20 @@ function BadgeChip({
 
   const content = (
     <>
-      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]">{subtitle}</p>
+      <div className="flex min-w-0 items-center gap-2">
+        {imageSrc ? (
+          <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded-sm border border-cyan-200/25 bg-[#071521]">
+            <Image
+              src={imageSrc}
+              alt={imageAlt ?? subtitle}
+              fill
+              sizes="24px"
+              className={`object-contain ${unlocked ? "" : "grayscale"}`}
+            />
+          </span>
+        ) : null}
+        <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em]">{subtitle}</p>
+      </div>
       <p className="overflow-hidden text-[11px] font-semibold leading-4 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
         {title}
       </p>
@@ -110,6 +126,67 @@ function PrahaCoatBadgeTile({
   );
 }
 
+type AchievementBadgeTileProps = {
+  title: string;
+  subtitle: string;
+  unlocked: boolean;
+  accentColor: string;
+  imageSrc?: string;
+  imageAlt?: string;
+  shortLabel?: string;
+};
+
+function AchievementBadgeTile({
+  title,
+  subtitle,
+  unlocked,
+  accentColor,
+  imageSrc,
+  imageAlt,
+  shortLabel,
+}: AchievementBadgeTileProps) {
+  const unlockedStyle = unlocked
+    ? {
+        borderColor: `${accentColor}bb`,
+        boxShadow: `0 0 14px ${accentColor}2d`,
+      }
+    : undefined;
+
+  return (
+    <article
+      title={`${subtitle} · ${title}`}
+      aria-label={`${subtitle} ${title}`}
+      className={`group block rounded-md border p-1 transition-transform hover:-translate-y-0.5 ${
+        unlocked
+          ? "border-cyan-300/30 bg-cyan-500/8"
+          : "border-cyan-300/15 bg-[#08161f]/55 opacity-80 grayscale"
+      }`}
+      style={unlockedStyle}
+    >
+      <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-sm bg-[#071521]">
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt={imageAlt ?? title}
+            fill
+            sizes="(max-width: 640px) 18vw, (max-width: 1024px) 12vw, 56px"
+            quality={60}
+            className={`object-contain p-1 ${unlocked ? "" : "grayscale"}`}
+          />
+        ) : (
+          <span
+            className={`${metro.monoDigit} text-base font-semibold tracking-[0.08em] ${
+              unlocked ? "text-cyan-50" : "text-cyan-100/55"
+            }`}
+          >
+            {shortLabel ?? "?"}
+          </span>
+        )}
+      </div>
+    </article>
+  );
+}
+
 export default async function BadgesPage() {
   const session = await getServerSession(authOptions);
 
@@ -117,8 +194,7 @@ export default async function BadgesPage() {
     redirect("/sign-in?callbackUrl=%2Fpokladnice");
   }
 
-  const claimedCodes = await getUserClaimedDistrictCodes(session.user.id);
-  const badges = buildBadgeOverview(claimedCodes);
+  const badges = await getUserBadgeOverview(session.user.id);
   const prahaAccents = [
     "#f59e0b",
     "#f97316",
@@ -182,9 +258,15 @@ export default async function BadgesPage() {
                 {badges.totals.prahaUnlocked} / 22
               </p>
             </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Speciální</p>
+              <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
+                {badges.totals.achievementsUnlocked} / {badges.achievementBadges.length}
+              </p>
+            </article>
           </div>
 
-          <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Odemčeno celkem</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-orange-100`}>{badges.totals.unlocked}</p>
@@ -200,6 +282,12 @@ export default async function BadgesPage() {
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Praha 1–22</p>
               <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>{badges.totals.prahaUnlocked} / 22</p>
+            </article>
+            <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/5 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-200/70">Speciální</p>
+              <p className={`${metro.monoDigit} mt-2 text-2xl font-semibold text-cyan-50`}>
+                {badges.totals.achievementsUnlocked} / {badges.achievementBadges.length}
+              </p>
             </article>
           </div>
 
@@ -247,6 +335,26 @@ export default async function BadgesPage() {
                   />
                 );
               })}
+            </div>
+          </section>
+
+          <section className="mt-6 border-t border-cyan-300/20 pt-6">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100/70">
+              Speciální výzvy
+            </h2>
+            <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
+              {badges.achievementBadges.map((badge) => (
+                <AchievementBadgeTile
+                  key={badge.id}
+                  title={badge.title}
+                  subtitle={badge.subtitle}
+                  unlocked={badge.unlocked}
+                  accentColor={badge.accentColor}
+                  imageSrc={badge.imageSrc}
+                  imageAlt={badge.imageAlt}
+                  shortLabel={badge.shortLabel}
+                />
+              ))}
             </div>
           </section>
         </div>

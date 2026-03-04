@@ -191,7 +191,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
               Mini odznaky
             </h2>
 
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="mt-4 grid gap-2 sm:grid-cols-4">
               <MiniBadgeChip
                 label="Městské části"
                 value={`${profile.badges.totals.districtsUnlocked}/112`}
@@ -206,6 +206,13 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                 label="Praha 1-22"
                 value={`${profile.badges.totals.prahaUnlocked}/22`}
                 unlocked={profile.badges.totals.prahaUnlocked === 22}
+              />
+              <MiniBadgeChip
+                label="Speciální"
+                value={`${profile.badges.totals.achievementsUnlocked}/${profile.badges.achievementBadges.length}`}
+                unlocked={
+                  profile.badges.totals.achievementsUnlocked === profile.badges.achievementBadges.length
+                }
               />
             </div>
 
@@ -240,6 +247,25 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                     accentColor={PRAHA_ACCENTS[(badge.number - 1) % PRAHA_ACCENTS.length]}
                     imageSrc={`/coats/praha${badge.number}.webp`}
                     imageAlt={`Znak Praha ${badge.number}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/60">
+                Speciální výzvy
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {profile.badges.achievementBadges.map((badge) => (
+                  <MiniBadgeChip
+                    key={badge.id}
+                    label={badge.subtitle}
+                    value={badge.title}
+                    unlocked={badge.unlocked}
+                    accentColor={badge.accentColor}
+                    imageSrc={badge.imageSrc}
+                    imageAlt={badge.imageAlt}
                   />
                 ))}
               </div>

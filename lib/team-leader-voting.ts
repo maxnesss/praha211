@@ -189,6 +189,12 @@ export async function synchronizeTeamLeaderByVotes(tx: TeamVoteTx, teamId: strin
     });
   }
 
+  await tx.user.update({
+    where: { id: nextLeader.id },
+    data: { hasBeenTeamLeader: true },
+    select: { id: true },
+  });
+
   return {
     teamId: team.id,
     membersCount: members.length,

@@ -92,7 +92,10 @@ export async function POST(
 
       const moved = await tx.user.updateMany({
         where: { id: request.userId, teamId: null },
-        data: { teamId: team.id },
+        data: {
+          teamId: team.id,
+          hasJoinedTeam: true,
+        },
       });
 
       if (moved.count !== 1) {

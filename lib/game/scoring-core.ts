@@ -70,6 +70,40 @@ export function calculateCurrentStreak(claimDates: Date[], now = new Date()) {
   return streak;
 }
 
+export function calculateLongestStreak(claimDates: Date[]) {
+  if (claimDates.length === 0) {
+    return 0;
+  }
+
+  const sorted = [...new Set(claimDates.map((date) => toPragueDayKey(date)))].sort((a, b) =>
+    a.localeCompare(b),
+  );
+
+  if (sorted.length === 0) {
+    return 0;
+  }
+
+  let longest = 1;
+  let current = 1;
+
+  for (let index = 1; index < sorted.length; index += 1) {
+    const dayKey = sorted[index];
+    const previousDayKey = sorted[index - 1];
+
+    if (getPreviousDayKey(dayKey) === previousDayKey) {
+      current += 1;
+    } else {
+      current = 1;
+    }
+
+    if (current > longest) {
+      longest = current;
+    }
+  }
+
+  return longest;
+}
+
 export function countClaimsToday(claimDates: Date[], now = new Date()) {
   const todayKey = toPragueDayKey(now);
   return claimDates.filter((date) => toPragueDayKey(date) === todayKey).length;
