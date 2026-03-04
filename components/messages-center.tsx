@@ -104,10 +104,17 @@ export function MessagesCenter({
     }
     return "";
   }, [initialRecipientUserId, recipients]);
+  const defaultRecipientQuery = useMemo(() => {
+    if (!defaultRecipientUserId) {
+      return "";
+    }
+
+    return recipients.find((recipient) => recipient.userId === defaultRecipientUserId)?.displayName ?? "";
+  }, [defaultRecipientUserId, recipients]);
 
   const [mode, setMode] = useState<MessageSendMode>(availableModes[0] ?? "DIRECT");
   const [recipientUserId, setRecipientUserId] = useState(defaultRecipientUserId);
-  const [recipientQuery, setRecipientQuery] = useState("");
+  const [recipientQuery, setRecipientQuery] = useState(defaultRecipientQuery);
   const [isRecipientFocused, setIsRecipientFocused] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -179,7 +186,7 @@ export function MessagesCenter({
       },
       body: JSON.stringify({
         mode: resolvedMode,
-        recipientUserId: resolvedMode === "DIRECT" ? resolvedRecipientUserId : undefined,
+        recipientNickname: resolvedMode === "DIRECT" ? selectedRecipient?.displayName : undefined,
         title,
         body,
       }),

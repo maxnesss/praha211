@@ -60,16 +60,15 @@ export async function POST(request: Request) {
       const bodyText = parsed.data.body.trim();
 
       if (mode === "DIRECT") {
-        const recipientUserId = parsed.data.recipientUserId?.trim() ?? "";
-        if (recipientUserId === userId) {
-          return NextResponse.json(
-            { message: "Nemůžete poslat zprávu sami sobě." },
-            { status: 400 },
-          );
-        }
+        const recipientNickname = parsed.data.recipientNickname?.trim() ?? "";
 
-        const recipient = await prisma.user.findUnique({
-          where: { id: recipientUserId },
+        const recipient = await prisma.user.findFirst({
+          where: {
+            nickname: {
+              equals: recipientNickname,
+              mode: "insensitive",
+            },
+          },
           select: { id: true, isFrozen: true },
         });
 
@@ -80,9 +79,16 @@ export async function POST(request: Request) {
           );
         }
 
+        if (recipient.id === userId) {
+          return NextResponse.json(
+            { message: "Nemůžete poslat zprávu sami sobě." },
+            { status: 400 },
+          );
+        }
+
         await prisma.userMessage.create({
           data: {
-            recipientUserId,
+            recipientUserId: recipient.id,
             senderUserId: userId,
             category: MessageCategory.DIRECT,
             title,

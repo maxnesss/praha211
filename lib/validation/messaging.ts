@@ -6,10 +6,10 @@ export type MessageSendMode = (typeof messageSendModeValues)[number];
 
 export const sendMessageSchema = z.object({
   mode: z.enum(messageSendModeValues),
-  recipientUserId: z
+  recipientNickname: z
     .string()
     .trim()
-    .max(191, "Příjemce je neplatný.")
+    .max(40, "Přezdívka příjemce je neplatná.")
     .optional(),
   title: z
     .string()
@@ -26,14 +26,14 @@ export const sendMessageSchema = z.object({
     return;
   }
 
-  const recipientUserId = value.recipientUserId?.trim() ?? "";
-  if (recipientUserId.length > 0) {
+  const recipientNickname = value.recipientNickname?.trim() ?? "";
+  if (recipientNickname.length > 0) {
     return;
   }
 
   context.addIssue({
     code: z.ZodIssueCode.custom,
-    path: ["recipientUserId"],
+    path: ["recipientNickname"],
     message: "Vyberte příjemce zprávy.",
   });
 });

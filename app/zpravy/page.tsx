@@ -10,6 +10,7 @@ import {
   getUserInboxMessages,
   getUserUnreadMessageCount,
 } from "@/lib/messaging";
+import { normalizeTeamSearch } from "@/lib/team-utils";
 
 type MessagesPageSearchParams = Promise<{
   to?: string | string[];
@@ -34,7 +35,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
   }
 
   const resolvedSearchParams = await searchParams;
-  const requestedRecipientUserId = resolveQueryValue(resolvedSearchParams.to);
+  const requestedRecipient = resolveQueryValue(resolvedSearchParams.to);
 
   const [messages, recipients, unreadCount, teamContext] = await Promise.all([
     getUserInboxMessages(session.user.id, { limit: 120 }),
@@ -43,11 +44,14 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
     getTeamMessagingContextForUser(session.user.id),
   ]);
 
-  const initialRecipientUserId = recipients.some(
-    (recipient) => recipient.userId === requestedRecipientUserId,
-  )
-    ? requestedRecipientUserId
-    : null;
+  const normalizedRequestedRecipient = normalizeTeamSearch(requestedRecipient);
+  const initialRecipientUserId = recipients.find((recipient) => {
+    if (recipient.userId === requestedRecipient) {
+      return true;
+    }
+
+    return normalizeTeamSearch(recipient.displayName) === normalizedRequestedRecipient;
+  })?.userId ?? null;
 
   return (
     <main className={metro.routeShell}>

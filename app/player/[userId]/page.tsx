@@ -118,7 +118,7 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                 </Link>
               ) : (
                 <Link
-                  href={`/zpravy?to=${profile.userId}`}
+                  href={`/zpravy?to=${encodeURIComponent(profile.nickname ?? profile.userId)}`}
                   className="rounded-md border border-orange-300/60 bg-orange-400/20 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-orange-50 transition-colors hover:bg-orange-400/30"
                 >
                   Napsat zprávu
