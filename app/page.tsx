@@ -57,8 +57,8 @@ export default async function Home() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-3xl text-sm leading-6 text-cyan-100/75 sm:text-base">
-            Přihlaste se, sledujte body, denní sérii a postup v kapitolách jako živý
-            dispečerský panel.
+            Přihlaste se a mějte přehled o bodech, denní sérii i postupu v kapitolách
+            na jednom místě.
           </p>
 
           <div className="mt-6 flex w-full flex-col items-center justify-center gap-3 sm:mt-7 sm:flex-row">

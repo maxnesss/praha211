@@ -60,7 +60,8 @@ export default async function BodyPage() {
             Přehled vašeho skóre
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/75 sm:text-base">
-            Tady vidíte souhrn bodového výkonu a poslední potvrzené městské části.
+            Tahle tabule ukazuje, jak roste vaše skóre a které městské části jste
+            potvrdili naposledy.
           </p>
 
           <div className="mt-8 grid grid-cols-6 gap-2 sm:hidden">
