@@ -5,6 +5,7 @@ import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
 } from "@/lib/db/serializable-transaction";
+import { syncUserScoreEvents } from "@/lib/game/score-ledger";
 import { synchronizeTeamLeaderByVotes } from "@/lib/team-leader-voting";
 import { getTeamValidationMessage, voteTeamLeaderSchema } from "@/lib/validation/team";
 
@@ -97,7 +98,13 @@ export async function POST(request: Request, context: VoteTeamLeaderRouteContext
             select: { id: true },
           });
 
-          return synchronizeTeamLeaderByVotes(tx, team.id);
+          const leaderSnapshot = await synchronizeTeamLeaderByVotes(tx, team.id);
+          await syncUserScoreEvents({
+            db: tx,
+            userId: leaderSnapshot.leaderUserId,
+          });
+
+          return leaderSnapshot;
         });
 
         return NextResponse.json({

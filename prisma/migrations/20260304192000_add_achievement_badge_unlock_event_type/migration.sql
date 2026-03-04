@@ -1,0 +1,1 @@
+ALTER TYPE "public"."ScoreEventType" ADD VALUE 'ACHIEVEMENT_BADGE_UNLOCK';

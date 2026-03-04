@@ -5,6 +5,7 @@ import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
 } from "@/lib/db/serializable-transaction";
+import { syncUserScoreEvents } from "@/lib/game/score-ledger";
 import { synchronizeTeamLeaderByVotes } from "@/lib/team-leader-voting";
 import { TEAM_MAX_MEMBERS } from "@/lib/team-utils";
 
@@ -141,7 +142,14 @@ export async function POST(
         select: { id: true },
       });
 
-      await synchronizeTeamLeaderByVotes(tx, team.id);
+      const leaderSnapshot = await synchronizeTeamLeaderByVotes(tx, team.id);
+
+      for (const affectedUserId of new Set([request.userId, leaderSnapshot.leaderUserId])) {
+        await syncUserScoreEvents({
+          db: tx,
+          userId: affectedUserId,
+        });
+      }
 
       return team;
     });

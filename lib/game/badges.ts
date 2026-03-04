@@ -25,8 +25,8 @@ const pragueHourFormatter = new Intl.DateTimeFormat("en-GB", {
   hour12: false,
 });
 
-const PROGRESS_THRESHOLDS = [1, 10, 25, 50, 75, 100, 112];
-const STREAK_THRESHOLDS = [3, 7, 14, 30];
+const PROGRESS_THRESHOLDS = [1, 10, 25, 75, 100, 112];
+const STREAK_THRESHOLDS = [3, 7, 30];
 const progressBadgeImageByThreshold = new Map<number, { src: string; alt: string }>([
   [1, { src: "/badges/progress_1.webp", alt: "Odznak prvního potvrzení" }],
   [10, { src: "/badges/progress_10.webp", alt: "Odznak 10 potvrzení" }],
@@ -34,6 +34,11 @@ const progressBadgeImageByThreshold = new Map<number, { src: string; alt: string
   [75, { src: "/badges/progress_75.webp", alt: "Odznak 75 potvrzení" }],
   [100, { src: "/badges/progress_100.webp", alt: "Odznak 100 potvrzení" }],
   [112, { src: "/badges/progress_112.webp", alt: "Odznak 112 potvrzení" }],
+]);
+const streakBadgeImageByThreshold = new Map<number, { src: string; alt: string }>([
+  [3, { src: "/badges/streak_3.webp", alt: "Odznak série 3 dní" }],
+  [7, { src: "/badges/streak_7.webp", alt: "Odznak série 7 dní" }],
+  [30, { src: "/badges/streak_30.webp", alt: "Odznak série 30 dní" }],
 ]);
 
 function extractPrahaNumbers(text: string) {
@@ -109,11 +114,25 @@ export type AchievementBadgeCategory =
   | "RHYTHM"
   | "TEAM";
 
+export type AchievementBadgeDifficulty =
+  | "EASY"
+  | "MEDIUM"
+  | "HARD"
+  | "LEGENDARY";
+
+export const ACHIEVEMENT_BADGE_DIFFICULTY_POINTS: Record<AchievementBadgeDifficulty, number> = {
+  EASY: 75,
+  MEDIUM: 150,
+  HARD: 300,
+  LEGENDARY: 600,
+};
+
 export type AchievementBadge = {
   id: string;
   title: string;
   subtitle: string;
   category: AchievementBadgeCategory;
+  difficulty: AchievementBadgeDifficulty;
   unlocked: boolean;
   accentColor: string;
   imageSrc?: string;
@@ -156,12 +175,20 @@ function toPragueHour(date: Date) {
 function buildProgressAchievementBadges(totalClaims: number): AchievementBadge[] {
   return PROGRESS_THRESHOLDS.map((threshold) => {
     const image = progressBadgeImageByThreshold.get(threshold);
+    const difficulty = threshold >= 112
+      ? "LEGENDARY"
+      : threshold >= 75
+      ? "HARD"
+      : threshold >= 25
+      ? "MEDIUM"
+      : "EASY";
 
     return {
       id: `progress_${threshold}`,
       title: threshold === 1 ? "První potvrzení" : `${threshold} potvrzení`,
       subtitle: "Postup",
       category: "PROGRESS",
+      difficulty,
       unlocked: totalClaims >= threshold,
       accentColor: "#f59e0b",
       imageSrc: image?.src,
@@ -174,15 +201,27 @@ function buildProgressAchievementBadges(totalClaims: number): AchievementBadge[]
 function buildStreakAchievementBadges(claimDates: Date[]): AchievementBadge[] {
   const longestStreak = calculateLongestStreak(claimDates);
 
-  return STREAK_THRESHOLDS.map((threshold) => ({
-    id: `streak_${threshold}`,
-    title: `Série ${threshold} dní`,
-    subtitle: "Série",
-    category: "STREAK",
-    unlocked: longestStreak >= threshold,
-    accentColor: "#22d3ee",
-    shortLabel: `${threshold}D`,
-  }));
+  return STREAK_THRESHOLDS.map((threshold) => {
+    const image = streakBadgeImageByThreshold.get(threshold);
+    const difficulty = threshold >= 30
+      ? "LEGENDARY"
+      : threshold >= 7
+      ? "MEDIUM"
+      : "EASY";
+
+    return {
+      id: `streak_${threshold}`,
+      title: `Série ${threshold} dní`,
+      subtitle: "Série",
+      category: "STREAK",
+      difficulty,
+      unlocked: longestStreak >= threshold,
+      accentColor: "#22d3ee",
+      imageSrc: image?.src,
+      imageAlt: image?.alt,
+      shortLabel: `${threshold}D`,
+    };
+  });
 }
 
 function buildRhythmAchievementBadges(claimDates: Date[]): AchievementBadge[] {
@@ -215,8 +254,11 @@ function buildRhythmAchievementBadges(claimDates: Date[]): AchievementBadge[] {
       title: "Víkendová hlídka",
       subtitle: "Sobota + neděle",
       category: "RHYTHM",
+      difficulty: "MEDIUM",
       unlocked: hasSaturday && hasSunday,
       accentColor: "#14b8a6",
+      imageSrc: "/badges/rhythm_weekend_patrol.webp",
+      imageAlt: "Odznak víkendové hlídky",
       shortLabel: "WE",
     },
     {
@@ -224,8 +266,11 @@ function buildRhythmAchievementBadges(claimDates: Date[]): AchievementBadge[] {
       title: "Ranní ptáče",
       subtitle: "Ráno (5:00-10:59)",
       category: "RHYTHM",
+      difficulty: "EASY",
       unlocked: hasEarlyBird,
       accentColor: "#f97316",
+      imageSrc: "/badges/rhythm_early_bird.webp",
+      imageAlt: "Odznak ranního ptáčete",
       shortLabel: "AM",
     },
     {
@@ -233,8 +278,11 @@ function buildRhythmAchievementBadges(claimDates: Date[]): AchievementBadge[] {
       title: "Noční sova",
       subtitle: "Pozdní večer (21:00-23:59)",
       category: "RHYTHM",
+      difficulty: "EASY",
       unlocked: hasNightOwl,
       accentColor: "#8b5cf6",
+      imageSrc: "/badges/rhythm_night_owl.webp",
+      imageAlt: "Odznak noční sovy",
       shortLabel: "PM",
     },
   ];
@@ -250,6 +298,7 @@ function buildTeamAchievementBadges(input: {
       title: "První tým",
       subtitle: "Připojení do týmu",
       category: "TEAM",
+      difficulty: "MEDIUM",
       unlocked: input.joinedTeam,
       accentColor: "#10b981",
       imageSrc: "/badges/team_joined.png",
@@ -261,6 +310,7 @@ function buildTeamAchievementBadges(input: {
       title: "Velitel týmu",
       subtitle: "Někdy byl velitelem",
       category: "TEAM",
+      difficulty: "HARD",
       unlocked: input.hasBeenTeamLeader,
       accentColor: "#ef4444",
       imageSrc: "/badges/team_leader.png",

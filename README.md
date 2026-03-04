@@ -30,6 +30,11 @@ Produkční doména: `https://www.praha112.cz`.
   - `DISTRICT_CLAIM` (jednorázově za část)
   - `CHAPTER_COMPLETE` (+750 za kompletní kapitolu)
   - `PRAHA_PART_COMPLETE` (+300 za kompletní odznak Praha 1-22)
+  - `ACHIEVEMENT_BADGE_UNLOCK` (speciální odznak podle obtížnosti)
+    - `EASY` = +75
+    - `MEDIUM` = +150
+    - `HARD` = +300
+    - `LEGENDARY` = +600
 - Výpočet pro `DISTRICT_CLAIM`:
   - `awardedPoints = round(basePoints * sameDayMultiplier + streakBonus)`
   - `sameDayMultiplier = min(2, 1 + claimsTodayBefore * 0.15)`
@@ -45,6 +50,25 @@ Produkční doména: `https://www.praha112.cz`.
   - hráč potvrzuje viditelnost oficiální cedule
   - claim používá serverový čas (`Europe/Prague`)
   - 1 uživatel může potvrdit danou část pouze jednou
+
+## Speciální odznaky (Achievement)
+
+- Postup (PROGRESS): `1`, `10`, `25`, `75`, `100`, `112` potvrzení
+  - milestone `50` byl odstraněn
+- Série (STREAK): `3`, `7`, `30` dní v řadě
+  - milestone `14` byl odstraněn
+- Rytmus (RHYTHM):
+  - `Víkendová hlídka` (claim v sobotu i neděli)
+  - `Ranní ptáče` (claim v čase `05:00-10:59`)
+  - `Noční sova` (claim v čase `21:00-23:59`)
+- Tým (TEAM):
+  - `První tým`
+  - `Velitel týmu`
+
+Assety speciálních odznaků patří do `public/badges/`:
+- `streak_3.webp`, `streak_7.webp`, `streak_30.webp`
+- `rhythm_weekend_patrol.webp`, `rhythm_early_bird.webp`, `rhythm_night_owl.webp`
+- `team_joined.png`, `team_leader.png`
 
 ## Hlavní funkce
 
@@ -126,7 +150,7 @@ npm run test
 ```
 
 Poznámky:
-- Po nasazení migrace `ScoreEvent` spusťte `npm run score:backfill`, aby historická data dostala chapter/praha bonus eventy konzistentně.
+- Po nasazení změn v `ScoreEvent` spusťte `npm run score:backfill`, aby historická data dostala chapter/praha/achievement eventy konzistentně.
 - `test:integration:core` spouští produkční server (`npm run start`) na dočasném portu a testuje API end-to-end.
 - Testy pracují s DB přes izolovaný namespace a po doběhu po sobě uklízí testovací data.
 - V CI (GitHub Actions) se automaticky spouští `lint`, `build` a `test:integration:all`.

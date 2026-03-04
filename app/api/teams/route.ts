@@ -8,6 +8,7 @@ import {
   isSerializableConflictError,
   runSerializableTransactionWithRetry,
 } from "@/lib/db/serializable-transaction";
+import { syncUserScoreEvents } from "@/lib/game/score-ledger";
 import { toTeamSlug } from "@/lib/team-utils";
 import { createTeamSchema, getTeamValidationMessage } from "@/lib/validation/team";
 
@@ -109,6 +110,11 @@ export async function POST(request: Request) {
           candidateUserId: user.id,
         },
         select: { id: true },
+      });
+
+      await syncUserScoreEvents({
+        db: tx,
+        userId: user.id,
       });
 
       return team;

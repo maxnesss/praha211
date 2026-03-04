@@ -4,6 +4,7 @@ import {
   type ChapterSlug,
 } from "./district-catalog.ts";
 import {
+  ACHIEVEMENT_BADGE_DIFFICULTY_POINTS,
   PRAHA_BADGE_NUMBERS,
   buildBadgeOverview,
   getPrahaBadgeDistrictCodes,
@@ -14,20 +15,23 @@ export const SCORE_EVENT_TYPE = {
   districtClaim: "DISTRICT_CLAIM",
   chapterComplete: "CHAPTER_COMPLETE",
   prahaPartComplete: "PRAHA_PART_COMPLETE",
+  achievementBadgeUnlock: "ACHIEVEMENT_BADGE_UNLOCK",
 } as const satisfies Record<string, ScoreEventType>;
 
 export const SCORE_POINT_VALUES = {
   chapterComplete: 750,
   prahaPartComplete: 300,
+  achievementBadgeUnlockByDifficulty: ACHIEVEMENT_BADGE_DIFFICULTY_POINTS,
 } as const;
 
 const MANAGED_SCORE_EVENT_TYPES: ScoreEventType[] = [
   SCORE_EVENT_TYPE.districtClaim,
   SCORE_EVENT_TYPE.chapterComplete,
   SCORE_EVENT_TYPE.prahaPartComplete,
+  SCORE_EVENT_TYPE.achievementBadgeUnlock,
 ];
 
-type ScoreDbClient = Pick<PrismaClient, "districtClaim" | "scoreEvent">
+type ScoreDbClient = Pick<PrismaClient, "districtClaim" | "scoreEvent" | "user">
   | Prisma.TransactionClient;
 
 type ScoreClaimSnapshot = {
@@ -49,6 +53,10 @@ function toPrahaPartCompleteEventKey(number: number) {
   return `praha_part_complete:${number}`;
 }
 
+function toAchievementBadgeUnlockEventKey(badgeId: string) {
+  return `achievement_badge_unlock:${badgeId}`;
+}
+
 function maxDate(values: Date[]) {
   if (values.length === 0) {
     return null;
@@ -60,19 +68,49 @@ function maxDate(values: Date[]) {
   );
 }
 
+type ScoreBadgeContext = {
+  joinedTeam: boolean;
+  hasBeenTeamLeader: boolean;
+  userCreatedAt: Date;
+};
+
 function buildManagedScoreEventsForClaims(
   userId: string,
   claims: ScoreClaimSnapshot[],
+  badgeContext: ScoreBadgeContext,
 ): Prisma.ScoreEventUncheckedCreateInput[] {
   if (claims.length === 0) {
-    return [];
+    const emptyOverview = buildBadgeOverview(new Set<string>(), {
+      joinedTeam: badgeContext.joinedTeam,
+      hasBeenTeamLeader: badgeContext.hasBeenTeamLeader,
+    });
+
+    return emptyOverview.achievementBadges
+      .filter((badge) => badge.unlocked)
+      .map((badge) => ({
+        userId,
+        eventType: SCORE_EVENT_TYPE.achievementBadgeUnlock,
+        eventKey: toAchievementBadgeUnlockEventKey(badge.id),
+        points: SCORE_POINT_VALUES.achievementBadgeUnlockByDifficulty[badge.difficulty],
+        occurredAt: badgeContext.userCreatedAt,
+        metadata: {
+          badgeId: badge.id,
+          category: badge.category,
+          difficulty: badge.difficulty,
+        } satisfies Prisma.JsonObject,
+      }));
   }
 
   const claimByDistrict = new Map(
     claims.map((claim) => [claim.districtCode.toUpperCase(), claim] as const),
   );
   const completedCodes = new Set([...claimByDistrict.keys()]);
-  const badges = buildBadgeOverview(completedCodes);
+  const claimDates = claims.map((claim) => claim.claimedAt);
+  const badges = buildBadgeOverview(completedCodes, {
+    claimDates,
+    joinedTeam: badgeContext.joinedTeam,
+    hasBeenTeamLeader: badgeContext.hasBeenTeamLeader,
+  });
 
   const chapterLatestClaimedAt = new Map<ChapterSlug, Date>();
   for (const chapter of CHAPTERS) {
@@ -148,7 +186,23 @@ function buildManagedScoreEventsForClaims(
     })
     .filter((value) => value !== null);
 
-  return [...claimEvents, ...chapterEvents, ...prahaEvents];
+  const fallbackAchievementOccurredAt = maxDate(claimDates) ?? badgeContext.userCreatedAt;
+  const achievementEvents: Prisma.ScoreEventUncheckedCreateInput[] = badges.achievementBadges
+    .filter((badge) => badge.unlocked)
+    .map((badge) => ({
+      userId,
+      eventType: SCORE_EVENT_TYPE.achievementBadgeUnlock,
+      eventKey: toAchievementBadgeUnlockEventKey(badge.id),
+      points: SCORE_POINT_VALUES.achievementBadgeUnlockByDifficulty[badge.difficulty],
+      occurredAt: fallbackAchievementOccurredAt,
+      metadata: {
+        badgeId: badge.id,
+        category: badge.category,
+        difficulty: badge.difficulty,
+      } satisfies Prisma.JsonObject,
+    }));
+
+  return [...claimEvents, ...chapterEvents, ...prahaEvents, ...achievementEvents];
 }
 
 type SyncScoreEventsInput = {
@@ -158,18 +212,37 @@ type SyncScoreEventsInput = {
 };
 
 export async function syncUserScoreEvents(input: SyncScoreEventsInput) {
-  const claims = input.claims
-    ?? await input.db.districtClaim.findMany({
-      where: { userId: input.userId },
+  const [claims, user] = await Promise.all([
+    input.claims
+      ?? input.db.districtClaim.findMany({
+        where: { userId: input.userId },
+        select: {
+          districtCode: true,
+          chapterSlug: true,
+          awardedPoints: true,
+          claimedAt: true,
+        },
+      }),
+    input.db.user.findUnique({
+      where: { id: input.userId },
       select: {
-        districtCode: true,
-        chapterSlug: true,
-        awardedPoints: true,
-        claimedAt: true,
+        teamId: true,
+        hasJoinedTeam: true,
+        hasBeenTeamLeader: true,
+        createdAt: true,
       },
-    });
+    }),
+  ]);
 
-  const nextEvents = buildManagedScoreEventsForClaims(input.userId, claims);
+  if (!user) {
+    return;
+  }
+
+  const nextEvents = buildManagedScoreEventsForClaims(input.userId, claims, {
+    joinedTeam: Boolean(user.hasJoinedTeam || user.teamId),
+    hasBeenTeamLeader: Boolean(user.hasBeenTeamLeader),
+    userCreatedAt: user.createdAt,
+  });
   const nextEventKeys = nextEvents.map((event) => event.eventKey);
 
   if (nextEventKeys.length === 0) {

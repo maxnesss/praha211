@@ -22,6 +22,7 @@ enum ScoreEventType {
   DISTRICT_CLAIM
   CHAPTER_COMPLETE
   PRAHA_PART_COMPLETE
+  ACHIEVEMENT_BADGE_UNLOCK
 }
 
 enum ClaimSubmissionStatus {
