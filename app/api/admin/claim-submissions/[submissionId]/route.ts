@@ -44,7 +44,7 @@ export async function POST(request: Request, context: UpdateSubmissionRouteConte
         return NextResponse.json({ message: "Přístup odepřen." }, { status: 403 });
       }
 
-      const rateLimited = applyRateLimit({
+      const rateLimited = await applyRateLimit({
         request,
         prefix: "admin-claim-submission-update",
         userId,

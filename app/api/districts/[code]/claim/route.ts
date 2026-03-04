@@ -51,7 +51,7 @@ export async function POST(request: Request, context: ClaimRouteContext) {
         );
       }
 
-      const rateLimited = applyRateLimit({
+      const rateLimited = await applyRateLimit({
         request,
         prefix: "district-claim",
         userId,

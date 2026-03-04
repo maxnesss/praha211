@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   return withApiWriteObservability(
     { request, operation: "auth.password_reset.request" },
     async () => {
-      const rateLimited = applyRateLimit({
+      const rateLimited = await applyRateLimit({
         request,
         prefix: "password-reset-request",
         max: 6,

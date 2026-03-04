@@ -57,7 +57,7 @@ export async function POST(request: Request) {
           { status: 200 },
         );
 
-      const rateLimited = applyRateLimit({
+      const rateLimited = await applyRateLimit({
         request,
         prefix: "auth-register",
         max: 6,

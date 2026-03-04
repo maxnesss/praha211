@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   return withApiWriteObservability(
     { request, operation: "auth.verify_email" },
     async () => {
-  const rateLimited = applyRateLimit({
+  const rateLimited = await applyRateLimit({
     request,
     prefix: "auth-verify-email",
     max: 40,

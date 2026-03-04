@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   return withApiWriteObservability(
     { request, operation: "contact.submit" },
     async () => {
-  const rateLimited = applyRateLimit({
+  const rateLimited = await applyRateLimit({
     request,
     prefix: "contact",
     max: 8,

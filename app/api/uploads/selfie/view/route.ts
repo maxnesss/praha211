@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
   }
 
-  const rateLimited = applyRateLimit({
+  const rateLimited = await applyRateLimit({
     request,
     prefix: "selfie-view",
     userId,

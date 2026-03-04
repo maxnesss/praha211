@@ -33,7 +33,7 @@ export async function requireAuthedUser(
   }
 
   if (input.rateLimit) {
-    const rateLimited = applyRateLimit({
+    const rateLimited = await applyRateLimit({
       request: input.request,
       prefix: input.rateLimit.prefix,
       max: input.rateLimit.max,

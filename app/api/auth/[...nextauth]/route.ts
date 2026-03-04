@@ -20,7 +20,7 @@ export async function POST(
   context: { params: Promise<{ nextauth: string[] }> },
 ) {
   if (isCredentialsCallbackRequest(request)) {
-    const rateLimited = applyRateLimit({
+    const rateLimited = await applyRateLimit({
       request,
       prefix: "auth-credentials-signin",
       max: 12,

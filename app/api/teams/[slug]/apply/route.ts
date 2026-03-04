@@ -23,7 +23,7 @@ export async function POST(request: Request, context: ApplyTeamRouteContext) {
     return NextResponse.json({ message: "Nejste přihlášeni." }, { status: 401 });
   }
 
-  const rateLimited = applyRateLimit({
+  const rateLimited = await applyRateLimit({
     request,
     prefix: "teams-apply",
     userId,
