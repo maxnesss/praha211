@@ -59,6 +59,7 @@ type RedComponent = {
   maxY: number;
   width: number;
   height: number;
+  areaRatio: number;
   pixelCount: number;
   fillRatio: number;
   aspectRatio: number;
@@ -70,6 +71,7 @@ const OCR_RESIZE_WIDTH = 1400;
 const OCR_MAX_TEXT_LENGTH = 10_000;
 const RED_SIGN_DETECTION_SIZE = 900;
 const RED_SIGN_MAX_CANDIDATES = 3;
+const RED_SIGN_MAX_AREA_RATIO = 0.15;
 const RED_SIGN_CROP_PADDING = 24;
 const TESSERACT_OEM_LSTM_ONLY = 1;
 const TESSERACT_CACHE_DIR = path.join(process.cwd(), ".cache", "tesseract");
@@ -521,12 +523,14 @@ function collectRedSignComponents(
       const componentWidth = maxX - minX + 1;
       const componentHeight = maxY - minY + 1;
       const area = componentWidth * componentHeight;
+      const areaRatio = area / (width * height);
       const fillRatio = area > 0 ? pixelCount / area : 0;
       const aspectRatio = componentHeight > 0 ? componentWidth / componentHeight : 0;
 
       if (
         pixelCount >= 120
         && area >= 200
+        && areaRatio <= RED_SIGN_MAX_AREA_RATIO
         && aspectRatio > 1.2
         && aspectRatio < 5.5
         && fillRatio > 0.2
@@ -538,6 +542,7 @@ function collectRedSignComponents(
           maxY,
           width: componentWidth,
           height: componentHeight,
+          areaRatio,
           pixelCount,
           fillRatio,
           aspectRatio,
