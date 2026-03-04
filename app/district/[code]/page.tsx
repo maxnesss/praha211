@@ -6,6 +6,7 @@ import { DistrictCoatPreview } from "@/components/district-coat-preview";
 import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
+import { getPendingSubmissionState } from "@/lib/game/claim-validation-queue";
 import { getDistrictStory } from "@/lib/game/district-stories";
 import { getChapterBySlug, getDistrictByCode } from "@/lib/game/district-catalog";
 import { prisma } from "@/lib/prisma";
@@ -55,6 +56,8 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
         id: true,
         createdAt: true,
         selfieUrl: true,
+        localValidatedAt: true,
+        reviewNote: true,
       },
     }),
   ]);
@@ -114,6 +117,10 @@ export default async function DistrictPage({ params }: DistrictPageProps) {
                         id: pendingSubmission.id,
                         createdAt: pendingSubmission.createdAt.toISOString(),
                         selfieUrl: pendingSubmission.selfieUrl,
+                        pendingState: getPendingSubmissionState({
+                          localValidatedAt: pendingSubmission.localValidatedAt,
+                          reviewNote: pendingSubmission.reviewNote,
+                        }),
                       }
                     : undefined
                 }

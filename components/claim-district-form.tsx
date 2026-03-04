@@ -19,6 +19,7 @@ type PendingSubmission = {
   id: string;
   createdAt: string;
   selfieUrl: string;
+  pendingState: "VALIDATING" | "MANUAL_REVIEW";
 };
 
 type ClaimDistrictFormProps = {
@@ -40,10 +41,17 @@ type SignedUploadPayload = {
 type ClaimStatusPayload = {
   status?: "NONE" | "PENDING" | "CLAIMED";
   message?: string;
+  submission?: {
+    id?: string;
+    createdAt?: string;
+    pendingState?: "VALIDATING" | "MANUAL_REVIEW";
+  };
 };
 
 const UNLOCK_EFFECT_SESSION_KEY_PREFIX = "praha112_unlock_effect_";
 const UNLOCK_EFFECT_MAX_AGE_MS = 20_000;
+const CLAIM_STATUS_POLL_INTERVAL_MS = 2500;
+const CLAIM_STATUS_POLL_TIMEOUT_MS = 95_000;
 
 const UNLOCK_EFFECT_SPARKS = [
   { left: "8%", top: "86%", delay: "0ms" },
@@ -121,7 +129,7 @@ export function ClaimDistrictForm({
       setSubmitStage("idle");
     };
 
-    const applyRecoveredClaimState = async () => {
+    const readClaimStatus = async () => {
       try {
         const statusResponse = await fetch(`/api/districts/${districtCode}/claim`, {
           method: "GET",
@@ -132,32 +140,62 @@ export function ClaimDistrictForm({
           | null;
 
         if (!statusResponse.ok || !statusPayload?.status) {
-          return false;
+          return null;
         }
+        return statusPayload;
+      } catch (error) {
+        console.error("Nepodařilo se načíst stav potvrzení:", error);
+        return null;
+      }
+    };
 
-        if (statusPayload.status === "CLAIMED") {
-          setSuccess("Městská část byla potvrzena.");
-          setIsModalOpen(false);
-          stopSubmitting();
-          storeUnlockEffect();
-          router.refresh();
-          return true;
-        }
+    const applyRecoveredClaimState = async () => {
+      const statusPayload = await readClaimStatus();
+      if (!statusPayload) {
+        return false;
+      }
 
-        if (statusPayload.status === "PENDING") {
-          setSuccess(
-            "Žádost byla přijata a čeká na ruční schválení administrátorem.",
-          );
-          setIsModalOpen(false);
-          stopSubmitting();
-          router.refresh();
-          return true;
-        }
-      } catch (recoveryError) {
-        console.error("Nepodařilo se načíst stav potvrzení po chybě:", recoveryError);
+      if (statusPayload.status === "CLAIMED") {
+        setSuccess("Městská část byla potvrzena.");
+        setIsModalOpen(false);
+        stopSubmitting();
+        storeUnlockEffect();
+        router.refresh();
+        return true;
+      }
+
+      if (statusPayload.status === "PENDING") {
+        setSuccess("Žádost byla přijata a čeká na ruční schválení administrátorem.");
+        setIsModalOpen(false);
+        stopSubmitting();
+        router.refresh();
+        return true;
       }
 
       return false;
+    };
+
+    const waitForValidationOutcome = async () => {
+      const deadline = Date.now() + CLAIM_STATUS_POLL_TIMEOUT_MS;
+
+      while (Date.now() < deadline) {
+        const statusPayload = await readClaimStatus();
+        if (statusPayload?.status === "CLAIMED") {
+          return "CLAIMED" as const;
+        }
+
+        if (statusPayload?.status === "PENDING") {
+          if (statusPayload.submission?.pendingState === "MANUAL_REVIEW") {
+            return "MANUAL_REVIEW" as const;
+          }
+        }
+
+        await new Promise((resolve) => {
+          setTimeout(resolve, CLAIM_STATUS_POLL_INTERVAL_MS);
+        });
+      }
+
+      return "TIMEOUT" as const;
     };
 
     const formData = new FormData(event.currentTarget);
@@ -263,11 +301,29 @@ export function ClaimDistrictForm({
         | null;
 
       if (response.status === 202) {
+        const outcome = await waitForValidationOutcome();
+
+        if (outcome === "CLAIMED") {
+          setSuccess("Městská část byla potvrzena.");
+          setIsModalOpen(false);
+          stopSubmitting();
+          storeUnlockEffect();
+          router.refresh();
+          return;
+        }
+
+        if (outcome === "MANUAL_REVIEW") {
+          setSuccess("Žádost byla přijata a čeká na ruční schválení administrátorem.");
+          setIsModalOpen(false);
+          stopSubmitting();
+          router.refresh();
+          return;
+        }
+
         setSuccess(
           payload?.message
-            || "Žádost byla přijata a čeká na ruční schválení administrátorem.",
+            || "Validace trvá déle. Žádost zůstává přijatá a výsledek se projeví po obnovení.",
         );
-        setIsModalOpen(false);
         stopSubmitting();
         router.refresh();
         return;
@@ -364,13 +420,17 @@ export function ClaimDistrictForm({
   }
 
   if (pendingSubmission) {
+    const isPendingValidation = pendingSubmission.pendingState === "VALIDATING";
+
     return (
       <div className={`relative mt-1 overflow-hidden rounded-xl border border-cyan-300/35 bg-cyan-500/10 p-4 sm:p-5 ${metro.mobileCard}`}>
-        <h2 className="text-lg font-semibold text-cyan-50">Žádost čeká na schválení</h2>
+        <h2 className="text-lg font-semibold text-cyan-50">
+          {isPendingValidation ? "Probíhá validace selfie" : "Žádost čeká na schválení"}
+        </h2>
         <p className="mt-1.5 text-sm text-cyan-100/85">
-          Lokální kontrola selfie nestačila na automatické odemčení. Žádost byla
-          odeslána dne {new Date(pendingSubmission.createdAt).toLocaleString("cs-CZ")} a
-          čeká na ruční schválení administrátorem.
+          {isPendingValidation
+            ? `Selfie byla odeslána dne ${new Date(pendingSubmission.createdAt).toLocaleString("cs-CZ")} a právě probíhá automatická validace.`
+            : `Lokální kontrola selfie nestačila na automatické odemčení. Žádost byla odeslána dne ${new Date(pendingSubmission.createdAt).toLocaleString("cs-CZ")} a čeká na ruční schválení administrátorem.`}
         </p>
         {pendingSubmission.selfieUrl.startsWith("selfies/") ? (
           <a

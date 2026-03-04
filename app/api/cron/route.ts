@@ -1,17 +1,42 @@
 import { NextResponse } from "next/server";
 import { withApiWriteObservability } from "@/lib/api/write-observability";
+import { processPendingClaimValidations } from "@/lib/game/claim-validation-queue";
 import { removeTeamsWithoutMembers } from "@/lib/cron/cleanup-empty-teams";
 
-type CronTaskId = "cleanup-empty-teams";
+type CronTaskId = "cleanup-empty-teams" | "process-claim-validations";
 
 type CronTaskResult = {
   task: CronTaskId;
   ok: boolean;
   message: string;
   deletedTeams?: number;
+  scanned?: number;
+  approved?: number;
+  manualReview?: number;
+  skipped?: number;
+  failed?: number;
 };
 
 const TASK_REGISTRY: Record<CronTaskId, () => Promise<CronTaskResult>> = {
+  "process-claim-validations": async () => {
+    const queue = await processPendingClaimValidations({
+      limit: Math.min(
+        Math.max(Number.parseInt(process.env.CLAIM_VALIDATION_CRON_BATCH_SIZE ?? "8", 10) || 8, 1),
+        30,
+      ),
+    });
+
+    return {
+      task: "process-claim-validations",
+      ok: queue.failed === 0,
+      scanned: queue.scanned,
+      approved: queue.approved,
+      manualReview: queue.manualReview,
+      skipped: queue.skipped,
+      failed: queue.failed,
+      message: `Zpracováno ${queue.scanned} žádostí (${queue.approved} auto-schváleno, ${queue.manualReview} ruční kontrola).`,
+    };
+  },
   "cleanup-empty-teams": async () => {
     const deletedTeams = await removeTeamsWithoutMembers();
     return {
@@ -57,7 +82,7 @@ function resolveRequestedTasks(request: Request): CronTaskId[] | null {
   const tasksParam = searchParams.get("tasks")?.trim();
 
   if (!tasksParam) {
-    return ["cleanup-empty-teams"];
+    return ["process-claim-validations", "cleanup-empty-teams"];
   }
 
   const requested = tasksParam
@@ -66,10 +91,10 @@ function resolveRequestedTasks(request: Request): CronTaskId[] | null {
     .filter((task) => task.length > 0);
 
   if (requested.length === 0) {
-    return ["cleanup-empty-teams"];
+    return ["process-claim-validations", "cleanup-empty-teams"];
   }
 
-  const allTaskIds = new Set<CronTaskId>(["cleanup-empty-teams"]);
+  const allTaskIds = new Set<CronTaskId>(["process-claim-validations", "cleanup-empty-teams"]);
   const valid = requested.every((task) => allTaskIds.has(task as CronTaskId));
   if (!valid) {
     return null;
@@ -90,7 +115,7 @@ async function handleCronRun(request: Request) {
       {
         ok: false,
         message: "Neplatný seznam cron tasků.",
-        availableTasks: ["cleanup-empty-teams"],
+        availableTasks: ["process-claim-validations", "cleanup-empty-teams"],
       },
       { status: 400 },
     );

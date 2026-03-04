@@ -5,12 +5,11 @@ import { NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/api/rate-limit";
 import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
-import { createApprovedDistrictClaim } from "@/lib/game/claim-submission-service";
-import { getDistrictByCode } from "@/lib/game/district-catalog";
 import {
-  type LocalClaimValidationResult,
-  validateDistrictSelfieLocally,
-} from "@/lib/game/local-selfie-validation";
+  getPendingSubmissionState,
+  processPendingClaimValidations,
+} from "@/lib/game/claim-validation-queue";
+import { getDistrictByCode } from "@/lib/game/district-catalog";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
 import { prisma } from "@/lib/prisma";
 import { isSelfieObjectKey } from "@/lib/selfie-upload-rules";
@@ -23,79 +22,6 @@ type ClaimRouteContext = {
 
 function shouldBypassLocalValidationInCI() {
   return process.env.CI === "true";
-}
-
-function buildBypassedLocalValidation() {
-  return {
-    verdict: "PASS" as const,
-    confidence: 1,
-    faceDetected: true,
-    faceCount: 1,
-    districtNameMatched: true,
-    matchedAlias: null,
-    ocrText: "",
-    reasons: ["Lokální validace byla přeskočena v CI režimu."],
-  };
-}
-
-function getLocalValidationTimeoutMs() {
-  const raw = process.env.LOCAL_SELFIE_VALIDATION_TIMEOUT_MS;
-  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
-  if (Number.isNaN(parsed) || parsed < 30_000) {
-    return 90_000;
-  }
-  return parsed;
-}
-
-function buildTimedOutLocalValidation(timeoutMs: number): LocalClaimValidationResult {
-  return {
-    verdict: "REVIEW",
-    confidence: 0.3,
-    faceDetected: false,
-    faceCount: 0,
-    districtNameMatched: false,
-    matchedAlias: null,
-    ocrText: "",
-    reasons: [
-      `Lokální validace selfie překročila časový limit (${Math.round(timeoutMs / 1000)} s).`,
-      "Žádost byla přijata k ruční kontrole administrátorem.",
-    ],
-  };
-}
-
-async function runLocalValidationWithTimeout(
-  input: { selfieUrl: string; districtName: string },
-  timeoutMs: number,
-) {
-  const validationPromise = validateDistrictSelfieLocally(input).catch((error) => {
-    console.error("Lokální validace selfie spadla do fallbacku:", error);
-    return {
-      verdict: "REVIEW",
-      confidence: 0,
-      faceDetected: false,
-      faceCount: 0,
-      districtNameMatched: false,
-      matchedAlias: null,
-      ocrText: "",
-      reasons: [
-        "Lokální validace selfie selhala interní chybou. Žádost čeká na ruční kontrolu.",
-      ],
-    } satisfies LocalClaimValidationResult;
-  });
-
-  let timeoutHandle: NodeJS.Timeout | null = null;
-  const timeoutPromise = new Promise<LocalClaimValidationResult>((resolve) => {
-    timeoutHandle = setTimeout(() => {
-      resolve(buildTimedOutLocalValidation(timeoutMs));
-    }, timeoutMs);
-  });
-
-  const result = await Promise.race([validationPromise, timeoutPromise]);
-  if (timeoutHandle) {
-    clearTimeout(timeoutHandle);
-  }
-
-  return result;
 }
 
 function isSelfieOwnedByUser(selfieKey: string, userId: string) {
@@ -228,99 +154,9 @@ export async function POST(request: Request, context: ClaimRouteContext) {
 
       if (existingPendingSubmission) {
         return NextResponse.json(
-          { message: "Pro tuto městskou část už čeká žádost na ruční schválení." },
+          { message: "Pro tuto městskou část už probíhá validace nebo čeká žádost." },
           { status: 409 },
         );
-      }
-
-      const localValidation = shouldBypassLocalValidationInCI()
-        ? buildBypassedLocalValidation()
-        : await runLocalValidationWithTimeout(
-          {
-            selfieUrl: selfieKey,
-            districtName: district.name,
-          },
-          getLocalValidationTimeoutMs(),
-        );
-      const now = new Date();
-
-      if (localValidation.verdict === "PASS") {
-        try {
-          const result = await prisma.$transaction(async (tx) => {
-            const submission = await tx.districtClaimSubmission.create({
-              data: {
-                userId,
-                districtCode: district.code,
-                chapterSlug: district.chapterSlug,
-                districtName: district.name,
-                selfieUrl: selfieKey,
-                attestVisited: parsed.data.attestVisited,
-                attestSignVisible: parsed.data.attestSignVisible,
-                status: ClaimSubmissionStatus.APPROVED,
-                localFaceCount: localValidation.faceCount,
-                localFaceDetected: localValidation.faceDetected,
-                localDistrictMatched: localValidation.districtNameMatched,
-                localConfidence: localValidation.confidence,
-                localMatchedAlias: localValidation.matchedAlias,
-                localOcrText: localValidation.ocrText,
-                localReasons: localValidation.reasons as Prisma.JsonArray,
-                localValidatedAt: now,
-                reviewedAt: now,
-                reviewNote: "Auto-schváleno lokální validací selfie.",
-              },
-              select: { id: true },
-            });
-
-            const approvedClaim = await createApprovedDistrictClaim({
-              tx,
-              userId,
-              districtCode: district.code,
-              chapterSlug: district.chapterSlug,
-              districtName: district.name,
-              selfieUrl: selfieKey,
-              signVisible: parsed.data.attestSignVisible,
-              claimedAt: now,
-              basePoints: district.basePoints,
-            });
-
-            await tx.districtClaimSubmission.update({
-              where: { id: submission.id },
-              data: {
-                approvedClaimId: approvedClaim.claim.id,
-              },
-            });
-
-            return approvedClaim;
-          });
-
-          revalidateTag(LEADERBOARD_CACHE_TAG, "max");
-
-          return NextResponse.json(
-            {
-              message: "Městská část byla úspěšně potvrzena (lokální validace selfie prošla).",
-              claim: result.claim,
-              streakAfterClaim: result.streakAfterClaim,
-              validationMode: "auto",
-            },
-            { status: 201 },
-          );
-        } catch (error) {
-          if (
-            error instanceof Prisma.PrismaClientKnownRequestError
-            && error.code === "P2002"
-          ) {
-            return NextResponse.json(
-              { message: "Tato městská část už byla potvrzena." },
-              { status: 409 },
-            );
-          }
-
-          console.error("Potvrzení městské části selhalo:", error);
-          return NextResponse.json(
-            { message: "Potvrzení městské části selhalo." },
-            { status: 500 },
-          );
-        }
       }
 
       try {
@@ -334,14 +170,15 @@ export async function POST(request: Request, context: ClaimRouteContext) {
             attestVisited: parsed.data.attestVisited,
             attestSignVisible: parsed.data.attestSignVisible,
             status: ClaimSubmissionStatus.PENDING,
-            localFaceCount: localValidation.faceCount,
-            localFaceDetected: localValidation.faceDetected,
-            localDistrictMatched: localValidation.districtNameMatched,
-            localConfidence: localValidation.confidence,
-            localMatchedAlias: localValidation.matchedAlias,
-            localOcrText: localValidation.ocrText,
-            localReasons: localValidation.reasons as Prisma.JsonArray,
-            localValidatedAt: now,
+            localFaceCount: 0,
+            localFaceDetected: false,
+            localDistrictMatched: false,
+            localConfidence: 0,
+            localMatchedAlias: null,
+            localOcrText: null,
+            localReasons: [] as Prisma.JsonArray,
+            localValidatedAt: null,
+            reviewNote: null,
           },
           select: {
             id: true,
@@ -349,15 +186,51 @@ export async function POST(request: Request, context: ClaimRouteContext) {
           },
         });
 
+        if (shouldBypassLocalValidationInCI()) {
+          await processPendingClaimValidations({ limit: 1 });
+          const approvedClaim = await prisma.districtClaim.findUnique({
+            where: {
+              userId_districtCode: {
+                userId,
+                districtCode: district.code,
+              },
+            },
+            select: {
+              id: true,
+              districtCode: true,
+              districtName: true,
+              chapterSlug: true,
+              claimedAt: true,
+              selfieUrl: true,
+            },
+          });
+
+          if (approvedClaim) {
+            revalidateTag(LEADERBOARD_CACHE_TAG, "max");
+            return NextResponse.json(
+              {
+                message: "Městská část byla úspěšně potvrzena (lokální validace selfie prošla).",
+                claim: approvedClaim,
+                validationMode: "auto",
+              },
+              { status: 201 },
+            );
+          }
+        } else {
+          void processPendingClaimValidations({ limit: 1 }).catch((error) => {
+            console.error("Spuštění asynchronní validace po enqueue selhalo:", error);
+          });
+        }
+
         return NextResponse.json(
           {
             message:
-              "Žádost byla přijata. Lokální kontrola nestačila na automatické odemčení, žádost čeká na ruční schválení administrátorem.",
+              "Selfie byla přijata. Probíhá automatická validace, výsledek se brzy projeví.",
             submission: {
               id: submission.id,
               createdAt: submission.createdAt,
             },
-            validationMode: "manual_review",
+            validationMode: "queued",
           },
           { status: 202 },
         );
@@ -412,6 +285,8 @@ export async function GET(_request: Request, context: ClaimRouteContext) {
       select: {
         id: true,
         createdAt: true,
+        localValidatedAt: true,
+        reviewNote: true,
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -437,6 +312,10 @@ export async function GET(_request: Request, context: ClaimRouteContext) {
         submission: {
           id: pendingSubmission.id,
           createdAt: pendingSubmission.createdAt,
+          pendingState: getPendingSubmissionState({
+            localValidatedAt: pendingSubmission.localValidatedAt,
+            reviewNote: pendingSubmission.reviewNote,
+          }),
         },
       },
       { status: 200 },
