@@ -33,7 +33,7 @@ function DistrictCoatTile({ badge }: { badge: DistrictBadgeWallItem }) {
       href={`/district/${badge.code}`}
       aria-label={`${badge.code} ${badge.name}`}
       title={`${badge.code} · ${badge.name}`}
-      className={`group block rounded-md border p-1 transition-transform hover:-translate-y-0.5 ${
+      className={`group block rounded-md border p-1 ${
         badge.unlocked
           ? "border-cyan-300/30 bg-cyan-500/8"
           : "border-cyan-300/15 bg-[#08161f]/55 opacity-80 grayscale"

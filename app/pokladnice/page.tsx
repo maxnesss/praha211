@@ -28,7 +28,7 @@ function BadgeChip({
   imageAlt,
 }: BadgeChipProps) {
   const baseClassName =
-    "group flex h-[4.4rem] w-full min-w-0 flex-col justify-between rounded-md border px-2.5 py-2 text-left transition-transform hover:-translate-y-0.5";
+    "group flex h-[4.4rem] w-full min-w-0 flex-col justify-between rounded-md border px-2.5 py-2 text-left";
 
   const stateClassName = unlocked
     ? "border-cyan-300/35 bg-cyan-500/8 text-cyan-50"
@@ -111,7 +111,7 @@ function PrahaCoatBadgeTile({
     <article
       aria-label={`Praha ${number}`}
       title={`Praha ${number} · ${completed}/${total}`}
-      className={`group block rounded-md border p-1 transition-transform hover:-translate-y-0.5 ${
+      className={`group block rounded-md border p-1 ${
         unlocked
           ? "border-cyan-300/30 bg-cyan-500/8"
           : "border-cyan-300/15 bg-[#08161f]/55 opacity-80 grayscale"
@@ -162,7 +162,7 @@ function AchievementBadgeTile({
     <article
       title={`${subtitle} · ${title}`}
       aria-label={`${subtitle} ${title}`}
-      className={`group block rounded-md border p-1 transition-transform hover:-translate-y-0.5 ${
+      className={`group block rounded-md border p-1 ${
         unlocked
           ? "border-cyan-300/30 bg-cyan-500/8"
           : "border-cyan-300/15 bg-[#08161f]/55 opacity-80 grayscale"
