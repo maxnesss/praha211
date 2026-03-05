@@ -52,6 +52,14 @@ export function TeamMembershipActions({
   }
 
   async function handleLeave() {
+    const confirmationMessage = isLeader
+      ? "Opravdu chcete opustit tým? Pokud jste poslední člen, tým se zruší. Jinak se velení předá dalšímu členovi."
+      : "Opravdu chcete opustit tento tým?";
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
     setErrorMessage(null);
     setIsSubmitting(true);
 

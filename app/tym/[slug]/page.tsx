@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
@@ -14,6 +15,10 @@ import { TEAM_MAX_MEMBERS } from "@/lib/team-utils";
 
 type TeamPageContext = {
   params: Promise<{ slug: string }>;
+};
+
+export const metadata: Metadata = {
+  title: "Detail týmu",
 };
 
 export default async function TeamPage({ params }: TeamPageContext) {

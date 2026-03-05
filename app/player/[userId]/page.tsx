@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
@@ -11,6 +12,10 @@ import { DEFAULT_USER_AVATAR } from "@/lib/profile-avatars";
 
 type PlayerProfilePageProps = {
   params: Promise<{ userId: string }>;
+};
+
+export const metadata: Metadata = {
+  title: "Hráčský profil",
 };
 
 const PRAHA_ACCENTS = [

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
@@ -12,6 +13,15 @@ import { getChapterBySlug, getDistrictsByChapter } from "@/lib/game/district-cat
 type ChapterPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({ params }: ChapterPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const chapter = getChapterBySlug(slug);
+
+  return {
+    title: chapter?.name ?? "Kapitola",
+  };
+}
 
 export default async function ChapterPage({ params }: ChapterPageProps) {
   const { slug } = await params;

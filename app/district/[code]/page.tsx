@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
@@ -14,6 +15,15 @@ import { prisma } from "@/lib/prisma";
 type DistrictPageProps = {
   params: Promise<{ code: string }>;
 };
+
+export async function generateMetadata({ params }: DistrictPageProps): Promise<Metadata> {
+  const { code } = await params;
+  const district = getDistrictByCode(code);
+
+  return {
+    title: district?.name ?? "Městská část",
+  };
+}
 
 export default async function DistrictPage({ params }: DistrictPageProps) {
   const { code } = await params;

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -9,6 +10,10 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const PAGE_SIZE = 50;
+
+export const metadata: Metadata = {
+  title: "Seznam účtů",
+};
 
 type AdminAccountsPageProps = {
   searchParams: Promise<{ page?: string }>;

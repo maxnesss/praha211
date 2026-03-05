@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 import { NO_INDEX_ROBOTS } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Skóre",
+  title: "Nové heslo",
   robots: NO_INDEX_ROBOTS,
 };
 
-export default function BodyLayout({
+export default function ResetPasswordLayout({
   children,
 }: {
   children: ReactNode;

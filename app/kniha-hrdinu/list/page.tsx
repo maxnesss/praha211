@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
@@ -15,6 +16,10 @@ const SEARCH_QUERY_MAX_LENGTH = 64;
 
 type LeaderboardListPageProps = {
   searchParams: Promise<{ page?: string; q?: string }>;
+};
+
+export const metadata: Metadata = {
+  title: "Kompletní žebříček",
 };
 
 function parsePage(input: string | undefined) {

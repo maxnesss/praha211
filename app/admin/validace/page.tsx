@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
@@ -10,6 +11,10 @@ import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Čekající validace",
+};
 
 function toReasonList(value: unknown): string[] {
   if (!Array.isArray(value)) {
