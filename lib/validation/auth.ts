@@ -20,8 +20,7 @@ const registrationCodeSchema = z
   .string()
   .trim()
   .min(1, "Registrační kód je povinný.")
-  .transform((value) => value.toLowerCase())
-  .refine((value) => value === "sokol", "Neplatný registrační kód.");
+  .max(64, "Registrační kód je příliš dlouhý.");
 
 const nameSchema = z
   .string()

@@ -15,7 +15,11 @@ function isAnalyticsConsentGranted() {
   return readConsentChoice() === "all";
 }
 
-export function UmamiAnalytics() {
+type UmamiAnalyticsProps = {
+  nonce?: string;
+};
+
+export function UmamiAnalytics({ nonce }: UmamiAnalyticsProps) {
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
@@ -45,6 +49,7 @@ export function UmamiAnalytics() {
       src={UMAMI_SCRIPT_URL}
       data-website-id={UMAMI_WEBSITE_ID}
       strategy="afterInteractive"
+      nonce={nonce}
     />
   );
 }

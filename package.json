@@ -13,6 +13,8 @@
     "logs:vps:out": "ssh ${REMOTE_SSH_HOST:-praha112} \"tail -n 200 ~/.pm2/logs/${REMOTE_APP_NAME:-praha112}-out.log\"",
     "logs:vps:nginx": "ssh ${REMOTE_SSH_HOST:-praha112} \"sudo tail -n 200 /var/log/nginx/error.log\"",
     "logs:vps:obs": "ssh ${REMOTE_SSH_HOST:-praha112} \"grep -h 'API write observation' ~/.pm2/logs/${REMOTE_APP_NAME:-praha112}-out.log | tail -n 200\"",
+    "predeploy:check": "node scripts/predeploy-check.mjs",
+    "predeploy:runbook": "node scripts/predeploy-check.mjs --runbook",
     "test": "npm run test:integration:all",
     "lint": "eslint",
     "prisma:generate": "prisma generate",
@@ -32,8 +34,8 @@
     "test:leaderboard:tie": "node --env-file=.env scripts/test-leaderboard-tie-ranking.mjs"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1000.0",
-    "@aws-sdk/s3-request-presigner": "^3.1000.0",
+    "@aws-sdk/client-s3": "^3.1002.0",
+    "@aws-sdk/s3-request-presigner": "^3.1002.0",
     "@prisma/client": "^6.16.2",
     "@tensorflow-models/blazeface": "^0.1.0",
     "@tensorflow/tfjs-backend-cpu": "^4.22.0",

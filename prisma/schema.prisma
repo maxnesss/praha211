@@ -49,6 +49,7 @@ model User {
   passwordHash                   String?
   passwordResetTokenHash         String?
   passwordResetTokenExpiresAt    DateTime?
+  sessionVersion                 Int               @default(0)
   role                           UserRole          @default(USER)
   isFrozen                       Boolean           @default(false)
   emailVerifiedAt                DateTime?

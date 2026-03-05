@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { prisma } from "@/lib/prisma";
 
 function getHealthAccessError(request: Request) {
@@ -33,6 +34,17 @@ function getHealthAccessError(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const rateLimited = await applyRateLimit({
+    request,
+    prefix: "health-db",
+    max: 300,
+    windowMs: 5 * 60 * 1000,
+    message: "Příliš mnoho health-check požadavků. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
+  }
+
   const accessError = getHealthAccessError(request);
   if (accessError) {
     return accessError;

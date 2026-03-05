@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { getFirstZodErrorMessage, registerSchema } from "@/lib/validation/auth";
 
 const TEST_AUTOMATION_EMAIL_DOMAIN = "@tests.praha112.local";
+const DEFAULT_REGISTRATION_CODE = "sokol";
 const GENERIC_REGISTRATION_FOLLOWUP_MESSAGE =
   "Pokud je to potřeba, poslali jsme na zadaný e-mail pokyny pro dokončení registrace.";
 const WELCOME_OVERVIEW_MESSAGE = {
@@ -40,6 +41,47 @@ const WELCOME_RULES_MESSAGE = {
 
 function shouldSkipVerificationEmailDelivery(email: string) {
   return email.endsWith(TEST_AUTOMATION_EMAIL_DOMAIN);
+}
+
+function getRuntimeEnv(name: string) {
+  const runtimeProcess = globalThis.process;
+  return runtimeProcess?.env?.[name];
+}
+
+function isLocalUrl(value: string | undefined) {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  try {
+    const hostname = new URL(normalized).hostname.toLowerCase();
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
+function getExpectedRegistrationCode() {
+  const configuredCode = getRuntimeEnv("REGISTRATION_CODE")?.trim();
+  if (configuredCode) {
+    return configuredCode.toLowerCase();
+  }
+
+  const isLocalRuntime =
+    isLocalUrl(getRuntimeEnv("NEXTAUTH_URL"))
+    || isLocalUrl(getRuntimeEnv("NEXT_PUBLIC_SITE_URL"));
+  const isProduction = getRuntimeEnv("NODE_ENV") === "production";
+  const isCiRuntime = getRuntimeEnv("CI") === "true";
+  if (
+    isProduction
+    && !isCiRuntime
+    && !isLocalRuntime
+  ) {
+    return null;
+  }
+
+  return DEFAULT_REGISTRATION_CODE;
 }
 
 async function rotateVerificationTokenAndSend(input: {
@@ -110,7 +152,32 @@ export async function POST(request: Request) {
           );
         }
 
-        const { email, password, name, nickname, privacyPolicyAccepted } = parsed.data;
+        const {
+          email,
+          password,
+          name,
+          nickname,
+          registrationCode,
+          privacyPolicyAccepted,
+        } = parsed.data;
+
+        const expectedRegistrationCode = getExpectedRegistrationCode();
+        if (!expectedRegistrationCode) {
+          console.error("REGISTRATION_CODE není nastaveno. Registrace je v produkci vypnutá.");
+          return NextResponse.json(
+            { message: "Registrace není momentálně dostupná. Zkuste to prosím později." },
+            { status: 503 },
+          );
+        }
+
+        const submittedRegistrationCode = registrationCode.trim().toLowerCase();
+        if (submittedRegistrationCode !== expectedRegistrationCode) {
+          return NextResponse.json(
+            { message: "Neplatný registrační kód." },
+            { status: 400 },
+          );
+        }
+
         const skipEmailDelivery = shouldSkipVerificationEmailDelivery(email);
 
         const existingUser = await prisma.user.findUnique({

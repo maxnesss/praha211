@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isIP } from "node:net";
 import { prisma } from "@/lib/prisma";
 
 type RateLimitStoreEntry = {
@@ -34,18 +35,68 @@ const DB_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const DB_ENTRY_TTL_BUFFER_MS = 24 * 60 * 60 * 1000;
 const DB_ERROR_LOG_INTERVAL_MS = 60 * 1000;
 
+function normalizeIpCandidate(value: string) {
+  let candidate = value.trim();
+  if (!candidate) {
+    return null;
+  }
+
+  if (candidate.startsWith("[") && candidate.includes("]")) {
+    const bracketEnd = candidate.indexOf("]");
+    candidate = candidate.slice(1, bracketEnd);
+  } else {
+    const ipv4WithPortMatch = candidate.match(/^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/);
+    if (ipv4WithPortMatch?.[1]) {
+      candidate = ipv4WithPortMatch[1];
+    }
+  }
+
+  if (isIP(candidate) === 0) {
+    return null;
+  }
+
+  return candidate.toLowerCase();
+}
+
+function parseForwardedForHeader(value: string) {
+  const parts = value
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+
+  for (let index = parts.length - 1; index >= 0; index -= 1) {
+    const normalized = normalizeIpCandidate(parts[index]);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
 function getClientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) {
-      return first;
+  const cloudflareIp = request.headers.get("cf-connecting-ip");
+  if (cloudflareIp) {
+    const normalized = normalizeIpCandidate(cloudflareIp);
+    if (normalized) {
+      return normalized;
     }
   }
 
   const realIp = request.headers.get("x-real-ip")?.trim();
   if (realIp) {
-    return realIp;
+    const normalized = normalizeIpCandidate(realIp);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const parsed = parseForwardedForHeader(forwarded);
+    if (parsed) {
+      return parsed;
+    }
   }
 
   return "unknown";

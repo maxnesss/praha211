@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import { LEADERBOARD_CACHE_TAG } from "@/lib/game/queries";
@@ -46,9 +47,9 @@ async function resolveAdminRequest(context: TestClaimRouteContext) {
   return { userId, district };
 }
 
-export async function POST(_request: Request, context: TestClaimRouteContext) {
+export async function POST(request: Request, context: TestClaimRouteContext) {
   return withApiWriteObservability(
-    { request: _request, operation: "district.test_claim.create" },
+    { request, operation: "district.test_claim.create" },
     async () => {
   const resolved = await resolveAdminRequest(context);
   if ("error" in resolved) {
@@ -56,6 +57,17 @@ export async function POST(_request: Request, context: TestClaimRouteContext) {
   }
 
   const { userId, district } = resolved;
+  const rateLimited = await applyRateLimit({
+    request,
+    prefix: "district-test-claim-create",
+    userId,
+    max: 40,
+    windowMs: 5 * 60 * 1000,
+    message: "Příliš mnoho testovacích akcí. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
+  }
 
   const existingClaim = await prisma.districtClaim.findUnique({
     where: {
@@ -126,9 +138,9 @@ export async function POST(_request: Request, context: TestClaimRouteContext) {
   );
 }
 
-export async function DELETE(_request: Request, context: TestClaimRouteContext) {
+export async function DELETE(request: Request, context: TestClaimRouteContext) {
   return withApiWriteObservability(
-    { request: _request, operation: "district.test_claim.delete" },
+    { request, operation: "district.test_claim.delete" },
     async () => {
   const resolved = await resolveAdminRequest(context);
   if ("error" in resolved) {
@@ -136,6 +148,17 @@ export async function DELETE(_request: Request, context: TestClaimRouteContext) 
   }
 
   const { userId, district } = resolved;
+  const rateLimited = await applyRateLimit({
+    request,
+    prefix: "district-test-claim-delete",
+    userId,
+    max: 40,
+    windowMs: 5 * 60 * 1000,
+    message: "Příliš mnoho testovacích akcí. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
+  }
 
   const existingClaim = await prisma.districtClaim.findUnique({
     where: {

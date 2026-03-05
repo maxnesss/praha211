@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Cinzel_Decorative } from "next/font/google";
 import { CookieConsentDialog } from "@/components/cookie-consent-dialog";
 import { SiteFooter } from "@/components/site-footer";
@@ -49,11 +50,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const requestHeaders = await headers();
+  const cspNonce = requestHeaders.get("x-nonce") ?? undefined;
+
   return (
     <html lang="cs">
       <body className={`${cinzelDecorative.variable} antialiased`}>
@@ -62,7 +66,7 @@ export default function RootLayout({
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
           <SiteFooter />
           <CookieConsentDialog />
-          <UmamiAnalytics />
+          <UmamiAnalytics nonce={cspNonce} />
         </div>
       </body>
     </html>

@@ -110,6 +110,8 @@ Assety speciálních odznaků patří do `public/badges/`:
 - `npm run logs:vps:out` - poslední stdout logy aplikace
 - `npm run logs:vps:nginx` - poslední nginx error logy
 - `npm run logs:vps:obs` - poslední observability logy API write endpointů
+- `npm run predeploy:check` - striktní kontrola produkčních env hodnot (fail-fast)
+- `npm run predeploy:runbook` - env gate + kompletní predeploy runbook (migrate/lint/build/test/r2 smoke)
 - `npm run test` - jednotný běh všech integračních testů
 - `npm run lint` - ESLint
 - `npm run prisma:generate` - generování Prisma Clientu
@@ -231,10 +233,14 @@ Poznámky:
 
 ## Bezpečnost a API poznámky
 
+- Striktní nasazovací checklist pro produkci: `docs/production-env-checklist.md`
 - Veřejně volatelné write/mutate endpointy mají explicitní rate limiting (viz přehled níže).
 - Claim endpoint ošetřuje závodní stav (duplicate claim) a vrací konzistentní `409`.
 - Claim endpoint přijímá pouze interní selfie klíč (`selfies/...`), ověřuje že patří aktuálnímu uživateli a že objekt skutečně existuje v R2.
 - Write/mutate endpointy logují observability event (`api_write_observation`) se stavem odpovědi, třídou stavu (`4xx/5xx/429`) a latencí.
+- Aplikace posílá bezpečnostní HTTP hlavičky:
+  - CSP s nonce přes `proxy.ts`
+  - ostatní hlavičky (`X-Frame-Options`, `Referrer-Policy`, `HSTS` v produkci) přes `next.config.ts`
 - Health endpoint (`/api/health/db`) je v produkci chráněn hlavičkou `x-health-check-secret` (`HEALTHCHECK_SECRET` v env).
   - Příklad: `curl -H "x-health-check-secret: <HEALTHCHECK_SECRET>" https://.../api/health/db`
 - Centrální cron endpoint (`/api/cron`) je v produkci chráněn hlavičkou `x-cron-secret` (`CRON_SECRET` v env).
@@ -245,12 +251,23 @@ Poznámky:
   - do DB se ukládá klíč objektu (`selfies/...`), ne veřejná URL
   - zobrazení probíhá přes podepsaný download URL (`/api/uploads/selfie/view`)
   - při odstranění účtu (`POST /api/profile/delete`) se před smazáním uživatele mažou i selfie objekty v R2 pod `selfies/<userId>/`
+- Rate limiting IP identita se bere v pořadí: `cf-connecting-ip` -> `x-real-ip` -> poslední validní položka `x-forwarded-for`.
+  - Na reverse proxy nastavte hlavičky explicitně a nepropouštějte klientské spoofované hodnoty bez přepsání.
+  - Doporučené minimum pro nginx:
+```nginx
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+```
+  - Pokud používáte Cloudflare, nastavte i `real_ip_header CF-Connecting-IP` + trusted `set_real_ip_from` rozsahy.
 
 ### API limity (write/mutate)
 
 - `POST /api/auth/register`: `6 / 15 min` (IP)
 - `GET /api/auth/verify-email`: `40 / 15 min` (IP)
 - `POST /api/contact`: `8 / 10 min` (IP)
+- `GET /api/health/db`: `300 / 5 min` (IP)
+- `GET|POST /api/cron`: `120 / 5 min` (IP)
 - `POST /api/districts/[code]/claim`: `30 / 5 min` (uživatel)
 - `POST /api/profile/password`: `8 / 60 min` (uživatel)
 - `POST /api/profile/delete`: `4 / 10 min` (uživatel)
@@ -264,12 +281,17 @@ Poznámky:
 - `POST /api/teams/[slug]/requests/[requestId]/approve`: `20 / 5 min` (uživatel)
 - `POST /api/teams/[slug]/requests/[requestId]/reject`: `20 / 5 min` (uživatel)
 - `POST /api/uploads/selfie/sign`: `30 / 5 min` (uživatel)
+- `POST /api/admin/users/[userId]/freeze`: `45 / 5 min` (admin)
+- `POST /api/admin/users/[userId]/role`: `45 / 5 min` (admin)
+- `POST /api/districts/[code]/test-claim`: `40 / 5 min` (admin)
+- `DELETE /api/districts/[code]/test-claim`: `40 / 5 min` (admin)
 
 ## Auth a role
 
 - Role: `USER`, `ADMIN`
 - Noví uživatelé defaultně dostávají `USER`
 - Registrace vyžaduje potvrzení zásad ochrany osobních údajů (GDPR)
+- Registrace vyžaduje serverový registrační kód (`REGISTRATION_CODE` v `.env`); fallback `sokol` je pouze mimo produkci
 - Po registraci je nutné potvrdit e-mail přes odkaz zaslaný přes Resend (`RESEND_API_KEY`, `RESEND_FROM`)
 - Po úspěšném ověření e-mailu se odesílá uvítací e-mail
 - Kontaktní formulář (`/kontaktujte-nas`) posílá zprávy přes Resend na `RESEND_CONTACT_TO` (pokud není nastaveno, použije adresu z `RESEND_FROM`)

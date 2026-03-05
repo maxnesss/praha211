@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +25,18 @@ export async function POST(request: Request, context: AdminUserFreezeContext) {
 
       if (session.user.role !== "ADMIN") {
         return NextResponse.json({ message: "Nemáte oprávnění." }, { status: 403 });
+      }
+
+      const rateLimited = await applyRateLimit({
+        request,
+        prefix: "admin-user-freeze",
+        userId: session.user.id,
+        max: 45,
+        windowMs: 5 * 60 * 1000,
+        message: "Příliš mnoho administrátorských požadavků. Zkuste to prosím později.",
+      });
+      if (rateLimited) {
+        return rateLimited;
       }
 
       const { userId } = await context.params;

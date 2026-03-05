@@ -445,6 +445,10 @@ async function cleanupByNamespace(namespace) {
   });
 }
 
+async function cleanupRateLimitBuckets() {
+  await prisma.rateLimitBucket.deleteMany();
+}
+
 async function registerAndLogin(baseUrl, namespace, label, name) {
   const email = `${namespace}.${label}@tests.praha112.local`;
   const nickname = buildNickname(namespace, label);
@@ -852,6 +856,7 @@ async function main() {
 
   try {
     await cleanupByNamespace(namespace);
+    await cleanupRateLimitBuckets();
     server = await startServer(baseUrl, port);
 
     await testCoreFlows(baseUrl, namespace);
@@ -859,6 +864,7 @@ async function main() {
     console.log("PASS test-integration-core-flows");
   } finally {
     await stopServer(server?.child ?? null);
+    await cleanupRateLimitBuckets();
     await cleanupByNamespace(namespace);
     await prisma.$disconnect();
   }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { applyRateLimit } from "@/lib/api/rate-limit";
 import { withApiWriteObservability } from "@/lib/api/write-observability";
 import { processPendingClaimValidations } from "@/lib/game/claim-validation-queue";
 import { removeTeamsWithoutMembers } from "@/lib/cron/cleanup-empty-teams";
@@ -104,6 +105,17 @@ function resolveRequestedTasks(request: Request): CronTaskId[] | null {
 }
 
 async function handleCronRun(request: Request) {
+  const rateLimited = await applyRateLimit({
+    request,
+    prefix: "cron-run",
+    max: 120,
+    windowMs: 5 * 60 * 1000,
+    message: "Příliš mnoho cron požadavků v krátkém čase. Zkuste to prosím později.",
+  });
+  if (rateLimited) {
+    return rateLimited;
+  }
+
   const accessError = getCronAccessError(request);
   if (accessError) {
     return accessError;
