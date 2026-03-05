@@ -378,6 +378,21 @@ export function MessagesCenter({
                       setRecipientUserId("");
                     }
                   }}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === "Enter"
+                      && shouldShowRecipientDropdown
+                      && filteredRecipients.length === 1
+                    ) {
+                      const onlyRecipient = filteredRecipients[0];
+                      if (!onlyRecipient) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      handleRecipientSelect(onlyRecipient);
+                    }
+                  }}
                   onFocus={() => setIsRecipientFocused(true)}
                   onBlur={() => {
                     setTimeout(() => setIsRecipientFocused(false), 120);
