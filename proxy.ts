@@ -31,8 +31,9 @@ function createNonce() {
 function buildContentSecurityPolicy(nonce: string) {
   const isDevelopment = process.env.NODE_ENV !== "production";
   const umamiScriptOrigin = getOriginFromUrl(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL);
+  const r2EndpointOrigin = getOriginFromUrl(process.env.R2_ENDPOINT);
   const scriptSrc = ["'self'", `'nonce-${nonce}'`];
-  const connectSrc = ["'self'"];
+  const connectSrc = ["'self'", "https://*.r2.cloudflarestorage.com"];
 
   if (isDevelopment) {
     scriptSrc.push("'unsafe-eval'");
@@ -43,6 +44,10 @@ function buildContentSecurityPolicy(nonce: string) {
   if (umamiScriptOrigin) {
     scriptSrc.push(umamiScriptOrigin);
     connectSrc.push(umamiScriptOrigin);
+  }
+
+  if (r2EndpointOrigin) {
+    connectSrc.push(r2EndpointOrigin);
   }
 
   const directives = [
