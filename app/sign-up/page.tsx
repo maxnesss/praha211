@@ -236,6 +236,12 @@ export default function SignUpPage() {
           <p className="mt-2 text-sm text-cyan-100/75">
             Vytvořte si účet. Noví uživatelé dostanou roli <code>USER</code>.
           </p>
+          <p className="mt-2 text-xs text-cyan-100/65">
+            <span className="text-rose-300" aria-hidden="true">
+              *
+            </span>{" "}
+            povinné pole
+          </p>
 
           <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
@@ -253,7 +259,10 @@ export default function SignUpPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="nickname" className="text-sm font-medium text-cyan-100">
-                Přezdívka
+                Přezdívka{" "}
+                <span className="text-rose-300" aria-hidden="true">
+                  *
+                </span>
               </label>
               <input
                 id="nickname"
@@ -283,7 +292,10 @@ export default function SignUpPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="email" className="text-sm font-medium text-cyan-100">
-                E-mail
+                E-mail{" "}
+                <span className="text-rose-300" aria-hidden="true">
+                  *
+                </span>
               </label>
               <input
                 id="email"
@@ -297,7 +309,10 @@ export default function SignUpPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="registrationCode" className="text-sm font-medium text-cyan-100">
-                Registrační kód
+                Registrační kód{" "}
+                <span className="text-rose-300" aria-hidden="true">
+                  *
+                </span>
               </label>
               <input
                 id="registrationCode"
@@ -311,7 +326,10 @@ export default function SignUpPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-sm font-medium text-cyan-100">
-                Heslo
+                Heslo{" "}
+                <span className="text-rose-300" aria-hidden="true">
+                  *
+                </span>
               </label>
               <PasswordField
                 id="password"
@@ -326,7 +344,10 @@ export default function SignUpPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="confirmPassword" className="text-sm font-medium text-cyan-100">
-                Potvrzení hesla
+                Potvrzení hesla{" "}
+                <span className="text-rose-300" aria-hidden="true">
+                  *
+                </span>
               </label>
               <PasswordField
                 id="confirmPassword"
@@ -347,6 +368,9 @@ export default function SignUpPage() {
                 className="mt-0.5 h-4 w-4 rounded border-cyan-300/50 bg-[#08161f] text-cyan-300 focus:ring-cyan-300"
               />
               <span>
+                <span className="text-rose-300" aria-hidden="true">
+                  *
+                </span>{" "}
                 Souhlasím se zpracováním osobních údajů podle{" "}
                 <Link
                   href="/ochrana-osobnich-udaju"
