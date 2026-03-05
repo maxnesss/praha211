@@ -35,10 +35,15 @@ type ExtractOcrTextOptions = {
   mirrorHorizontal?: boolean;
   rotateDegrees?: number;
   thresholdMode?: boolean;
+  invertColors?: boolean;
+  pageSegMode?: TesseractPageSegMode;
 };
+
+type TesseractPageSegMode = "3" | "6" | "11";
 
 type OcrWorker = {
   recognize: (image: Buffer) => Promise<{ data: { text: string } }>;
+  setParameters?: (params: Record<string, string>) => Promise<unknown>;
   terminate: () => Promise<unknown>;
 };
 
@@ -74,6 +79,9 @@ const RED_SIGN_MAX_CANDIDATES = 3;
 const RED_SIGN_MAX_AREA_RATIO = 0.15;
 const RED_SIGN_CROP_PADDING = 24;
 const TESSERACT_OEM_LSTM_ONLY = 1;
+const TESSERACT_PSM_AUTO: TesseractPageSegMode = "3";
+const TESSERACT_PSM_SINGLE_BLOCK: TesseractPageSegMode = "6";
+const TESSERACT_PSM_SPARSE_TEXT: TesseractPageSegMode = "11";
 const TESSERACT_CACHE_DIR = path.join(process.cwd(), ".cache", "tesseract");
 const TESSERACT_NODE_WORKER_RELATIVE_PATH = path.join(
   "node_modules",
@@ -83,28 +91,78 @@ const TESSERACT_NODE_WORKER_RELATIVE_PATH = path.join(
   "node",
   "index.js",
 );
+const OCR_CONFUSABLE_DIGIT_MAP: Record<string, string> = {
+  0: "o",
+  1: "i",
+  2: "z",
+  3: "e",
+  4: "a",
+  5: "s",
+  6: "g",
+  7: "t",
+  8: "b",
+  9: "g",
+};
 
 let faceModelPromise: Promise<unknown> | null = null;
 
 const QUICK_OCR_VARIANTS: ExtractOcrTextOptions[] = [
-  {},
-  { mirrorHorizontal: true },
-  { rotateDegrees: 90, mirrorHorizontal: true },
-  { rotateDegrees: 270, mirrorHorizontal: true },
+  { pageSegMode: TESSERACT_PSM_SPARSE_TEXT },
+  { mirrorHorizontal: true, pageSegMode: TESSERACT_PSM_SPARSE_TEXT },
+  { rotateDegrees: 90, mirrorHorizontal: true, pageSegMode: TESSERACT_PSM_SPARSE_TEXT },
+  { rotateDegrees: 270, mirrorHorizontal: true, pageSegMode: TESSERACT_PSM_SPARSE_TEXT },
+  { pageSegMode: TESSERACT_PSM_AUTO },
+  { pageSegMode: TESSERACT_PSM_SINGLE_BLOCK },
 ];
 
 const QUICK_THRESHOLD_OCR_VARIANTS: ExtractOcrTextOptions[] = [
-  { thresholdMode: true },
-  { thresholdMode: true, mirrorHorizontal: true },
+  { thresholdMode: true, pageSegMode: TESSERACT_PSM_SPARSE_TEXT },
+  { thresholdMode: true, mirrorHorizontal: true, pageSegMode: TESSERACT_PSM_SPARSE_TEXT },
+  { thresholdMode: true, invertColors: true, pageSegMode: TESSERACT_PSM_SPARSE_TEXT },
+  {
+    thresholdMode: true,
+    invertColors: true,
+    mirrorHorizontal: true,
+    pageSegMode: TESSERACT_PSM_SPARSE_TEXT,
+  },
 ];
 
 const DEEP_OCR_FALLBACK_VARIANTS: ExtractOcrTextOptions[] = [
-  { rotateDegrees: 90 },
-  { rotateDegrees: 270 },
-  { rotateDegrees: 180 },
-  { rotateDegrees: 180, mirrorHorizontal: true },
-  { thresholdMode: true, rotateDegrees: 90, mirrorHorizontal: true },
-  { thresholdMode: true, rotateDegrees: 270, mirrorHorizontal: true },
+  { rotateDegrees: 90, pageSegMode: TESSERACT_PSM_SINGLE_BLOCK },
+  { rotateDegrees: 270, pageSegMode: TESSERACT_PSM_SINGLE_BLOCK },
+  { rotateDegrees: 180, pageSegMode: TESSERACT_PSM_SINGLE_BLOCK },
+  { rotateDegrees: 180, mirrorHorizontal: true, pageSegMode: TESSERACT_PSM_SINGLE_BLOCK },
+  {
+    thresholdMode: true,
+    rotateDegrees: 90,
+    mirrorHorizontal: true,
+    pageSegMode: TESSERACT_PSM_SINGLE_BLOCK,
+  },
+  {
+    thresholdMode: true,
+    rotateDegrees: 270,
+    mirrorHorizontal: true,
+    pageSegMode: TESSERACT_PSM_SINGLE_BLOCK,
+  },
+  {
+    thresholdMode: true,
+    invertColors: true,
+    rotateDegrees: 90,
+    mirrorHorizontal: true,
+    pageSegMode: TESSERACT_PSM_SPARSE_TEXT,
+  },
+  {
+    thresholdMode: true,
+    invertColors: true,
+    rotateDegrees: 270,
+    mirrorHorizontal: true,
+    pageSegMode: TESSERACT_PSM_SPARSE_TEXT,
+  },
+  {
+    thresholdMode: true,
+    invertColors: true,
+    pageSegMode: TESSERACT_PSM_SPARSE_TEXT,
+  },
 ];
 
 function resolveTesseractWorkerPath() {
@@ -152,11 +210,113 @@ function getNormalizedAliases(districtName: string) {
   return [...aliases].filter((alias) => alias.length >= 3);
 }
 
-function getNormalizedTokens(value: string) {
-  return normalizeText(value)
+function splitNormalizedTokens(normalized: string) {
+  return normalized
     .split(" ")
     .map((token) => token.trim())
     .filter((token) => token.length >= 3);
+}
+
+function replaceConfusableDigits(value: string) {
+  return value.replace(/[0-9]/g, (digit) => OCR_CONFUSABLE_DIGIT_MAP[digit] ?? digit);
+}
+
+function getNormalizedOcrVariants(ocrText: string) {
+  const normalized = normalizeText(ocrText);
+  if (!normalized) {
+    return [];
+  }
+
+  const variants = new Set<string>([normalized]);
+  const compact = normalized.replace(/\s+/g, "");
+  if (compact.length >= 3) {
+    variants.add(compact);
+  }
+
+  const correctedDigits = replaceConfusableDigits(normalized);
+  if (correctedDigits !== normalized) {
+    variants.add(correctedDigits);
+    const compactCorrected = correctedDigits.replace(/\s+/g, "");
+    if (compactCorrected.length >= 3) {
+      variants.add(compactCorrected);
+    }
+  }
+
+  return [...variants];
+}
+
+function getOcrTokenVariants(ocrText: string) {
+  const normalized = normalizeText(ocrText);
+  if (!normalized) {
+    return [];
+  }
+
+  const candidates = new Set<string>([normalized, replaceConfusableDigits(normalized)]);
+  const tokenVariants = [...candidates]
+    .map((candidate) => splitNormalizedTokens(candidate))
+    .filter((tokens) => tokens.length > 0);
+
+  return tokenVariants;
+}
+
+function tokenMatches(aliasToken: string, ocrToken: string) {
+  const maxDistance = allowedTokenDistance(aliasToken);
+  return levenshteinDistance(aliasToken, ocrToken) <= maxDistance;
+}
+
+function matchTokensInOrder(aliasTokens: string[], ocrTokens: string[]) {
+  let searchFromIndex = 0;
+
+  for (const aliasToken of aliasTokens) {
+    let matchedIndex = -1;
+
+    for (let index = searchFromIndex; index < ocrTokens.length; index += 1) {
+      if (tokenMatches(aliasToken, ocrTokens[index] ?? "")) {
+        matchedIndex = index;
+        break;
+      }
+    }
+
+    if (matchedIndex === -1) {
+      return false;
+    }
+
+    searchFromIndex = matchedIndex + 1;
+  }
+
+  return true;
+}
+
+function matchTokensUnordered(aliasTokens: string[], ocrTokens: string[]) {
+  return aliasTokens.every((aliasToken) => (
+    ocrTokens.some((ocrToken) => tokenMatches(aliasToken, ocrToken))
+  ));
+}
+
+function matchAliasTokens(aliasTokens: string[], ocrTokenVariants: string[][]) {
+  if (aliasTokens.length === 0 || ocrTokenVariants.length === 0) {
+    return false;
+  }
+
+  return ocrTokenVariants.some((ocrTokens) => (
+    matchTokensInOrder(aliasTokens, ocrTokens)
+    || matchTokensUnordered(aliasTokens, ocrTokens)
+  ));
+}
+
+function matchAliasExact(alias: string, normalizedOcrVariants: string[]) {
+  return normalizedOcrVariants.some((ocrVariant) => (
+    ocrVariant.includes(alias)
+    || ocrVariant.replace(/\s+/g, "").includes(alias)
+  ));
+}
+
+function getAliasTokens(alias: string) {
+  return splitNormalizedTokens(alias);
+}
+
+function getOcrTokensForFallback(ocrText: string) {
+  return splitNormalizedTokens(normalizeText(ocrText));
 }
 
 function levenshteinDistance(a: string, b: string) {
@@ -206,33 +366,32 @@ function allowedTokenDistance(token: string) {
 }
 
 function matchDistrictAlias(ocrText: string, districtName: string): DistrictAliasMatch {
-  const normalizedOcr = normalizeText(ocrText);
+  const normalizedOcrVariants = getNormalizedOcrVariants(ocrText);
   const aliases = getNormalizedAliases(districtName);
+  const ocrTokenVariants = getOcrTokenVariants(ocrText);
 
   for (const alias of aliases) {
-    if (normalizedOcr.includes(alias) || normalizedOcr.replace(/\s+/g, "").includes(alias)) {
+    if (matchAliasExact(alias, normalizedOcrVariants)) {
       return { matched: true, alias, exact: true };
     }
   }
 
-  const ocrTokens = getNormalizedTokens(ocrText);
+  const ocrTokens = getOcrTokensForFallback(ocrText);
   if (ocrTokens.length === 0) {
     return { matched: false, alias: null, exact: false };
   }
 
   for (const alias of aliases) {
-    const aliasTokens = alias.split(" ").filter((token) => token.length >= 3);
+    const aliasTokens = getAliasTokens(alias);
 
     if (aliasTokens.length === 0) {
       continue;
     }
 
-    const allTokensMatched = aliasTokens.every((aliasToken) => {
-      const maxDistance = allowedTokenDistance(aliasToken);
-      return ocrTokens.some(
-        (ocrToken) => levenshteinDistance(aliasToken, ocrToken) <= maxDistance,
-      );
-    });
+    const allTokensMatched = matchAliasTokens(
+      aliasTokens,
+      ocrTokenVariants.length > 0 ? ocrTokenVariants : [ocrTokens],
+    );
 
     if (allTokensMatched) {
       return { matched: true, alias, exact: false };
@@ -350,6 +509,14 @@ async function extractOcrText(
   imageBuffer: Buffer,
   options: ExtractOcrTextOptions = {},
 ) {
+  const pageSegMode = options.pageSegMode ?? TESSERACT_PSM_SPARSE_TEXT;
+  if (worker.setParameters) {
+    await worker.setParameters({
+      tessedit_pageseg_mode: pageSegMode,
+      preserve_interword_spaces: "1",
+    });
+  }
+
   let pipeline = sharp(imageBuffer).rotate();
 
   if (options.rotateDegrees) {
@@ -367,20 +534,24 @@ async function extractOcrText(
     pipeline = pipeline.flop();
   }
 
-  const processed = options.thresholdMode
-    ? await pipeline
+  let processedPipeline = options.thresholdMode
+    ? pipeline
       .grayscale()
       .normalize()
       .linear(1.35, -15)
       .threshold(160)
-      .png()
-      .toBuffer()
-    : await pipeline
+    : pipeline
       .grayscale()
       .normalize()
-      .sharpen()
-      .png()
-      .toBuffer();
+      .sharpen();
+
+  if (options.invertColors) {
+    processedPipeline = processedPipeline.negate({ alpha: false });
+  }
+
+  const processed = await processedPipeline
+    .png()
+    .toBuffer();
 
   const output = await worker.recognize(processed);
   return output.data.text.slice(0, OCR_MAX_TEXT_LENGTH);
