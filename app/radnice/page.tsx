@@ -160,7 +160,7 @@ export default async function OverviewPage() {
               </p>
             </article>
             <article className="rounded-lg border border-cyan-300/25 bg-cyan-500/8 p-3">
-              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Body</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-200/70">Skóre</p>
               <p className={`${metro.monoDigit} mt-1 text-base font-semibold text-cyan-50`}>
                 {formatInt(totalPoints)}
               </p>
@@ -189,7 +189,7 @@ export default async function OverviewPage() {
                 </>
               )}
             />
-            <OverviewStatCard label="Body" value={formatInt(totalPoints)} />
+            <OverviewStatCard label="Skóre" value={formatInt(totalPoints)} />
             <OverviewStatCard label="Denní série" value={overview.currentStreak} />
             <OverviewStatCard label="Kapitoly hotovo" value={completedChapters} />
           </div>
