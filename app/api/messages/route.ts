@@ -60,17 +60,23 @@ export async function POST(request: Request) {
       const bodyText = parsed.data.body.trim();
 
       if (mode === "DIRECT") {
+        const recipientUserId = parsed.data.recipientUserId?.trim() ?? "";
         const recipientNickname = parsed.data.recipientNickname?.trim() ?? "";
 
-        const recipient = await prisma.user.findFirst({
-          where: {
-            nickname: {
-              equals: recipientNickname,
-              mode: "insensitive",
-            },
-          },
-          select: { id: true, isFrozen: true },
-        });
+        const recipient = recipientUserId
+          ? await prisma.user.findUnique({
+              where: { id: recipientUserId },
+              select: { id: true, isFrozen: true },
+            })
+          : await prisma.user.findFirst({
+              where: {
+                nickname: {
+                  equals: recipientNickname,
+                  mode: "insensitive",
+                },
+              },
+              select: { id: true, isFrozen: true },
+            });
 
         if (!recipient || recipient.isFrozen) {
           return NextResponse.json(

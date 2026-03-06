@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { normalizeTeamSearch } from "@/lib/team-utils";
 
 type MessageCategory =
@@ -33,15 +33,19 @@ type DirectRecipientOption = {
 
 type MessagesCenterProps = {
   messages: InboxMessage[];
-  recipients: DirectRecipientOption[];
   unreadCount: number;
   canSendTeamMessage: boolean;
   teamName: string | null;
   canBroadcastAllUsers: boolean;
-  initialRecipientUserId?: string | null;
+  initialRecipient?: DirectRecipientOption | null;
 };
 
 type ApiPayload = {
+  message?: string;
+};
+
+type RecipientSearchPayload = {
+  recipients?: DirectRecipientOption[];
   message?: string;
 };
 
@@ -61,6 +65,7 @@ const MODE_LABELS: Record<MessageSendMode, string> = {
 
 const RECIPIENT_MIN_QUERY_LENGTH = 4;
 const RECIPIENT_MAX_VISIBLE_RESULTS = 8;
+const RECIPIENT_SEARCH_DEBOUNCE_MS = 180;
 
 function formatDateTime(value: string) {
   const parsed = new Date(value);
@@ -76,12 +81,11 @@ function normalizeRecipientSearch(value: string) {
 
 export function MessagesCenter({
   messages,
-  recipients,
   unreadCount,
   canSendTeamMessage,
   teamName,
   canBroadcastAllUsers,
-  initialRecipientUserId,
+  initialRecipient,
 }: MessagesCenterProps) {
   const router = useRouter();
   const availableModes = useMemo(() => {
@@ -95,26 +99,14 @@ export function MessagesCenter({
     return modes;
   }, [canBroadcastAllUsers, canSendTeamMessage]);
 
-  const defaultRecipientUserId = useMemo(() => {
-    if (
-      initialRecipientUserId
-      && recipients.some((recipient) => recipient.userId === initialRecipientUserId)
-    ) {
-      return initialRecipientUserId;
-    }
-    return "";
-  }, [initialRecipientUserId, recipients]);
-  const defaultRecipientQuery = useMemo(() => {
-    if (!defaultRecipientUserId) {
-      return "";
-    }
-
-    return recipients.find((recipient) => recipient.userId === defaultRecipientUserId)?.displayName ?? "";
-  }, [defaultRecipientUserId, recipients]);
-
   const [mode, setMode] = useState<MessageSendMode>(availableModes[0] ?? "DIRECT");
-  const [recipientUserId, setRecipientUserId] = useState(defaultRecipientUserId);
-  const [recipientQuery, setRecipientQuery] = useState(defaultRecipientQuery);
+  const [recipientUserId, setRecipientUserId] = useState(initialRecipient?.userId ?? "");
+  const [recipientQuery, setRecipientQuery] = useState(initialRecipient?.displayName ?? "");
+  const [recipientResults, setRecipientResults] = useState<DirectRecipientOption[]>(
+    initialRecipient ? [initialRecipient] : [],
+  );
+  const [recipientSearchBusy, setRecipientSearchBusy] = useState(false);
+  const [recipientSearchError, setRecipientSearchError] = useState<string | null>(null);
   const [isRecipientFocused, setIsRecipientFocused] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -129,30 +121,74 @@ export function MessagesCenter({
   const resolvedMode = availableModes.includes(mode)
     ? mode
     : (availableModes[0] ?? "DIRECT");
-  const resolvedRecipientUserId = recipients.some(
-    (recipient) => recipient.userId === recipientUserId,
-  )
-    ? recipientUserId
-    : "";
-  const selectedRecipient = recipients.find(
-    (recipient) => recipient.userId === resolvedRecipientUserId,
-  ) ?? null;
+  const selectedRecipient = useMemo(() => {
+    if (!recipientUserId) {
+      return null;
+    }
+
+    return recipientResults.find((recipient) => recipient.userId === recipientUserId)
+      ?? (initialRecipient?.userId === recipientUserId ? initialRecipient : null);
+  }, [initialRecipient, recipientResults, recipientUserId]);
+  const resolvedRecipientUserId = selectedRecipient?.userId ?? "";
   const normalizedRecipientQuery = normalizeRecipientSearch(recipientQuery);
-  const shouldFilterRecipients = normalizedRecipientQuery.length >= RECIPIENT_MIN_QUERY_LENGTH;
-  const filteredRecipients = shouldFilterRecipients
-    ? recipients.filter((recipient) => {
-      const haystack = normalizeRecipientSearch(
-        `${recipient.displayName} ${recipient.teamName ?? ""}`,
-      );
-      return haystack.includes(normalizedRecipientQuery);
-    }).slice(0, RECIPIENT_MAX_VISIBLE_RESULTS)
-    : [];
+  const shouldSearchRecipients = normalizedRecipientQuery.length >= RECIPIENT_MIN_QUERY_LENGTH;
+  const filteredRecipients = recipientResults.slice(0, RECIPIENT_MAX_VISIBLE_RESULTS);
   const shouldShowRecipientDropdown =
     resolvedMode === "DIRECT"
     && isRecipientFocused
-    && shouldFilterRecipients;
+    && shouldSearchRecipients;
   const visibleMessages = messages.filter((message) => !deletedMessageIds.has(message.id));
   const openedMessage = visibleMessages.find((message) => message.id === openedMessageId) ?? null;
+  const selectedRecipientUserId = selectedRecipient?.userId ?? "";
+
+  useEffect(() => {
+    if (resolvedMode !== "DIRECT" || !shouldSearchRecipients) {
+      setRecipientSearchBusy(false);
+      setRecipientSearchError(null);
+      if (!selectedRecipientUserId) {
+        setRecipientResults([]);
+      }
+      return;
+    }
+
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      setRecipientSearchBusy(true);
+      setRecipientSearchError(null);
+
+      try {
+        const response = await fetch(
+          `/api/messages/recipients?q=${encodeURIComponent(recipientQuery)}&limit=${RECIPIENT_MAX_VISIBLE_RESULTS}`,
+          { signal: abortController.signal },
+        );
+        const payload = (await response.json().catch(() => null)) as RecipientSearchPayload | null;
+
+        if (!response.ok) {
+          setRecipientSearchError(payload?.message ?? "Příjemce se nepodařilo načíst.");
+          return;
+        }
+
+        setRecipientResults(payload?.recipients ?? []);
+      } catch (error) {
+        if (
+          typeof error === "object"
+          && error !== null
+          && "name" in error
+          && error.name === "AbortError"
+        ) {
+          return;
+        }
+        setRecipientSearchError("Příjemce se nepodařilo načíst.");
+      } finally {
+        setRecipientSearchBusy(false);
+      }
+    }, RECIPIENT_SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      abortController.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [recipientQuery, resolvedMode, selectedRecipientUserId, shouldSearchRecipients]);
 
   function isMessageRead(message: InboxMessage) {
     return message.readAtIso !== null || readMessageIds.has(message.id);
@@ -161,6 +197,8 @@ export function MessagesCenter({
   function handleRecipientSelect(recipient: DirectRecipientOption) {
     setRecipientUserId(recipient.userId);
     setRecipientQuery(recipient.displayName);
+    setRecipientResults([recipient]);
+    setRecipientSearchError(null);
     setIsRecipientFocused(false);
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -186,7 +224,7 @@ export function MessagesCenter({
       },
       body: JSON.stringify({
         mode: resolvedMode,
-        recipientNickname: resolvedMode === "DIRECT" ? selectedRecipient?.displayName : undefined,
+        recipientUserId: resolvedMode === "DIRECT" ? selectedRecipient?.userId : undefined,
         title,
         body,
       }),
@@ -369,6 +407,7 @@ export function MessagesCenter({
                   value={recipientQuery}
                   onChange={(event) => {
                     const nextQuery = event.target.value;
+                    setRecipientSearchError(null);
                     setRecipientQuery(nextQuery);
                     if (
                       selectedRecipient
@@ -407,7 +446,15 @@ export function MessagesCenter({
 
                 {shouldShowRecipientDropdown ? (
                   <div className="absolute left-0 right-0 z-20 mt-2 rounded-xl border border-cyan-300/35 bg-[#061720] shadow-[0_10px_28px_rgba(0,0,0,0.45)]">
-                    {filteredRecipients.length > 0 ? (
+                    {recipientSearchBusy ? (
+                      <p className="px-3 py-2 text-sm text-cyan-100/75">
+                        Načítám příjemce...
+                      </p>
+                    ) : recipientSearchError ? (
+                      <p className="px-3 py-2 text-sm text-rose-200">
+                        {recipientSearchError}
+                      </p>
+                    ) : filteredRecipients.length > 0 ? (
                       <ul className="max-h-72 overflow-y-auto py-1">
                         {filteredRecipients.map((recipient) => (
                           <li key={recipient.userId} className="px-2 py-1">

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { isIP } from "node:net";
 import { prisma } from "@/lib/prisma";
 
@@ -34,6 +35,7 @@ const STORE_SOFT_LIMIT = 5000;
 const DB_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 const DB_ENTRY_TTL_BUFFER_MS = 24 * 60 * 60 * 1000;
 const DB_ERROR_LOG_INTERVAL_MS = 60 * 1000;
+const SHOULD_TRUST_PROXY_HEADERS = process.env.RATE_LIMIT_TRUST_PROXY_HEADERS === "true";
 
 function normalizeIpCandidate(value: string) {
   let candidate = value.trim();
@@ -62,7 +64,8 @@ function parseForwardedForHeader(value: string) {
   const parts = value
     .split(",")
     .map((part) => part.trim())
-    .filter((part) => part.length > 0);
+    .filter((part) => part.length > 0)
+    .slice(-20);
 
   for (let index = parts.length - 1; index >= 0; index -= 1) {
     const normalized = normalizeIpCandidate(parts[index]);
@@ -74,7 +77,15 @@ function parseForwardedForHeader(value: string) {
   return null;
 }
 
-function getClientIp(request: Request) {
+function getClientIpFromTrustedHeaders(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const parsed = parseForwardedForHeader(forwarded);
+    if (parsed) {
+      return parsed;
+    }
+  }
+
   const cloudflareIp = request.headers.get("cf-connecting-ip");
   if (cloudflareIp) {
     const normalized = normalizeIpCandidate(cloudflareIp);
@@ -91,15 +102,41 @@ function getClientIp(request: Request) {
     }
   }
 
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const parsed = parseForwardedForHeader(forwarded);
-    if (parsed) {
-      return parsed;
+  return null;
+}
+
+function getClientFingerprint(request: Request) {
+  const fingerprintSource = [
+    request.headers.get("user-agent")?.trim() ?? "",
+    request.headers.get("accept-language")?.trim() ?? "",
+    request.headers.get("sec-ch-ua")?.trim() ?? "",
+    request.headers.get("sec-ch-ua-platform")?.trim() ?? "",
+    request.headers.get("sec-ch-ua-mobile")?.trim() ?? "",
+  ]
+    .filter((value) => value.length > 0)
+    .join("|");
+
+  if (!fingerprintSource) {
+    return "unknown";
+  }
+
+  const fingerprintHash = createHash("sha256")
+    .update(fingerprintSource)
+    .digest("hex")
+    .slice(0, 24);
+
+  return `fp:${fingerprintHash}`;
+}
+
+function getClientIdentity(request: Request) {
+  if (SHOULD_TRUST_PROXY_HEADERS) {
+    const clientIp = getClientIpFromTrustedHeaders(request);
+    if (clientIp) {
+      return `ip:${clientIp}`;
     }
   }
 
-  return "unknown";
+  return getClientFingerprint(request);
 }
 
 function cleanupExpiredEntries(now: number) {
@@ -239,7 +276,7 @@ function maybeLogRateLimitDbError(error: unknown) {
 export async function applyRateLimit(input: ApplyRateLimitInput) {
   const identity = input.userId
     ? `user:${input.userId}`
-    : `ip:${getClientIp(input.request)}`;
+    : getClientIdentity(input.request);
   const key = `${input.prefix}:${identity}`;
 
   try {

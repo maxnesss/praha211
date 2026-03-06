@@ -5,12 +5,11 @@ import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
 import {
-  getDirectMessageRecipientOptions,
+  findDirectMessageRecipientOption,
   getTeamMessagingContextForUser,
   getUserInboxMessages,
   getUserUnreadMessageCount,
 } from "@/lib/messaging";
-import { normalizeTeamSearch } from "@/lib/team-utils";
 
 type MessagesPageSearchParams = Promise<{
   to?: string | string[];
@@ -36,22 +35,16 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
   const resolvedSearchParams = await searchParams;
   const requestedRecipient = resolveQueryValue(resolvedSearchParams.to);
+  const initialRecipientPromise = requestedRecipient.length > 0
+    ? findDirectMessageRecipientOption(session.user.id, requestedRecipient)
+    : Promise.resolve(null);
 
-  const [messages, recipients, unreadCount, teamContext] = await Promise.all([
+  const [messages, unreadCount, teamContext, initialRecipient] = await Promise.all([
     getUserInboxMessages(session.user.id, { limit: 120 }),
-    getDirectMessageRecipientOptions(session.user.id),
     getUserUnreadMessageCount(session.user.id),
     getTeamMessagingContextForUser(session.user.id),
+    initialRecipientPromise,
   ]);
-
-  const normalizedRequestedRecipient = normalizeTeamSearch(requestedRecipient);
-  const initialRecipientUserId = recipients.find((recipient) => {
-    if (recipient.userId === requestedRecipient) {
-      return true;
-    }
-
-    return normalizeTeamSearch(recipient.displayName) === normalizedRequestedRecipient;
-  })?.userId ?? null;
 
   return (
     <main className={metro.routeShell}>
@@ -74,12 +67,11 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
           <MessagesCenter
             messages={messages}
-            recipients={recipients}
             unreadCount={unreadCount}
             canSendTeamMessage={Boolean(teamContext)}
             teamName={teamContext?.teamName ?? null}
             canBroadcastAllUsers={session.user.role === "ADMIN"}
-            initialRecipientUserId={initialRecipientUserId}
+            initialRecipient={initialRecipient}
           />
         </div>
       </section>

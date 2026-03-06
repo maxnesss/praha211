@@ -250,9 +250,12 @@ Poznámky:
   - klient si vyžádá podepsaný upload URL (`/api/uploads/selfie/sign`)
   - do DB se ukládá klíč objektu (`selfies/...`), ne veřejná URL
   - zobrazení probíhá přes podepsaný download URL (`/api/uploads/selfie/view`)
-  - při odstranění účtu (`POST /api/profile/delete`) se před smazáním uživatele mažou i selfie objekty v R2 pod `selfies/<userId>/`
-- Rate limiting IP identita se bere v pořadí: `cf-connecting-ip` -> `x-real-ip` -> poslední validní položka `x-forwarded-for`.
-  - Na reverse proxy nastavte hlavičky explicitně a nepropouštějte klientské spoofované hodnoty bez přepsání.
+  - při odstranění účtu (`POST /api/profile/delete`) se nejdřív odstraní účet v DB a následně se čistí selfie objekty v R2 pod `selfies/<userId>/`
+- Rate limiting identita:
+  - přihlášené endpointy používají `userId`
+  - nepřihlášené endpointy defaultně používají fingerprint klienta (ne důvěra v IP hlavičky)
+  - chcete-li použít proxy IP hlavičky, nastavte `RATE_LIMIT_TRUST_PROXY_HEADERS=true`
+  - Na reverse proxy vždy přepisujte hlavičky explicitně a nepropouštějte klientské spoofované hodnoty bez přepsání.
   - Doporučené minimum pro nginx:
 ```nginx
 proxy_set_header X-Real-IP $remote_addr;
@@ -268,6 +271,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
 - `POST /api/contact`: `8 / 10 min` (IP)
 - `GET /api/health/db`: `300 / 5 min` (IP)
 - `GET|POST /api/cron`: `120 / 5 min` (IP)
+- `GET /api/messages/recipients`: `120 / 5 min` (uživatel)
 - `POST /api/districts/[code]/claim`: `30 / 5 min` (uživatel)
 - `POST /api/profile/password`: `8 / 60 min` (uživatel)
 - `POST /api/profile/delete`: `4 / 10 min` (uživatel)

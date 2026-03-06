@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { compare } from "bcryptjs";
 import {
   parseJsonWithSchema,
   requireAuthedUser,
@@ -44,15 +45,16 @@ export async function POST(request: Request) {
       return parsedBody;
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        claims: {
-          select: { selfieUrl: true },
-        },
-        claimSubmissions: {
-          select: { selfieUrl: true },
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          passwordHash: true,
+          claims: {
+            select: { selfieUrl: true },
+          },
+          claimSubmissions: {
+            select: { selfieUrl: true },
         },
       },
     });
@@ -61,20 +63,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Uživatel nebyl nalezen." }, { status: 404 });
     }
 
-    try {
-      await deleteUserSelfieObjects({
-        userId,
-        selfieKeys: [
-          ...user.claims.map((claim) => claim.selfieUrl),
-          ...user.claimSubmissions.map((submission) => submission.selfieUrl),
-        ],
-      });
-    } catch (error) {
-      console.error("Mazání selfie při odstranění účtu selhalo:", error);
-      return NextResponse.json(
-        { message: "Nepodařilo se odstranit nahraná selfie. Zkuste to prosím znovu." },
-        { status: 500 },
-      );
+    const currentPassword = parsedBody.data.currentPassword?.trim() ?? "";
+    const selfieKeys = [
+      ...user.claims.map((claim) => claim.selfieUrl),
+      ...user.claimSubmissions.map((submission) => submission.selfieUrl),
+    ];
+
+    if (user.passwordHash) {
+      if (currentPassword.length === 0) {
+        return NextResponse.json(
+          { message: "Zadejte aktuální heslo." },
+          { status: 400 },
+        );
+      }
+
+      const matches = await compare(currentPassword, user.passwordHash);
+      if (!matches) {
+        return NextResponse.json(
+          { message: "Aktuální heslo není správné." },
+          { status: 400 },
+        );
+      }
     }
 
     await runSerializableTransactionWithRetry(async (tx) => {
@@ -140,6 +149,20 @@ export async function POST(request: Request) {
         select: { id: true },
       });
     });
+
+    if (selfieKeys.length > 0) {
+      try {
+        await deleteUserSelfieObjects({
+          userId,
+          selfieKeys,
+        });
+      } catch (error) {
+        console.error(
+          "Účet byl odstraněn, ale mazání selfie objektů selhalo:",
+          error,
+        );
+      }
+    }
 
     return NextResponse.json({ message: "Účet byl odstraněn." });
   } catch (error) {

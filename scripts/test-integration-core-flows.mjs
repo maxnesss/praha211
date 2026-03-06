@@ -6,7 +6,7 @@ import { spawn } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-const REGISTRATION_CODE = "sokol";
+const REGISTRATION_CODE = process.env.REGISTRATION_CODE?.trim() || "sokol";
 const PASSWORD = "testpass123";
 const BASE_PORT = 4100;
 const PORT_SCAN_LIMIT = 40;

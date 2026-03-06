@@ -19,6 +19,11 @@ export const changePasswordSchema = z
 export const DELETE_ACCOUNT_CONFIRMATION_TEXT = "SMAZAT UCET";
 
 export const deleteAccountSchema = z.object({
+  currentPassword: z
+    .string()
+    .trim()
+    .max(256, "Aktuální heslo je příliš dlouhé.")
+    .optional(),
   confirmationText: z
     .string()
     .trim()

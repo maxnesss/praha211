@@ -37,9 +37,11 @@ Pokud je splněno cokoliv níže, **nedeployovat**:
 - `CLAIM_VALIDATION_LOCK_STALE_MS`
 - `LOCAL_SELFIE_VALIDATION_TIMEOUT_MS`
 - `CLAIM_VALIDATION_CRON_BATCH_SIZE`
+- `RATE_LIMIT_TRUST_PROXY_HEADERS` (doporučeno `true`, pokud důvěřujete proxy hlavičkám)
 
 ## 4. Reverse Proxy / IP Důvěra
 
+- pokud chcete rate limiting podle IP, nastavte `RATE_LIMIT_TRUST_PROXY_HEADERS=true`
 - přepisovat `X-Real-IP` a `X-Forwarded-For` na proxy
 - nepouštět spoofované klientské hodnoty bez přepsání
 - při Cloudflare nastavit trusted ranges + `real_ip_header CF-Connecting-IP`

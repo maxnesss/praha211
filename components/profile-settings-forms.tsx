@@ -51,6 +51,7 @@ export function ProfileSettingsForms({
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const [deleteConfirmationDraft, setDeleteConfirmationDraft] = useState("");
+  const [deleteCurrentPasswordDraft, setDeleteCurrentPasswordDraft] = useState("");
   const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
   const [isDeleteAccountSubmitting, setIsDeleteAccountSubmitting] = useState(false);
   const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
@@ -138,10 +139,17 @@ export function ProfileSettingsForms({
     setIsDeleteAccountSubmitting(true);
 
     const parsed = deleteAccountSchema.safeParse({
+      currentPassword: deleteCurrentPasswordDraft,
       confirmationText: deleteConfirmationDraft,
     });
     if (!parsed.success) {
       setDeleteAccountError(getProfileValidationMessage(parsed.error));
+      setIsDeleteAccountSubmitting(false);
+      return;
+    }
+
+    if (hasPassword && (parsed.data.currentPassword?.trim().length ?? 0) === 0) {
+      setDeleteAccountError("Zadejte aktuální heslo.");
       setIsDeleteAccountSubmitting(false);
       return;
     }
@@ -253,6 +261,7 @@ export function ProfileSettingsForms({
             onClick={() => {
               setDeleteAccountError(null);
               setDeleteConfirmationDraft("");
+              setDeleteCurrentPasswordDraft("");
               setIsDeleteAccountModalOpen(true);
             }}
             className="rounded-md border border-rose-300/60 bg-rose-500/10 px-3 py-1.5 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-500/20"
@@ -294,6 +303,26 @@ export function ProfileSettingsForms({
               onSubmit={handleDeleteAccountSubmit}
               autoComplete="off"
             >
+              {hasPassword ? (
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="deleteAccountCurrentPassword"
+                    className="text-sm font-medium text-cyan-100"
+                  >
+                    Aktuální heslo
+                  </label>
+                  <PasswordField
+                    id="deleteAccountCurrentPassword"
+                    name="deleteAccountCurrentPassword"
+                    value={deleteCurrentPasswordDraft}
+                    onChange={(event) => setDeleteCurrentPasswordDraft(event.target.value)}
+                    autoComplete="off"
+                    required={hasPassword}
+                    className="w-full rounded-md border border-cyan-300/35 bg-[#08161f] px-3 py-2 text-sm text-cyan-50 outline-none transition-colors focus:border-cyan-200"
+                  />
+                </div>
+              ) : null}
+
               <div className="space-y-1.5">
                 <label
                   htmlFor="deleteAccountConfirmation"
