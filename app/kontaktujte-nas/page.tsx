@@ -85,7 +85,7 @@ export default function ContactPage() {
               className="group block w-fit rounded-xl transition-opacity hover:opacity-90"
             >
               <Image
-                src="/logo/praha-tr.png"
+                src="/logo/praha-tr.webp"
                 alt="PRAHA 112 logo"
                 width={420}
                 height={420}

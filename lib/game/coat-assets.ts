@@ -15,8 +15,8 @@ function loadCoatAssetKeys() {
     const files = fs.readdirSync(coatsDir, { withFileTypes: true });
     const keys = new Set(
       files
-        .filter((entry) => entry.isFile() && entry.name.endsWith(".png"))
-        .map((entry) => entry.name.slice(0, -4).toLowerCase()),
+        .filter((entry) => entry.isFile() && entry.name.endsWith(".webp"))
+        .map((entry) => entry.name.slice(0, -5).toLowerCase()),
     );
 
     keys.add("karlin");

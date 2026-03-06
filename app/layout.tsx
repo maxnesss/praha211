@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/logo/praha-tr.png",
+        url: "/logo/praha-tr.webp",
         width: 1200,
         height: 1200,
         alt: "PRAHA 112",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    images: ["/logo/praha-tr.png"],
+    images: ["/logo/praha-tr.webp"],
   },
   robots: {
     index: true,

@@ -105,7 +105,7 @@ export async function SiteHeader({ session }: SiteHeaderProps) {
             aria-label="Přejít na hlavní stránku"
           >
             <Image
-              src="/logo/praha-tr.png"
+              src="/logo/praha-tr.webp"
               alt="PRAHA 112 logo"
               width={160}
               height={160}

@@ -71,7 +71,7 @@ Kompletní specifikace bodování:
 Assety speciálních odznaků patří do `public/badges/`:
 - `streak_3.webp`, `streak_7.webp`, `streak_30.webp`
 - `rhythm_weekend_patrol.webp`, `rhythm_early_bird.webp`, `rhythm_night_owl.webp`
-- `team_joined.png`, `team_leader.png`
+- `team_joined.webp`, `team_leader.webp`
 
 ## Hlavní funkce
 
@@ -335,7 +335,6 @@ npm run user:add -- --email admin@praha211.com --password "AdminPass123" --role 
 
 Assety patří do `public/coats/`:
 - `<district_slug>.webp` a volitelně `<district_slug>@2x.webp`
-- `<district_slug>.png` a volitelně `<district_slug>@2x.png`
 
 ## Cloudflare R2 setup (privátní selfie)
 

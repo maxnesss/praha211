@@ -112,7 +112,7 @@ function buildVerificationEmailText(input: VerificationEmailTemplateInput) {
 
 function buildVerificationEmailHtml(input: VerificationEmailTemplateInput) {
   const siteUrl = getSiteUrl();
-  const logoUrl = new URL("/logo/praha-tr.png", siteUrl).toString();
+  const logoUrl = new URL("/logo/praha-tr.webp", siteUrl).toString();
   const signInUrl = new URL("/sign-in", siteUrl).toString();
 
   return `
@@ -201,7 +201,7 @@ function buildPasswordResetEmailText(input: PasswordResetEmailTemplateInput) {
 
 function buildPasswordResetEmailHtml(input: PasswordResetEmailTemplateInput) {
   const siteUrl = getSiteUrl();
-  const logoUrl = new URL("/logo/praha-tr.png", siteUrl).toString();
+  const logoUrl = new URL("/logo/praha-tr.webp", siteUrl).toString();
   const signInUrl = new URL("/sign-in", siteUrl).toString();
 
   return `
@@ -294,7 +294,7 @@ function buildWelcomeEmailText() {
 
 function buildWelcomeEmailHtml() {
   const siteUrl = getSiteUrl();
-  const logoUrl = new URL("/logo/praha-tr.png", siteUrl).toString();
+  const logoUrl = new URL("/logo/praha-tr.webp", siteUrl).toString();
   const signInUrl = new URL("/sign-in", siteUrl).toString();
   const dashboardUrl = new URL("/radnice", siteUrl).toString();
 

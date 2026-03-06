@@ -42,7 +42,7 @@ function DistrictCoatTile({ badge }: { badge: DistrictBadgeWallItem }) {
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-sm">
         <Image
-          src={`/coats/${badge.coatAssetKey}.png`}
+          src={`/coats/${badge.coatAssetKey}.webp`}
           alt={`${badge.name} znak`}
           fill
           loader={coatImageLoader}

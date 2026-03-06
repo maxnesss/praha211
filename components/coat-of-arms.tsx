@@ -69,7 +69,7 @@ export function CoatOfArms({
     >
       {mode !== "placeholder" && shouldRenderImage ? (
         <Image
-          src={`/coats/${resolvedAssetKey}.png`}
+          src={`/coats/${resolvedAssetKey}.webp`}
           alt={`${name} znak městské části`}
           fill
           loader={coatImageLoader}

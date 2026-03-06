@@ -39,7 +39,7 @@ export default async function Home() {
       <section className="relative mx-auto flex min-h-0 flex-1 w-full max-w-7xl flex-col items-center justify-center px-4 py-4 text-center sm:px-8 sm:py-6">
         <div className={`${metro.pageReveal} w-full max-w-5xl rounded-3xl border border-cyan-300/35 bg-[#0c202e]/80 p-5 shadow-[0_24px_56px_rgba(0,0,0,0.48)] sm:p-7 ${metro.mobilePanel}`}>
           <Image
-            src="/logo/praha-tr.png"
+            src="/logo/praha-tr.webp"
             alt="PRAHA 112 logo"
             width={900}
             height={900}
