@@ -13,30 +13,41 @@ Poznamka:
 - Frontend validuje data pres `registerSchema`.
 
 ### Frontend kroky
-1. Stranka `app/sign-up/page.tsx` nasbira `name`, `email`, `password`.
+1. Stranka `app/sign-up/page.tsx` nasbira `name`, `nickname`, `email`, `password`, `registrationCode`.
 2. Probehne klientska validace (Zod) v prohlizeci.
 3. Frontend posle `POST /api/auth/register` s JSON payloadem.
-4. Po uspesne registraci frontend automaticky vola `signIn("credentials")`.
-5. Pri uspechu dojde k redirectu na `/radnice`.
+4. Po uspesne registraci frontend zobrazi informaci o overovacim e-mailu.
+5. Po kratke prodleve dojde k redirectu na `/sign-in`.
 
 ### Backend kroky (`POST /api/auth/register`)
-1. Rate-limit (`auth-register`): max 6 pokusu / 15 minut (IP).
+1. Rate-limit (`auth-register`): max 6 pokusu / 15 minut (neprihlasena identita: fingerprint, volitelne IP).
 2. Parsovani JSON tela, Zod validace `registerSchema`.
-3. Kontrola, zda uz e-mail neexistuje.
-4. Hash hesla (`bcryptjs`, cost 12).
-5. Vygenerovani unikatni prezdivky (`generateUniqueNickname`).
-6. Vytvoreni `User` zaznamu:
+3. Kontrola a vyhodnoceni registracniho kodu:
+   - primarne z `REGISTRATION_CODE`,
+   - fallback `sokol` jen mimo produkci (local/CI),
+   - v produkci bez kodu vraci endpoint `503`.
+4. Kontrola, zda uz e-mail neexistuje:
+   - pokud e-mail existuje a neni overeny, token se znovu otoci a (pokud jde) znovu odesle overovaci e-mail,
+   - odpoved zustava zamerne obecna (`200`) kvuli anti-enumeration.
+5. Kontrola obsazene prezdivky.
+6. Hash hesla (`bcryptjs`, cost 12).
+7. Vytvoreni `User` zaznamu:
    - `role = USER`
    - `avatar = DEFAULT_USER_AVATAR`
    - `passwordHash = hashed password`
-7. Odpoved `201`.
+   - `emailVerificationTokenHash` + expirace
+8. Vytvoreni uvitacich systemovych zprav do inboxu.
+9. Odeslani overovaciho e-mailu (mimo test domeny).
+10. Odpoved `201`.
 
 ### Datove efekty
 - Tabulka `User`: novy uzivatel, unikatni `email`, unikatni `nickname` (pokud vyplnena).
+- Tabulka `UserMessage`: 2 uvitaci systemove zpravy.
 
 ### Chybove vetve
 - `400`: neplatny vstup / neplatne telo pozadavku.
-- `409`: e-mail (nebo prezdivka) uz existuje.
+- `409`: prezdivka uz existuje.
+- `503`: registrace je docasne vypnuta (chybi produkcni `REGISTRATION_CODE`).
 - `429`: prilis mnoho pokusu o registraci.
 - `500`: neocekavana chyba.
 
@@ -52,18 +63,25 @@ Poznamka:
 4. Pri uspechu redirect na `callbackUrl` nebo `/radnice`.
 
 ### Backend kroky (NextAuth Credentials provider)
-1. Validace credentials pres `signInSchema`.
-2. Nacteni uzivatele dle e-mailu.
-3. Overeni `passwordHash` + `bcrypt compare`.
-4. Pokud sedi, vraci user payload do NextAuth.
-5. V JWT callbacku se ulozi:
+1. Credentials callback route ma rate-limit (`auth-credentials-signin`): max 12 / 10 minut.
+2. Validace credentials pres `signInSchema`.
+3. Nacteni uzivatele dle e-mailu.
+4. Overeni `passwordHash` + `bcrypt compare`.
+5. Kontrola stavu uctu:
+   - zmrazeny ucet -> `ACCOUNT_FROZEN`,
+   - neovereny e-mail -> `EMAIL_NOT_VERIFIED`.
+6. Pokud sedi, vraci user payload do NextAuth.
+7. V JWT callbacku se ulozi:
    - `id`, `role`, `avatar`
-6. V session callbacku se propise do `session.user`.
+   - `sessionVersion` (pro invalidaci starsich session)
+8. V session callbacku se propise do `session.user`.
 
 ### Chybove vetve
 - Neplatne credentials => `authorize` vraci `null`, UI zobrazi "Neplatny e-mail nebo heslo.".
+- Zmrazeny nebo neovereny ucet => prihlaseni je zamitnuto s odpovidajicim chovanim na prihlasovaci strance.
+- Pri preteceni limitu prihlaseni route vraci `429`.
 
-## 3. Proces: Beta kod pri registraci
+## 3. Proces: Registracni kod
 
 ### Spoustec
 - Uzivatel odesle formular na `/sign-up` s polem `registrationCode`.
@@ -71,10 +89,14 @@ Poznamka:
 ### Validace
 1. Klient i server validuji `registrationCode` pres `registerSchema`.
 2. Kod je povinny, normalizuje se na lowercase.
-3. Pri beta testu plati pevna hodnota `sokol`.
+3. Ocekavana hodnota:
+   - primarne `REGISTRATION_CODE`,
+   - fallback `sokol` jen v local/CI rezimu.
+4. Pokud v produkci chybi `REGISTRATION_CODE`, registrace je vypnuta (`503`).
 
 ### Chybove vetve
 - Pri spatnem kodu vrati API `400` s hlaskou `Neplatny registracni kod.`.
+- Pri chybejicim produkcnim kodu vrati API `503`.
 
 ## 4. Proces: Autorizace a pristup na chranene stranky
 
@@ -96,7 +118,7 @@ Krok:
 
 ## 5. Proces: Potvrzeni mestske casti (Claim district)
 
-Tento proces je dvoukrokovy: nejdriv upload selfie do R2, potom zapis claimu do DB.
+Tento proces je dvoukrokovy: nejdriv upload selfie do R2, potom odeslani zadosti o potvrzeni.
 
 ### 5.1 Frontend claim flow (`components/claim-district-form.tsx`)
 1. Uzivatel otevre modal "Odemknout mestskou cast".
@@ -121,34 +143,39 @@ Tento proces je dvoukrokovy: nejdriv upload selfie do R2, potom zapis claimu do 
 5. Vytvoreni signed PUT URL pro Cloudflare R2.
 6. Odpoved s `uploadUrl`, `selfieKey`, `expiresIn`.
 
-### 5.3 Backend: claim zapis (`POST /api/districts/[code]/claim`)
+### 5.3 Backend: claim enqueue + validace (`POST /api/districts/[code]/claim`)
 1. Kontrola session (`401` pokud neprihlasen).
-2. Rate-limit `district-claim`: max 30 / 5 minut (uzivatel).
-3. Kontrola existence districtu (`404` pokud neexistuje).
-4. Validace payloadu (`districtClaimSchema`):
-   - `selfieUrl` musi byt HTTP URL nebo interni key `selfies/...`
+2. Kontrola, zda uzivatel neni zmrazeny (`403`).
+3. Rate-limit `district-claim`: max 30 / 5 minut (uzivatel).
+4. Kontrola existence districtu (`404` pokud neexistuje).
+5. Validace payloadu (`districtClaimSchema`):
+   - `selfieUrl` musi byt interni key `selfies/...`
    - `attestVisited=true`
    - `attestSignVisible=true`
-5. Kontrola, zda uzivatel uz district nema potvrzeny (`@@unique [userId, districtCode]`).
-6. Nacteni historickych claimu uzivatele.
-7. Spocitani score:
-   - `sameDayMultiplier = min(2, 1 + claimsTodayBefore * 0.15)`
-   - `streakBonus = streakAfterClaim * 5`
-   - `awardedPoints = round(basePoints * sameDayMultiplier + streakBonus)`
-   - detailni score matice (chapter/praha/achievement eventy) je v `docs/scoring.md`
-8. Vytvoreni `DistrictClaim` zaznamu.
-9. `revalidateTag(LEADERBOARD_CACHE_TAG, "max")`.
-10. Odpoved `201` s detailem claimu.
+6. Kontrola ownership selfie key (`selfies/{userId}/...`) + existence objektu v R2.
+7. Kontrola, zda uzivatel uz district nema potvrzeny a zda nema pending submission.
+8. Vytvoreni `DistrictClaimSubmission` se stavem `PENDING`.
+9. Spusteni lokalni validace:
+   - v CI se zpracuje hned (`processPendingClaimValidations`) a pri schvaleni muze prijit `201` s claimem,
+   - bezne prostredi vraci `202` a validace dobehne asynchronne.
+10. Pri uspesnem schvaleni se vytvori `DistrictClaim` a refreshne leaderboard tag.
+
+### 5.4 Backend: stav claimu (`GET /api/districts/[code]/claim`)
+1. Kontrola session (`401`).
+2. Pokud existuje `DistrictClaim`, vraci `status: "CLAIMED"`.
+3. Pokud existuje pending submission, vraci `status: "PENDING"`.
+4. Jinak vraci `status: "NONE"`.
 
 ### Datove efekty
-- Tabulka `DistrictClaim`: novy claim, body, multiplikator, streak bonus.
-- Unikatni constraint zabrani dvojitemu claimu stejne mestske casti jednim uzivatelem.
+- Tabulka `DistrictClaimSubmission`: nova zadost o potvrzeni.
+- Tabulka `DistrictClaim`: vznikne az po schvaleni validace.
 
 ### Chybove vetve
 - `400`: neplatny payload / nesplnene attest podminky.
 - `401`: neprihlaseny uzivatel.
-- `404`: district neexistuje.
-- `409`: district uz byl potvrzen.
+- `403`: zmrazeny ucet / cizi selfie key.
+- `404`: district nebo selfie neexistuje.
+- `409`: district uz byl potvrzen nebo uz existuje pending zadost.
 - `429`: rate-limit.
 - `500`: interni chyba.
 
@@ -174,7 +201,9 @@ Tento proces je dvoukrokovy: nejdriv upload selfie do R2, potom zapis claimu do 
 
 - Session strategie je `jwt` (NextAuth).
 - Canonical cas claimu je serverovy `claimedAt`.
-- Rate-limit store je in-memory (global map), tedy proces-local.
+- Rate-limit pouziva DB bucket (`RateLimitBucket`) s in-memory fallbackem pri chybe DB.
+- U neprihlasenych endpointu je identita defaultne fingerprint klienta.
+- Pokud je nastaveno `RATE_LIMIT_TRUST_PROXY_HEADERS=true`, muze se pouzit IP z proxy hlavicek.
 - Chranene route se kontroluji per-page/per-endpoint pomoci `getServerSession`.
 
 ## 8. Procesy tymu (create, apply, approve/reject, leave, remove member)
@@ -348,9 +377,9 @@ Zakladni pravidla podle implementace:
 ## 9. Rychly seznam procesu (mapa)
 
 1. Landing (`/`) -> pokud login existuje, redirect `/radnice`.
-2. Registrace (`/sign-up`) -> `POST /api/auth/register` -> auto login -> `/radnice`.
+2. Registrace (`/sign-up`) -> `POST /api/auth/register` -> overovaci e-mail -> `/sign-in`.
 3. Prihlaseni (`/sign-in`) -> NextAuth credentials -> `/radnice` nebo callback URL.
-4. Claim district (`/district/[code]`) -> sign upload -> upload do R2 -> claim API -> prepocet score.
+4. Claim district (`/district/[code]`) -> sign upload -> upload do R2 -> claim API -> enqueue/validace -> schvaleny claim.
 5. Zobrazeni selfie -> private signed view link.
 6. Tym create (`/api/teams`) -> zadost (`/apply`) -> schvaleni/zamitnuti velitelem.
 7. Sprava clenu tymu -> leave / remove member dle role.

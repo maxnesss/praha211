@@ -198,6 +198,11 @@ API:
 - `/api/auth/verify-email`
 - `/api/districts/[code]/claim`
 - `/api/districts/[code]/test-claim` (admin test endpoint)
+- `/api/messages`
+- `/api/messages/recipients`
+- `/api/messages/read-all`
+- `/api/messages/[messageId]`
+- `/api/messages/[messageId]/read`
 - `/api/profile/avatar`
 - `/api/profile/delete`
 - `/api/profile/nickname`
