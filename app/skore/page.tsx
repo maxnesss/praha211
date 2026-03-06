@@ -3,10 +3,123 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import metro from "@/app/metro-theme.module.css";
 import { authOptions } from "@/lib/auth";
+import { getChapterBySlug, getDistrictByCode } from "@/lib/game/district-catalog";
 import { calculateCurrentStreak } from "@/lib/game/progress";
 import { getUserPointsRanking } from "@/lib/game/queries";
-import { getUserScoreTotal } from "@/lib/game/score-ledger";
+import { getUserScoreTimeline, getUserScoreTotal, type UserScoreTimelineEvent } from "@/lib/game/score-ledger";
 import { prisma } from "@/lib/prisma";
+
+const ACHIEVEMENT_LABELS: Record<string, string> = {
+  progress_1: "První potvrzení",
+  progress_10: "10 potvrzení",
+  progress_25: "25 potvrzení",
+  progress_75: "75 potvrzení",
+  progress_100: "100 potvrzení",
+  progress_112: "112 potvrzení",
+  streak_3: "Série 3 dní",
+  streak_7: "Série 7 dní",
+  streak_30: "Série 30 dní",
+  rhythm_weekend_patrol: "Víkendová hlídka",
+  rhythm_early_bird: "Ranní ptáče",
+  rhythm_night_owl: "Noční sova",
+  team_joined_first: "První tým",
+  team_has_led: "Velitel týmu",
+};
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readMetaString(metadata: unknown, key: string) {
+  if (!isJsonObject(metadata)) {
+    return null;
+  }
+
+  const value = metadata[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function readMetaNumber(metadata: unknown, key: string) {
+  if (!isJsonObject(metadata)) {
+    return null;
+  }
+
+  const value = metadata[key];
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  return null;
+}
+
+function extractSuffixFromEventKey(eventKey: string, prefix: string) {
+  return eventKey.startsWith(prefix) ? eventKey.slice(prefix.length) : null;
+}
+
+function describeTimelineEvent(event: UserScoreTimelineEvent) {
+  if (event.eventType === "DISTRICT_CLAIM") {
+    const metadataDistrictCode = readMetaString(event.metadata, "districtCode");
+    const eventKeyDistrictCode = extractSuffixFromEventKey(event.eventKey, "district_claim:");
+    const districtCode = metadataDistrictCode ?? eventKeyDistrictCode ?? null;
+    const district = districtCode ? getDistrictByCode(districtCode) : null;
+
+    return {
+      title: "Potvrzení městské části",
+      detail: district
+        ? `${district.name} (${district.code})`
+        : districtCode
+          ? `Městská část ${districtCode}`
+          : "Městská část",
+    };
+  }
+
+  if (event.eventType === "CHAPTER_COMPLETE") {
+    const metadataChapterSlug = readMetaString(event.metadata, "chapterSlug");
+    const eventKeyChapterSlug = extractSuffixFromEventKey(event.eventKey, "chapter_complete:");
+    const chapterSlug = metadataChapterSlug ?? eventKeyChapterSlug ?? null;
+    const chapter = chapterSlug ? getChapterBySlug(chapterSlug) : null;
+
+    return {
+      title: "Dokončená kapitola",
+      detail: chapter?.name ?? (chapterSlug ? `Kapitola ${chapterSlug}` : "Kapitola"),
+    };
+  }
+
+  if (event.eventType === "PRAHA_PART_COMPLETE") {
+    const metadataPrahaNumber = readMetaNumber(event.metadata, "prahaNumber");
+    const eventKeyPrahaNumber = extractSuffixFromEventKey(event.eventKey, "praha_part_complete:");
+    const prahaNumber = metadataPrahaNumber
+      ?? (eventKeyPrahaNumber ? Number.parseInt(eventKeyPrahaNumber, 10) : NaN);
+    const hasPrahaNumber = Number.isFinite(prahaNumber);
+
+    return {
+      title: "Dokončení Praha 1-22",
+      detail: hasPrahaNumber ? `Praha ${prahaNumber}` : "Odznak Praha části",
+    };
+  }
+
+  if (event.eventType === "ACHIEVEMENT_BADGE_UNLOCK") {
+    const metadataBadgeId = readMetaString(event.metadata, "badgeId");
+    const eventKeyBadgeId = extractSuffixFromEventKey(event.eventKey, "achievement_badge_unlock:");
+    const badgeId = metadataBadgeId ?? eventKeyBadgeId ?? "";
+    const badgeLabel = ACHIEVEMENT_LABELS[badgeId] ?? badgeId;
+
+    return {
+      title: "Odemknutý speciální odznak",
+      detail: badgeLabel || "Speciální odznak",
+    };
+  }
+
+  return {
+    title: "Bodovaný event",
+    detail: event.eventKey,
+  };
+}
 
 export default async function BodyPage() {
   const session = await getServerSession(authOptions);
@@ -15,24 +128,24 @@ export default async function BodyPage() {
     redirect("/sign-in?callbackUrl=%2Fskore");
   }
 
-  const claims = await prisma.districtClaim.findMany({
-    where: { userId: session.user.id },
-    select: {
-      id: true,
-      districtCode: true,
-      districtName: true,
-      awardedPoints: true,
-      basePoints: true,
-      sameDayMultiplier: true,
-      streakBonus: true,
-      claimedAt: true,
-    },
-    orderBy: { claimedAt: "desc" },
-  });
-
-  const [ranking, totalPoints] = await Promise.all([
+  const [claims, ranking, totalPoints, timeline] = await Promise.all([
+    prisma.districtClaim.findMany({
+      where: { userId: session.user.id },
+      select: {
+        id: true,
+        districtCode: true,
+        districtName: true,
+        awardedPoints: true,
+        basePoints: true,
+        sameDayMultiplier: true,
+        streakBonus: true,
+        claimedAt: true,
+      },
+      orderBy: { claimedAt: "desc" },
+    }),
     getUserPointsRanking(session.user.id),
     getUserScoreTotal(session.user.id),
+    getUserScoreTimeline(session.user.id, 80),
   ]);
   const totalUnlocks = claims.length;
   const averagePoints = totalUnlocks > 0 ? Math.round(totalPoints / totalUnlocks) : 0;
@@ -60,8 +173,7 @@ export default async function BodyPage() {
             Přehled vašeho skóre
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-cyan-100/75 sm:text-base">
-            Tahle tabule ukazuje, jak roste vaše skóre a které městské části jste
-            potvrdili naposledy.
+            Tahle tabule ukazuje, jak roste vaše skóre napříč bodovanými eventy.
           </p>
 
           <div className="mt-8 grid grid-cols-6 gap-2 sm:hidden">
@@ -133,53 +245,51 @@ export default async function BodyPage() {
 
           <section className="mt-8">
             <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-100/75">
-              Poslední bodované odemčení
+              Timeline bodových eventů
             </h2>
 
-            {claims.length > 0 ? (
+            {timeline.length > 0 ? (
               <ul className="mt-3 divide-y divide-cyan-300/20">
-                {claims.slice(0, 30).map((claim) => (
-                  <li key={claim.id} className="py-2.5 text-cyan-50/90">
+                {timeline.map((event) => {
+                  const presentation = describeTimelineEvent(event);
+
+                  return (
+                    <li key={event.id} className="py-2.5 text-cyan-50/90">
                     <div className="sm:hidden">
                       <div className="flex items-baseline justify-between gap-3">
                         <p className="min-w-0 truncate text-sm font-medium text-cyan-50">
-                          {claim.districtName}
+                          {presentation.title}
                         </p>
                         <p className={`${metro.monoDigit} shrink-0 text-sm font-semibold text-orange-100`}>
-                          +{claim.awardedPoints}
+                          +{event.points}
                         </p>
                       </div>
                       <p className={`${metro.monoDigit} mt-0.5 text-[11px] leading-4 text-cyan-100/70`}>
-                        {claim.claimedAt.toLocaleString("cs-CZ")} · Základ {claim.basePoints} · Násobitel {claim.sameDayMultiplier.toFixed(2)}x · Série bonus +{claim.streakBonus}
+                        {event.occurredAt.toLocaleString("cs-CZ")} · {presentation.detail}
                       </p>
                     </div>
 
-                    <div className="hidden sm:grid sm:grid-cols-[11rem_minmax(0,1fr)_auto_auto_auto_auto] sm:items-center sm:gap-3">
+                    <div className="hidden sm:grid sm:grid-cols-[11rem_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center sm:gap-3">
                       <p className={`${metro.monoDigit} text-xs text-cyan-100/70`}>
-                        {claim.claimedAt.toLocaleString("cs-CZ")}
+                        {event.occurredAt.toLocaleString("cs-CZ")}
                       </p>
                       <p className="text-sm font-medium text-cyan-50">
-                        {claim.districtName}
+                        {presentation.title}
                       </p>
                       <p className={`${metro.monoDigit} text-xs text-cyan-100/75`}>
-                        Základ {claim.basePoints}
-                      </p>
-                      <p className={`${metro.monoDigit} text-xs text-cyan-100/75`}>
-                        Násobitel {claim.sameDayMultiplier.toFixed(2)}x
-                      </p>
-                      <p className={`${metro.monoDigit} text-xs text-cyan-100/75`}>
-                        Série bonus +{claim.streakBonus}
+                        {presentation.detail}
                       </p>
                       <p className={`${metro.monoDigit} text-sm font-semibold text-orange-100`}>
-                        +{claim.awardedPoints}
+                        +{event.points}
                       </p>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             ) : (
               <p className="mt-4 text-sm text-cyan-100/65">
-                Zatím nemáte žádné bodované odemčení.
+                Zatím nemáte žádné bodové eventy.
               </p>
             )}
           </section>

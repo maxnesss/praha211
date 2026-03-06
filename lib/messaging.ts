@@ -110,7 +110,7 @@ export async function getUserInboxMessages(
     senderUserId: message.sender?.id ?? null,
     senderDisplayName: message.sender
       ? getPublicPlayerName(message.sender)
-      : "Systém PRAHA 112",
+      : "Praha112",
   }));
 }
 

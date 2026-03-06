@@ -211,6 +211,15 @@ type SyncScoreEventsInput = {
   claims?: ScoreClaimSnapshot[];
 };
 
+export type UserScoreTimelineEvent = {
+  id: string;
+  eventType: ScoreEventType;
+  eventKey: string;
+  points: number;
+  occurredAt: Date;
+  metadata: Prisma.JsonValue | null;
+};
+
 export async function syncUserScoreEvents(input: SyncScoreEventsInput) {
   const [claims, user] = await Promise.all([
     input.claims
@@ -289,6 +298,28 @@ export async function getUserScoreTotal(userId: string) {
   });
 
   return aggregate._sum.points ?? 0;
+}
+
+export async function getUserScoreTimeline(userId: string, limit = 80): Promise<UserScoreTimelineEvent[]> {
+  const parsedLimit = Number.isFinite(limit) ? Math.floor(limit) : 80;
+  const safeLimit = Math.min(Math.max(parsedLimit, 1), 200);
+
+  return prisma.scoreEvent.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      eventType: true,
+      eventKey: true,
+      points: true,
+      occurredAt: true,
+      metadata: true,
+    },
+    orderBy: [
+      { occurredAt: "desc" },
+      { id: "desc" },
+    ],
+    take: safeLimit,
+  });
 }
 
 export async function getUserScoreTotalsByUserIds(userIds: string[]) {
