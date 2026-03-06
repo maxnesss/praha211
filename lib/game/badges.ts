@@ -1,6 +1,7 @@
 import { DISTRICT_STORIES } from "./district-stories.ts";
 import { resolveCoatAssetKey } from "./coat-assets.ts";
 import { calculateLongestStreak } from "./scoring-core.ts";
+import { TEAM_MAX_MEMBERS } from "../team-utils.ts";
 import {
   CHAPTERS,
   DISTRICTS,
@@ -240,7 +241,7 @@ function buildRhythmAchievementBadges(claimDates: Date[]): AchievementBadge[] {
     }
 
     const hour = toPragueHour(claimDate);
-    if (hour !== null && hour >= 5 && hour <= 10) {
+    if (hour !== null && hour >= 4 && hour <= 7) {
       hasEarlyBird = true;
     }
     if (hour !== null && hour >= 21 && hour <= 23) {
@@ -264,7 +265,7 @@ function buildRhythmAchievementBadges(claimDates: Date[]): AchievementBadge[] {
     {
       id: "rhythm_early_bird",
       title: "Ranní ptáče",
-      subtitle: "Ráno (5:00-10:59)",
+      subtitle: "Ráno (4:00-7:59)",
       category: "RHYTHM",
       difficulty: "EASY",
       unlocked: hasEarlyBird,
@@ -308,7 +309,7 @@ function buildTeamAchievementBadges(input: {
     {
       id: "team_has_led",
       title: "Velitel týmu",
-      subtitle: "Někdy byl velitelem",
+      subtitle: `Velitel plného týmu (${TEAM_MAX_MEMBERS}/${TEAM_MAX_MEMBERS})`,
       category: "TEAM",
       difficulty: "HARD",
       unlocked: input.hasBeenTeamLeader,

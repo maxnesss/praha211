@@ -62,11 +62,11 @@ Kompletní specifikace bodování:
   - milestone `14` byl odstraněn
 - Rytmus (RHYTHM):
   - `Víkendová hlídka` (claim v sobotu i neděli)
-  - `Ranní ptáče` (claim v čase `05:00-10:59`)
+  - `Ranní ptáče` (claim v čase `04:00-07:59`)
   - `Noční sova` (claim v čase `21:00-23:59`)
 - Tým (TEAM):
   - `První tým`
-  - `Velitel týmu`
+  - `Velitel týmu` (někdy vedl plný tým `5/5`)
 
 Assety speciálních odznaků patří do `public/badges/`:
 - `streak_3.webp`, `streak_7.webp`, `streak_30.webp`

@@ -91,13 +91,12 @@ type UserBadgeContextSnapshot = {
   teamId: string | null;
   hasJoinedTeam: boolean;
   hasBeenTeamLeader: boolean;
-  ledTeam: { id: string } | null;
 };
 
 function toBadgeContext(user: UserBadgeContextSnapshot | null) {
   return {
     joinedTeam: Boolean(user?.hasJoinedTeam || user?.teamId),
-    hasBeenTeamLeader: Boolean(user?.hasBeenTeamLeader || user?.ledTeam),
+    hasBeenTeamLeader: Boolean(user?.hasBeenTeamLeader),
   };
 }
 
@@ -110,9 +109,6 @@ export async function getUserBadgeOverview(userId: string) {
         teamId: true,
         hasJoinedTeam: true,
         hasBeenTeamLeader: true,
-        ledTeam: {
-          select: { id: true },
-        },
       },
     }),
   ]);
@@ -350,9 +346,6 @@ export async function getPublicPlayerProfile(userId: string): Promise<PublicPlay
       teamId: true,
       hasJoinedTeam: true,
       hasBeenTeamLeader: true,
-      ledTeam: {
-        select: { id: true },
-      },
       team: {
         select: {
           name: true,
@@ -403,9 +396,6 @@ const getUserNavStatsCached = cache(async (userId: string): Promise<UserNavStats
         teamId: true,
         hasJoinedTeam: true,
         hasBeenTeamLeader: true,
-        ledTeam: {
-          select: { id: true },
-        },
         team: {
           select: {
             name: true,

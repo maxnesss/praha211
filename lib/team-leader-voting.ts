@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { getPublicPlayerName } from "@/lib/team-utils";
+import { getPublicPlayerName, TEAM_MAX_MEMBERS } from "@/lib/team-utils";
 
 type TeamVoteTx = Prisma.TransactionClient;
 
@@ -189,11 +189,13 @@ export async function synchronizeTeamLeaderByVotes(tx: TeamVoteTx, teamId: strin
     });
   }
 
-  await tx.user.update({
-    where: { id: nextLeader.id },
-    data: { hasBeenTeamLeader: true },
-    select: { id: true },
-  });
+  if (members.length >= TEAM_MAX_MEMBERS) {
+    await tx.user.update({
+      where: { id: nextLeader.id },
+      data: { hasBeenTeamLeader: true },
+      select: { id: true },
+    });
+  }
 
   return {
     teamId: team.id,

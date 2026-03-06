@@ -98,7 +98,6 @@ export async function POST(request: Request) {
         where: { id: user.id },
         data: {
           hasJoinedTeam: true,
-          hasBeenTeamLeader: true,
         },
         select: { id: true },
       });

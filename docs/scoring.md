@@ -83,13 +83,13 @@ Obtížnost:
 ### 5.3 RHYTHM
 
 - `rhythm_weekend_patrol`: claim v sobotu i neděli (`MEDIUM`)
-- `rhythm_early_bird`: claim mezi `05:00-10:59` (`EASY`)
+- `rhythm_early_bird`: claim mezi `04:00-07:59` (`EASY`)
 - `rhythm_night_owl`: claim mezi `21:00-23:59` (`EASY`)
 
 ### 5.4 TEAM
 
 - `team_joined_first`: uživatel je / byl v týmu (`MEDIUM`)
-- `team_has_led`: uživatel je / byl velitel (`HARD`)
+- `team_has_led`: uživatel někdy vedl plný tým (`5/5`) (`HARD`)
 
 ## 6. `occurredAt` pravidla pro eventy
 
