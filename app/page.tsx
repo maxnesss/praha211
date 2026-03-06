@@ -8,13 +8,15 @@ import { authOptions } from "@/lib/auth";
 import { SITE_DESCRIPTION } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Domů",
+  title: {
+    absolute: "PRAHA 112 - Jedna výzva, 112 městských částí",
+  },
   description: SITE_DESCRIPTION,
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "PRAHA 112",
+    title: "PRAHA 112 - Jedna výzva, 112 městských částí",
     description: SITE_DESCRIPTION,
     url: "/",
   },
